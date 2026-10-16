@@ -1,0 +1,72 @@
+using Ailu.Api.Data;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+
+namespace Ailu.Api.Services;
+
+// Hands each couple one task and one question per calendar day. Items are created lazily on the
+// first read of the day; the morning worker will later create them ahead of the 09:00 push.
+public sealed class DailyContentService(AiluDb db)
+{
+    public async Task<(CoupleTask Task, DailyQuestion Question)> EnsureAsync(Couple couple, DateOnly day,
+        CancellationToken ct = default, bool retried = false)
+    {
+        var task = await FindTaskAsync(couple.Id, day, ct);
+        var question = await FindQuestionAsync(couple.Id, day, ct);
+        if (task is not null && question is not null) return (task, question);
+
+        if (task is null)
+        {
+            var used = await db.CoupleTasks.Where(t => t.CoupleId == couple.Id).Select(t => t.DailyTaskId).ToListAsync(ct);
+            var library = await db.DailyTasks.Select(t => t.Id).ToListAsync(ct);
+            db.CoupleTasks.Add(new CoupleTask
+            {
+                Id = Guid.NewGuid(), CoupleId = couple.Id, Date = day,
+                DailyTaskId = PickLeastUsed(library, used, couple.Id, day)
+            });
+        }
+
+        if (question is null)
+        {
+            var used = await db.DailyQuestions.Where(q => q.CoupleId == couple.Id).Select(q => q.QuestionId).ToListAsync(ct);
+            var library = await db.Questions.Select(q => q.Id).ToListAsync(ct);
+            db.DailyQuestions.Add(new DailyQuestion
+            {
+                Id = Guid.NewGuid(), CoupleId = couple.Id, Date = day,
+                QuestionId = PickLeastUsed(library, used, couple.Id, day)
+            });
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException e) when (!retried && e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            // The partner opened the app at the same moment and created today's items first.
+            foreach (var entry in db.ChangeTracker.Entries().Where(x => x.State == EntityState.Added).ToList())
+                entry.State = EntityState.Detached;
+            return await EnsureAsync(couple, day, ct, retried: true);
+        }
+
+        return ((await FindTaskAsync(couple.Id, day, ct))!, (await FindQuestionAsync(couple.Id, day, ct))!);
+    }
+
+    // Prefer items the couple has seen least, and among those pick a stable one for the day,
+    // so the library is worked through before anything repeats.
+    public static int PickLeastUsed(IReadOnlyCollection<int> library, IEnumerable<int> used, Guid coupleId, DateOnly day)
+    {
+        if (library.Count == 0) throw new InvalidOperationException("The content library is empty.");
+        var counts = used.GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count());
+        var fewest = library.Min(id => counts.GetValueOrDefault(id));
+        var candidates = library.Where(id => counts.GetValueOrDefault(id) == fewest).Order().ToArray();
+        var seed = (uint)(BitConverter.ToInt32(coupleId.ToByteArray()) ^ day.DayNumber);
+        return candidates[seed % candidates.Length];
+    }
+
+    private Task<CoupleTask?> FindTaskAsync(Guid coupleId, DateOnly day, CancellationToken ct) =>
+        db.CoupleTasks.Include(t => t.DailyTask).SingleOrDefaultAsync(t => t.CoupleId == coupleId && t.Date == day, ct);
+
+    private Task<DailyQuestion?> FindQuestionAsync(Guid coupleId, DateOnly day, CancellationToken ct) =>
+        db.DailyQuestions.Include(q => q.Question).SingleOrDefaultAsync(q => q.CoupleId == coupleId && q.Date == day, ct);
+}
