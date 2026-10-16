@@ -1,0 +1,92 @@
+// Mirrors the DTOs in backend/src/Ailu.Api. Keep the two in step when either side changes.
+
+export type User = {
+  id: string;
+  phone: string;
+  name: string | null;
+  locale: 'kk' | 'ru' | 'en';
+  timeZone: string;
+};
+
+export type TokenPair = {
+  accessToken: string;
+  accessTokenExpiresAt: string;
+  refreshToken: string;
+  user: User;
+};
+
+export type Partner = { id: string; name: string | null };
+
+export type Couple = {
+  id: string;
+  startedAt: string;
+  status: 'Active' | 'Paused' | 'Ended';
+  daysTogether: number;
+  partner: Partner | null;
+};
+
+export type Invitation = { id: string; phone: string; expiresAt: string };
+
+export type Phase = {
+  cycle: number;
+  index: number;
+  slug: string;
+  name: string;
+  moon: string;
+  earned: number;
+  balance: number;
+  phaseStart: number;
+  nextAt: number | null;
+  nextName: string | null;
+  fill: number;
+};
+
+export type TaskState =
+  | 'offered'
+  | 'waiting_for_partner'
+  | 'accepted'
+  | 'waiting_for_confirmation'
+  | 'confirm_needed'
+  | 'done';
+
+export type DailyTask = {
+  id: string;
+  date: string;
+  slug: string;
+  category: string;
+  title: string;
+  body: string;
+  costKzt: number;
+  durationMin: number;
+  state: TaskState;
+  acceptedByMe: boolean;
+  acceptedByPartner: boolean;
+  completedAt: string | null;
+  confirmedAt: string | null;
+};
+
+export type DailyQuestion = {
+  id: string;
+  date: string;
+  text: string;
+  myAnswer: string | null;
+  partnerAnswered: boolean;
+  partnerAnswer: string | null;
+  revealedAt: string | null;
+};
+
+export type Today = {
+  date: string;
+  task: DailyTask;
+  question: DailyQuestion;
+  streak: { days: number; lastDay: string | null };
+  phase: Phase;
+};
+
+// RFC 9457 problem details, with the API's stable `code`.
+export type Problem = {
+  status: number;
+  code?: string;
+  detail?: string;
+  errors?: Record<string, string[]>;
+};

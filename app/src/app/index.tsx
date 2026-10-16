@@ -1,0 +1,212 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+
+import { api } from '@/api/client';
+import type { Couple, DailyQuestion, DailyTask, Phase, Today } from '@/api/types';
+import { Moon } from '@/components/moon';
+import { Button, Card, Centered, ErrorText, Field, Screen, T } from '@/components/ui';
+import { Colors, Radius, Spacing } from '@/constants/theme';
+import { useStrings } from '@/i18n';
+import { useSession } from '@/session';
+
+// Until the realtime hub exists, poll so a partner's accept or answer shows up without a manual refresh.
+const POLL_MS = 30_000;
+
+export default function TodayScreen() {
+  const s = useStrings();
+  const { user } = useSession();
+  const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
+  const today = useQuery({ queryKey: ['today'], queryFn: api.today, refetchInterval: POLL_MS });
+
+  if (today.isPending) return <Centered />;
+  if (today.isError)
+    return (
+      <Screen>
+        <T variant="heading">{s.somethingWrong}</T>
+        <ErrorText error={today.error} />
+        <Button title={s.retry} onPress={() => today.refetch()} />
+      </Screen>
+    );
+
+  const partnerName = couple.data?.partner?.name ?? s.partnerFallback;
+  return (
+    <Screen
+      refreshControl={
+        <RefreshControl refreshing={today.isRefetching} onRefresh={() => void today.refetch()} tintColor={Colors.accent} />
+      }>
+      <Header me={user?.name ?? s.someone} partner={partnerName} couple={couple.data ?? null} />
+      <PhaseCard phase={today.data.phase} streak={today.data.streak.days} />
+      <TaskCard task={today.data.task} />
+      <QuestionCard question={today.data.question} partnerName={partnerName} />
+    </Screen>
+  );
+}
+
+function Header({ me, partner, couple }: { me: string; partner: string; couple: Couple | null }) {
+  const s = useStrings();
+  return (
+    <View style={styles.header}>
+      <View style={styles.headerText}>
+        <T variant="title">{s.greeting(me, partner)}</T>
+        {couple && <T variant="secondary">{s.daysTogether(couple.daysTogether)}</T>}
+      </View>
+      <Link href="/profile" asChild>
+        <Pressable accessibilityRole="button" accessibilityLabel={s.profile} style={styles.profileButton}>
+          <T variant="heading">≡</T>
+        </Pressable>
+      </Link>
+    </View>
+  );
+}
+
+// Each phase lights another quarter of the disc, filling smoothly within the phase; the
+// supermoon is a full disc with a glow.
+function moonFill(p: Phase) {
+  return p.index >= 4 ? 1 : (p.index + p.fill) / 4;
+}
+
+function PhaseCard({ phase, streak }: { phase: Phase; streak: number }) {
+  const s = useStrings();
+  return (
+    <Card style={styles.phaseCard}>
+      <Moon fill={moonFill(phase)} glow={phase.index === 5} />
+      <View style={styles.phaseText}>
+        {phase.cycle > 1 && <T variant="label">{s.cycle(phase.cycle)}</T>}
+        <T variant="heading">{phase.name}</T>
+        <T variant="small">{phase.moon}</T>
+        <T variant="body">
+          {phase.earned.toLocaleString('ru-RU')} {s.nur}
+        </T>
+        {phase.nextAt !== null && phase.nextName && (
+          <T variant="small">{s.toNextPhase(phase.nextAt - phase.earned, phase.nextName)}</T>
+        )}
+        <T variant="small" style={{ color: streak > 0 ? Colors.success : Colors.textMuted }}>
+          {streak > 0 ? s.streak(streak) : s.streakZero}
+        </T>
+      </View>
+    </Card>
+  );
+}
+
+function useTodayUpdate<T>(fn: () => Promise<T>, apply: (today: Today, result: T) => Today) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: (result) => {
+      queryClient.setQueryData<Today>(['today'], (old) => (old ? apply(old, result) : old));
+      // Нұр, phase and streak are decided by the server; fetch them rather than guess.
+      queryClient.invalidateQueries({ queryKey: ['today'] });
+    },
+  });
+}
+
+function TaskCard({ task }: { task: DailyTask }) {
+  const s = useStrings();
+  const accept = useTodayUpdate(() => api.acceptTask(task.id), (t, task) => ({ ...t, task }));
+  const complete = useTodayUpdate(() => api.completeTask(task.id), (t, task) => ({ ...t, task }));
+
+  return (
+    <Card>
+      <T variant="label">{s.taskOfDay}</T>
+      <T variant="heading">{task.title}</T>
+      <T variant="secondary">{task.body}</T>
+      <T variant="small">{s.taskMeta(task.durationMin, task.costKzt)}</T>
+      <ErrorText error={accept.error ?? complete.error} />
+      {task.state === 'offered' && (
+        <>
+          {task.acceptedByPartner && <T variant="small">{s.partnerAccepted}</T>}
+          <Button title={s.acceptTask} onPress={() => accept.mutate()} loading={accept.isPending} />
+        </>
+      )}
+      {task.state === 'waiting_for_partner' && <Status text={s.waitingPartnerAccept} />}
+      {task.state === 'accepted' && (
+        <Button title={s.markDone} onPress={() => complete.mutate()} loading={complete.isPending} />
+      )}
+      {task.state === 'waiting_for_confirmation' && <Status text={s.waitingConfirm} />}
+      {task.state === 'confirm_needed' && (
+        <Button title={s.confirmDone} onPress={() => complete.mutate()} loading={complete.isPending} />
+      )}
+      {task.state === 'done' && <Status text={s.taskDone} done />}
+    </Card>
+  );
+}
+
+function QuestionCard({ question, partnerName }: { question: DailyQuestion; partnerName: string }) {
+  const s = useStrings();
+  const [text, setText] = useState('');
+  const answer = useTodayUpdate(
+    () => api.answer(question.id, text.trim()),
+    (t, question) => ({ ...t, question }),
+  );
+
+  const revealed = !!question.revealedAt;
+  return (
+    <Card>
+      <T variant="label">{s.questionOfDay}</T>
+      <T variant="heading">“{question.text}”</T>
+
+      {revealed ? (
+        <>
+          <Answer label={s.yourAnswer} text={question.myAnswer ?? ''} />
+          <Answer label={s.partnerAnswerLabel(partnerName)} text={question.partnerAnswer ?? ''} />
+        </>
+      ) : question.myAnswer ? (
+        <>
+          <Answer label={s.yourAnswer} text={question.myAnswer} />
+          <Status text={s.waitingAnswer(partnerName)} />
+        </>
+      ) : (
+        <>
+          <T variant="small">{question.partnerAnswered ? s.partnerAnsweredFirst : s.answerHidden}</T>
+          <Field
+            label={s.answerPlaceholder}
+            value={text}
+            onChangeText={setText}
+            multiline
+            maxLength={1000}
+            style={styles.answerInput}
+          />
+          <ErrorText error={answer.error} />
+          <Button
+            title={s.sendAnswer}
+            onPress={() => answer.mutate(undefined, { onSuccess: () => setText('') })}
+            loading={answer.isPending}
+            disabled={!text.trim()}
+          />
+        </>
+      )}
+    </Card>
+  );
+}
+
+function Answer({ label, text }: { label: string; text: string }) {
+  return (
+    <View style={styles.answer}>
+      <T variant="label">{label}</T>
+      <T variant="body">{text}</T>
+    </View>
+  );
+}
+
+function Status({ text, done }: { text: string; done?: boolean }) {
+  return (
+    <View style={styles.status}>
+      <T variant="small" style={{ color: done ? Colors.success : Colors.textSecondary }}>
+        {text}
+      </T>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
+  headerText: { flex: 1, gap: Spacing.two },
+  profileButton: { padding: Spacing.two },
+  phaseCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
+  phaseText: { flex: 1, gap: Spacing.one },
+  answer: { gap: Spacing.one, padding: Spacing.three, borderRadius: Radius.md, backgroundColor: Colors.surfaceStrong },
+  answerInput: { minHeight: 96, paddingTop: Spacing.three, textAlignVertical: 'top', fontSize: 16 },
+  status: { paddingVertical: Spacing.two },
+});
