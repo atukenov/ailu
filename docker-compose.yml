@@ -1,0 +1,14 @@
+# Local PostgreSQL for the API and its tests. Credentials match appsettings.Development.json.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ailu
+    ports:
+      - "5432:5432"
+    volumes:
+      - ailu-pg:/var/lib/postgresql/data
+
+volumes:
+  ailu-pg:
