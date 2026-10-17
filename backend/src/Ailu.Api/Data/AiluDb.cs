@@ -84,7 +84,7 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
 
         b.Entity<CoupleTask>(e =>
         {
-            e.HasIndex(x => new { x.CoupleId, x.Date }).IsUnique();
+            e.HasIndex(x => new { x.CoupleId, x.Date, x.Ordinal }).IsUnique();
             e.HasOne(x => x.DailyTask).WithMany().HasForeignKey(x => x.DailyTaskId);
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
         });

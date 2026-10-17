@@ -25,7 +25,10 @@ public sealed record TaskDto(Guid Id, DateOnly Date, string Slug, string Categor
 public sealed record QuestionDto(Guid Id, DateOnly Date, string Text, string? MyAnswer, bool PartnerAnswered,
     string? PartnerAnswer, DateTimeOffset? RevealedAt);
 
-public sealed record TodayDto(DateOnly Date, TaskDto Task, QuestionDto Question, StreakDto Streak, PhaseDto Phase);
+// `Task` is the task of the day; `MoreTasks` are the ones a paid couple asked for after it, oldest
+// first. `TasksPerDay` is what the plan allows today, the task of the day included.
+public sealed record TodayDto(DateOnly Date, TaskDto Task, IReadOnlyList<TaskDto> MoreTasks, int TasksPerDay,
+    QuestionDto Question, StreakDto Streak, PhaseDto Phase);
 public sealed record AnswerRequest(string Text);
 
 public static class DailyEndpoints
@@ -34,6 +37,7 @@ public static class DailyEndpoints
     {
         var g = app.MapGroup("/v1/couple").WithTags("Daily").RequireAuthorization();
         g.MapGet("/today", Today);
+        g.MapPost("/tasks/more", MoreTask);
         g.MapPost("/tasks/{id:guid}/accept", AcceptTask);
         g.MapPost("/tasks/{id:guid}/complete", CompleteTask);
         g.MapPost("/questions/{id:guid}/answer", Answer);
@@ -49,9 +53,46 @@ public static class DailyEndpoints
         var today = CoupleCalendar.Today(scope.Couple, clock);
         var (task, question) = await content.EnsureAsync(scope.Couple, today, ct);
         var streak = await streaks.DtoAsync(scope.Couple, today, ct);
+        var more = await db.CoupleTasks.Include(t => t.DailyTask)
+            .Where(t => t.CoupleId == scope.Couple.Id && t.Date == today && t.Ordinal > 0)
+            .OrderBy(t => t.Ordinal).ToListAsync(ct);
 
-        return Results.Ok(new TodayDto(today, ToDto(task, scope), ToDto(question, scope), streak,
-            PairingEndpoints.ToPhase(scope.Couple)));
+        return Results.Ok(new TodayDto(today, ToDto(task, scope), more.Select(t => ToDto(t, scope)).ToList(),
+            Plans.TasksPerDay(scope.Couple.Plan), ToDto(question, scope), streak, PairingEndpoints.ToPhase(scope.Couple)));
+    }
+
+    // The next task for today, once the previous one is done and the plan has room for it. When both
+    // partners ask at once, the second gets the task the first one opened.
+    private static async Task<IResult> MoreTask(HttpContext http, AiluDb db, DailyContentService content,
+        ActivityService activity, TimeProvider clock, CancellationToken ct)
+    {
+        var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
+        if (scope is null) return Errors.NoCouple();
+        var today = CoupleCalendar.Today(scope.Couple, clock);
+        await content.EnsureAsync(scope.Couple, today, ct);
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Couples\" WHERE \"Id\" = {scope.Couple.Id} FOR UPDATE", ct);
+        var last = await db.CoupleTasks.Include(t => t.DailyTask)
+            .Where(t => t.CoupleId == scope.Couple.Id && t.Date == today)
+            .OrderByDescending(t => t.Ordinal).FirstAsync(ct);
+
+        if (last.ConfirmedAt is null)
+            return last.Ordinal > 0
+                ? Results.Ok(ToDto(last, scope))
+                : Errors.Conflict("task_not_done", "Сначала завершите задание дня, потом откроется следующее.");
+
+        var limit = Plans.TasksPerDay(scope.Couple.Plan);
+        if (last.Ordinal + 1 >= limit)
+            return scope.Couple.Plan == CouplePlan.Free
+                ? Errors.Conflict("task_limit", "В бесплатной версии одно задание в день. В Plus их три.")
+                : Errors.Conflict("task_limit", $"На сегодня все {limit} задания выполнены. Новое появится завтра.");
+
+        var task = await content.AddExtraAsync(scope.Couple, today, last.Ordinal + 1, ct);
+        await activity.RecordAsync(scope.Couple, scope.UserId, today, ct);
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return Results.Ok(ToDto(task, scope));
     }
 
     private static async Task<IResult> RestoreStreak(HttpContext http, AiluDb db, StreakService streaks, CancellationToken ct)
@@ -97,7 +138,9 @@ public static class DailyEndpoints
         else if (task.ConfirmedAt is null && task.CompletedByUserId != scope.UserId)
         {
             task.ConfirmedAt = now;
-            await nur.AwardAsync(scope.Couple, NurSource.Task, task.Id.ToString("N"), Nur.TaskCompleted, task.Date, ct);
+            // Нұр for a task is capped at one a day (gamification doc), so paid extras don't buy phases faster.
+            if (task.Ordinal == 0)
+                await nur.AwardAsync(scope.Couple, NurSource.Task, task.Id.ToString("N"), Nur.TaskCompleted, task.Date, ct);
         }
 
         await activity.RecordAsync(scope.Couple, scope.UserId, task.Date, ct);
