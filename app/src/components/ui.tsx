@@ -15,7 +15,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ApiError } from '@/api/client';
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { useStrings } from '@/i18n';
 
 export function Screen({ children, refreshControl }: { children: ReactNode; refreshControl?: React.ReactElement }) {
   return (
@@ -87,8 +89,10 @@ export function Field({ label, style, ...rest }: TextInputProps & { label: strin
 }
 
 export function ErrorText({ error }: { error: unknown }) {
+  const s = useStrings();
   if (!error) return null;
-  const message = error instanceof Error ? error.message : String(error);
+  const translated = error instanceof ApiError && error.code ? s.errors[error.code] : undefined;
+  const message = translated ?? (error instanceof Error ? error.message : String(error));
   return (
     <T variant="small" style={{ color: Colors.danger }} accessibilityRole="alert">
       {message}
@@ -98,9 +102,10 @@ export function ErrorText({ error }: { error: unknown }) {
 
 // A screen's top row: back, title, and an optional action on the right.
 export function TopBar({ title, onBack, right }: { title: string; onBack: () => void; right?: ReactNode }) {
+  const s = useStrings();
   return (
     <View style={styles.topBar}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={onBack} style={styles.round}>
+      <Pressable accessibilityRole="button" accessibilityLabel={s.back} onPress={onBack} style={styles.round}>
         <Text style={styles.roundText}>‹</Text>
       </Pressable>
       <T variant="heading" style={styles.topTitle} numberOfLines={1}>
