@@ -126,6 +126,8 @@ public sealed class CoupleTask
     public Guid CoupleId { get; set; }
     public int DailyTaskId { get; set; }
     public DateOnly Date { get; set; }
+    // 0 is the task of the day; paid couples can ask for more once the previous one is done.
+    public int Ordinal { get; set; }
     public DateTimeOffset? AcceptedAtA { get; set; }
     public DateTimeOffset? AcceptedAtB { get; set; }
     public Guid? CompletedByUserId { get; set; }

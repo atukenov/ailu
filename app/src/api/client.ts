@@ -118,6 +118,7 @@ export const api = {
   phase: () => request<Phase>('GET', '/v1/couple/phase'),
   acceptTask: (id: string) => request<DailyTask>('POST', `/v1/couple/tasks/${id}/accept`),
   completeTask: (id: string) => request<DailyTask>('POST', `/v1/couple/tasks/${id}/complete`),
+  moreTask: () => request<DailyTask>('POST', '/v1/couple/tasks/more'),
   answer: (id: string, text: string) => request<DailyQuestion>('POST', `/v1/couple/questions/${id}/answer`, { text }),
   restoreStreak: () => request<Streak>('POST', '/v1/couple/streak/restore'),
 
