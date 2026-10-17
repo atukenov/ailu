@@ -17,6 +17,7 @@ import type {
   Problem,
   Storage,
   Streak,
+  TimelinePage,
   Today,
   TokenPair,
   User,
@@ -134,6 +135,8 @@ export const api = {
   react: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/reaction`),
   favorite: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/favorite`),
   storage: () => request<Storage>('GET', '/v1/couple/storage'),
+  timeline: (cursor?: string | null) =>
+    request<TimelinePage>('GET', `/v1/couple/timeline${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`),
 
   mood: () => request<Mood>('GET', '/v1/couple/mood'),
   // A note left out keeps the one already there; an empty string removes it.

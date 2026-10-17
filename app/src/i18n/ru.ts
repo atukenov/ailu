@@ -143,6 +143,8 @@ export const ru = {
   paywallStreakTitle: 'Семь дней подряд',
   paywallGoalsTitle: 'Больше общих целей',
   paywallGoalsBody: 'Ваши текущие цели остаются как есть. В Plus их можно ставить без ограничений.',
+  paywallHistoryTitle: 'Вся ваша история',
+  paywallHistoryBody: 'С Plus история пары открыта целиком, с первого дня. Воспоминания и фото остаются у вас при любом тарифе.',
   perMonth: '/ мес',
   perYear: '/ год',
   periodMonth: 'На месяц',
@@ -222,6 +224,27 @@ export const ru = {
   removeAgree: 'Удалить',
   removeKeep: 'Оставить',
   removeCancel: 'Не удалять',
+
+  timeline: 'История отношений',
+  timelineSummary: (days: number, memories: number, nur: string) =>
+    `${days} ${plural(days, 'день', 'дня', 'дней')} · ${memories} ${plural(memories, 'воспоминание', 'воспоминания', 'воспоминаний')} · ${nur} нұр`,
+  timelineStart: 'Начало',
+  timelineStartBody: 'Вы создали пару. Первая фаза — «Знакомство».',
+  timelineDays: (n: number) => `${n} ${plural(n, 'день', 'дня', 'дней')} вместе`,
+  timelineDaysBody: 'Маленький юбилей вашей пары.',
+  timelineYears: (n: number) => `${n} ${plural(n, 'год', 'года', 'лет')} вместе`,
+  timelineYearsBody: 'Годовщина в Ailu. С праздником!',
+  timelinePhase: (name: string) => `Фаза «${name}»`,
+  timelinePhaseBody: (moon: string) => `Ваша луна: ${moon.toLowerCase()}.`,
+  timelineFirstTask: 'Первое общее задание',
+  timelineFirstTaskBody: 'Вы оба отметили его выполненным.',
+  timelineFirstAnswers: 'Первые ответы',
+  timelineFirstAnswersBody: 'Вы впервые открыли ответы друг друга на вопрос дня.',
+  timelineMemory: 'Воспоминание',
+  timelineLocked: (n: number) => `Ещё ${n} ${plural(n, 'событие', 'события', 'событий')} раньше`,
+  timelineLockedBody: (days: number) =>
+    `В бесплатной версии история показывает последние ${days} ${plural(days, 'день', 'дня', 'дней')}. Plus открывает её целиком.`,
+  timelineLockedCta: 'Открыть всю историю',
   monthYear: (ym: string) => {
     const [y, m] = ym.split('-').map(Number);
     return `${MONTHS_NOMINATIVE[m - 1]} ${y}`;
