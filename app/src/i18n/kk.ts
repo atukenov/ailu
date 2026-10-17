@@ -129,7 +129,10 @@ export const kk: Strings = {
   delete: 'Жою',
   photosOfLimit: (n: number, limit: number) => `${n} / ${limit} фото`,
   photosStored: (n: number) => `${n} фото`,
-  storageFull: (limit: number) => `Барлық ${limit} фото орны толды. Жаңасын қосу үшін ескілерін жойыңыз немесе Plus-ты ашыңыз.`,
+  storageFull: (limit: number, next: string | null) =>
+    next
+      ? `Барлық ${limit} фото орны толды. Жаңасын қосу үшін ескілерін жойыңыз немесе ${next} нұсқасын ашыңыз.`
+      : `Барлық ${limit} фото орны толды. Жаңасын қосу үшін ескілерін жойыңыз.`,
   date: (iso: string) => {
     const [y, m, d] = iso.split('-').map(Number);
     return `${y} жылғы ${d} ${MONTHS[m - 1]}`;
@@ -144,8 +147,13 @@ export const kk: Strings = {
   paywallGoalsTitle: 'Көбірек ортақ мақсат',
   paywallGoalsBody: 'Қазіргі мақсаттарыңыз сол күйінде қалады. Plus-та мақсатты шексіз қоюға болады.',
   perMonth: '/ ай',
+  perYear: '/ жыл',
+  periodMonth: 'Бір айға',
+  periodYear: 'Бір жылға',
+  yearlySave: (percent: number) => `−${percent}%`,
+  yearlyPerMonth: (price: string) => `Жылдық төлемде айына ${price}`,
   plusFeatures: [
-    '200 орнына 8 000 фотоға дейін',
+    '200 орнына 500 фотоға дейін',
     'Күніне үш тапсырма',
     'Шексіз мақсаттар',
     'Айына үш рет серияны қалпына келтіру',
@@ -153,7 +161,7 @@ export const kk: Strings = {
   ],
   premiumIncludes: 'Plus-тың бәрі, сонымен қатар:',
   premiumFeatures: [
-    '24 000 фотоға дейін',
+    '1 200 фотоға дейін',
     'AI-дан кездесу идеялары мен топтамалар',
     'Жұбыңызға арналған жеке тапсырмалар',
     'Айына бес рет серияны қалпына келтіру',
@@ -164,7 +172,7 @@ export const kk: Strings = {
   continueFree: 'Тегін нұсқамен жалғастыру',
   cancelAnytime: 'Жазылымнан кез келген уақытта бас тарта аласыз.',
   photoLimitTitle: (limit: number) => `Барлық ${limit} фото орны толды`,
-  photoLimitBody: 'Сақтағандарыңыздың бәрі өзіңізде қалады. Plus-та мыңдаған жаңа фотоға орын жетеді.',
+  photoLimitBody: (next: string, limit: number) => `Сақтағандарыңыздың бәрі өзіңізде қалады. ${next} нұсқасына ${limit} фото сыяды.`,
   streakUpsellBody: 'Алдағының бәрін ашыңыз.',
   moreTask: 'Тағы бір тапсырма',
   moreTaskTomorrow: 'Тегін нұсқада күніне бір тапсырма. Жаңасы ертең пайда болады.',
@@ -173,7 +181,7 @@ export const kk: Strings = {
   allTasksDone: 'Бүгінгі тапсырмалардың бәрі орындалды. Жаңалары ертең пайда болады.',
   streakUpsellCta: 'Premium-ды көру',
   notNow: 'Кейінірек',
-  storageFullCta: 'Plus-та көбірек орын',
+  storageFullCta: (plan: string) => `${plan} нұсқасында көбірек орын`,
   goalLimitCta: 'Plus-ты ашу',
 
   goals: 'Біздің мақсаттар',

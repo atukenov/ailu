@@ -4,11 +4,11 @@ import { Link, router } from 'expo-router';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api, photoUrl } from '@/api/client';
-import type { Memory } from '@/api/types';
+import type { Memory, Storage } from '@/api/types';
 import { Button, Card, Centered, ErrorText, RoundButton, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
-import { openPaywall, photoLimitReached } from '@/upsells';
+import { biggerPlan, openPaywall, photoLimitReached } from '@/upsells';
 
 export default function Memories() {
   const s = useStrings();
@@ -60,21 +60,31 @@ export default function Memories() {
           loading={list.isFetchingNextPage}
         />
       )}
-      {storage.data && <StorageLine photos={storage.data.photos} limit={storage.data.photoLimit} />}
+      {storage.data && <StorageLine storage={storage.data} />}
       {storage.data && photoLimitReached(storage.data) && (
-        <Button title={s.storageFullCta} variant="ghost" onPress={() => openPaywall('photos')} />
+        <Button
+          title={s.storageFullCta(s.planName(biggerPlan(storage.data.plan) ?? 'plus'))}
+          variant="ghost"
+          onPress={() => openPaywall('photos')}
+        />
       )}
     </Screen>
   );
 }
 
-// Free couples keep up to 200 photos; the paid plans' limits aren't decided yet.
-function StorageLine({ photos, limit }: { photos: number; limit: number | null }) {
+// Free couples keep up to 200 photos, Plus 500, Premium 1 200.
+function StorageLine({ storage }: { storage: Storage }) {
   const s = useStrings();
+  const { photos, photoLimit: limit } = storage;
   const full = limit !== null && photos >= limit;
+  const next = biggerPlan(storage.plan);
   return (
     <T variant="small" style={[styles.storage, full && { color: Colors.danger }]}>
-      {limit === null ? s.photosStored(photos) : full ? s.storageFull(limit) : s.photosOfLimit(photos, limit)}
+      {limit === null
+        ? s.photosStored(photos)
+        : full
+          ? s.storageFull(limit, next && s.planName(next))
+          : s.photosOfLimit(photos, limit)}
     </T>
   );
 }

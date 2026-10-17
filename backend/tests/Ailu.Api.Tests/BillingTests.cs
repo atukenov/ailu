@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Ailu.Api.Data;
+using Ailu.Api.Domain;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Billing;
 using Ailu.Api.Features.Goals;
@@ -32,6 +33,9 @@ public class BillingTests
         Assert.Equal("free", before.Plan);
         Assert.True(before.TrialAvailable);
         Assert.Contains(before.Products, p => p is { Tier: "plus", PriceKzt: 1490, AppleProductId: "kz.ailu.plus.monthly" });
+        // A year is twelve months less 20%.
+        Assert.Contains(before.Products, p => p is { Tier: "plus", Period: "year", PriceKzt: 14304, AppleProductId: "kz.ailu.plus.yearly", GoogleBasePlanId: "yearly" });
+        Assert.Contains(before.Products, p => p is { Tier: "premium", Period: "year", PriceKzt: 23904 });
 
         // The app sends the latest transaction id; Apple answers with the original one.
         api.Apple.Purchases["txn-2"] = Apple("orig-1", account: me.Id.ToString());
@@ -52,6 +56,19 @@ public class BillingTests
         Assert.Equal(HttpStatusCode.OK, (await a.PostAsJsonAsync("/v1/billing/apple", new { transactionId = "orig-1" })).StatusCode);
         using var scope = api.Services.CreateScope();
         Assert.Equal(1, scope.ServiceProvider.GetRequiredService<AiluDb>().Subscriptions.Count());
+    }
+
+    [Fact]
+    public async Task A_yearly_subscription_gives_the_plan_for_the_year()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        var (a, b) = await api.PairAsync();
+        api.Apple.Purchases["y1"] = Apple("y1", product: "kz.ailu.premium.yearly", days: 365);
+
+        var paid = (await (await a.PostAsJsonAsync("/v1/billing/apple", new { transactionId = "y1" })).Content.ReadFromJsonAsync<BillingDto>())!;
+        Assert.Equal("premium", paid.Plan);
+        Assert.Equal(new DateTimeOffset(2027, 10, 1, 6, 0, 0, TimeSpan.Zero), paid.Subscription!.PeriodEnd);
+        Assert.Equal(Plans.PremiumPhotos, (await b.GetFromJsonAsync<StorageDto>("/v1/couple/storage"))!.PhotoLimit);
     }
 
     [Fact]

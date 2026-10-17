@@ -23,6 +23,7 @@ import type { Billing, BillingProduct } from '@/api/types';
 // can't buy, and say so with `purchases_unavailable`.
 
 export type Tier = 'plus' | 'premium';
+export type Period = 'month' | 'year';
 
 const native = Platform.OS === 'ios' || Platform.OS === 'android';
 
@@ -75,10 +76,11 @@ async function claim(purchase: Purchase): Promise<Billing> {
   return billing;
 }
 
-// Buy a tier. Resolves true when the couple's plan changed, false when the person backed out.
-export async function purchase(tier: Tier): Promise<boolean> {
+// Buy a tier for a month or a year. Resolves true when the couple's plan changed, false when the
+// person backed out.
+export async function purchase({ tier, period }: { tier: Tier; period: Period }): Promise<boolean> {
   const [billing, me] = await Promise.all([api.billing(), api.me(), connect()]);
-  const product = billing.products.find((p) => p.tier === tier && p.period === 'month');
+  const product = billing.products.find((p) => p.tier === tier && p.period === period);
   if (!product) throw new ApiError({ status: 0, code: 'purchase_not_found' });
   const sku = storeProductId(product);
 

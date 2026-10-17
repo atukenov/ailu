@@ -1,25 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { Storage } from '@/api/types';
 import { Moon } from '@/components/moon';
 import { Button, Card, ErrorText, Screen, T } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings, type Strings } from '@/i18n';
-import { purchase, type Tier } from '@/purchases';
-import type { PaywallReason } from '@/upsells';
+import { purchase, useBilling, type Period, type Tier } from '@/purchases';
+import { biggerPlan, type PaywallReason } from '@/upsells';
 
 const NAMES: Record<Tier, string> = { plus: 'Plus', premium: 'Premium' };
 
-// Monthly prices from the monetization doc, until the stores' localized prices come from billing.
-const PRICES: Record<Tier, string> = { plus: '1 490 ₸', premium: '2 490 ₸' };
+// Placeholder prices from the monetization doc, used until billing answers. A year is twelve months
+// less 20% (Lev, 2026-10-17); the server's products carry the same numbers.
+const YEARLY_DISCOUNT = 20;
+const MONTHLY_KZT: Record<Tier, number> = { plus: 1490, premium: 2490 };
+
+const tenge = (n: number) => `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} ₸`;
 
 // Each soft moment offers Plus; only day 7 of the streak offers Premium right away (monetization
-// doc). Opened without a reason, the paywall shows both.
-function tiersFor(reason: PaywallReason | undefined): Tier[] {
+// doc). A Plus couple out of photo room is offered Premium. Opened without a reason, the paywall
+// shows both.
+function tiersFor(reason: PaywallReason | undefined, plan: Storage['plan'] | undefined): Tier[] {
   if (reason === 'streak') return ['premium', 'plus'];
+  if (reason === 'photos') return [biggerPlan(plan) ?? 'plus'];
   if (reason) return ['plus'];
   return ['plus', 'premium'];
 }
@@ -29,7 +36,11 @@ function heading(s: Strings, reason: PaywallReason | undefined, storage: Storage
     // At the 201st photo this is the limit screen: it says plainly that nothing saved goes anywhere.
     case 'photos':
       if (storage?.photoLimit == null) break;
-      return { title: s.photoLimitTitle(storage.photoLimit), body: s.photoLimitBody };
+      return {
+        title: s.photoLimitTitle(storage.photoLimit),
+        // The next plan's limits, as the server sets them: Plus 500, Premium 1 200.
+        body: storage.plan === 'plus' ? s.photoLimitBody('Premium', 1200) : s.photoLimitBody('Plus', 500),
+      };
     case 'task':
       return { title: s.paywallTaskTitle, body: s.paywallTaskBody };
     case 'streak':
@@ -45,6 +56,12 @@ export default function Paywall() {
   const queryClient = useQueryClient();
   const { reason } = useLocalSearchParams<{ reason?: PaywallReason }>();
   const storage = useQuery({ queryKey: ['storage'], queryFn: api.storage });
+  const billing = useBilling();
+  const [period, setPeriod] = useState<Period>('year');
+
+  const priceOf = (tier: Tier, p: Period) =>
+    billing.data?.products.find((x) => x.tier === tier && x.period === p)?.priceKzt ??
+    (p === 'year' ? (MONTHLY_KZT[tier] * 12 * (100 - YEARLY_DISCOUNT)) / 100 : MONTHLY_KZT[tier]);
 
   const buy = useMutation({
     mutationFn: purchase,
@@ -60,7 +77,7 @@ export default function Paywall() {
   });
 
   const { title, body } = heading(s, reason, storage.data);
-  const tiers = tiersFor(reason);
+  const tiers = tiersFor(reason, storage.data?.plan);
   const current = storage.data?.plan;
 
   return (
@@ -75,15 +92,36 @@ export default function Paywall() {
         </T>
       </View>
 
+      <View style={styles.periods} accessibilityRole="radiogroup">
+        {(['month', 'year'] as const).map((p) => (
+          <Pressable
+            key={p}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: period === p }}
+            onPress={() => setPeriod(p)}
+            style={[styles.period, period === p && styles.periodOn]}>
+            <T variant="body" style={period === p ? styles.periodTextOn : undefined}>
+              {p === 'month' ? s.periodMonth : s.periodYear}
+              {p === 'year' && <T style={styles.save}> {s.yearlySave(YEARLY_DISCOUNT)}</T>}
+            </T>
+          </Pressable>
+        ))}
+      </View>
+
       {tiers.map((tier) => (
         <Card key={tier}>
           <View style={styles.tierHead}>
             <T style={styles.tierName}>{NAMES[tier].toUpperCase()}</T>
             <T variant="heading">
-              {PRICES[tier]}
-              <T variant="small"> {s.perMonth}</T>
+              {tenge(priceOf(tier, period))}
+              <T variant="small"> {period === 'year' ? s.perYear : s.perMonth}</T>
             </T>
           </View>
+          {period === 'year' && (
+            <T variant="small" style={styles.right}>
+              {s.yearlyPerMonth(tenge(priceOf(tier, 'year') / 12))}
+            </T>
+          )}
           {tier === 'premium' && (
             <T variant="small" style={styles.includes}>
               {s.premiumIncludes}
@@ -104,8 +142,8 @@ export default function Paywall() {
             <Button
               title={s.choosePlan(NAMES[tier])}
               variant={tier === tiers[0] ? 'primary' : 'ghost'}
-              onPress={() => buy.mutate(tier)}
-              loading={buy.isPending && buy.variables === tier}
+              onPress={() => buy.mutate({ tier, period })}
+              loading={buy.isPending && buy.variables?.tier === tier}
               disabled={buy.isPending}
             />
           )}
@@ -129,4 +167,17 @@ const styles = StyleSheet.create({
   includes: { color: Colors.accent, fontWeight: '600' },
   features: { gap: Spacing.two },
   active: { color: Colors.success, textAlign: 'center' },
+  right: { textAlign: 'right' },
+  periods: { flexDirection: 'row', gap: Spacing.two },
+  period: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.three,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.surface,
+  },
+  periodOn: { backgroundColor: Colors.surface, borderColor: Colors.accent },
+  periodTextOn: { fontWeight: '600' },
+  save: { color: Colors.accent, fontWeight: '600' },
 });

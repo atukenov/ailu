@@ -157,7 +157,7 @@ public static class MemoryEndpoints
         if (photo is null) return Errors.Validation("file", "Это не похоже на фотографию. Подойдут JPEG, PNG и WebP.");
 
         var quota = Plans.QuotaBytes(scope.Couple.Plan);
-        var limit = Plans.PhotoLimit(scope.Couple.Plan) ?? int.MaxValue;
+        var limit = Plans.PhotoLimit(scope.Couple.Plan);
         var bytes = (long)photo.Jpeg.Length;
         var row = new MemoryPhoto
         {
@@ -180,9 +180,11 @@ public static class MemoryEndpoints
             if (counted == 0)
             {
                 await store.DeleteFolderAsync(PhotoKeys.Folder(row.CoupleId, row.Id), ct);
-                return Errors.Conflict("storage_full", limit == Plans.FreePhotos
-                    ? $"В бесплатной версии можно хранить {Plans.FreePhotos} фотографий, и все они заняты."
-                    : "Место для фотографий закончилось.");
+                return Errors.Conflict("storage_full", scope.Couple.Plan switch
+                {
+                    CouplePlan.Free => $"В бесплатной версии можно хранить {limit} фотографий, и все они заняты.",
+                    var plan => $"В {plan} можно хранить {limit} фотографий, и все они заняты."
+                });
             }
             db.MemoryPhotos.Add(row); // fix-up adds it to memory.Photos too
             await db.SaveChangesAsync(ct);
