@@ -126,7 +126,10 @@ export const ru = {
   delete: 'Удалить',
   photosOfLimit: (n: number, limit: number) => `${n} из ${limit} фото`,
   photosStored: (n: number) => `${n} фото`,
-  storageFull: (limit: number) => `Все ${limit} фото заняты. Удалите старые или откройте Plus, чтобы добавлять новые.`,
+  storageFull: (limit: number, next: string | null) =>
+    next
+      ? `Все ${limit} фото заняты. Удалите старые или откройте ${next}, чтобы добавлять новые.`
+      : `Все ${limit} фото заняты. Чтобы добавить новые, удалите старые.`,
   date: (iso: string) => {
     const [y, m, d] = iso.split('-').map(Number);
     return `${d} ${MONTHS[m - 1]} ${y}`;
@@ -141,8 +144,13 @@ export const ru = {
   paywallGoalsTitle: 'Больше общих целей',
   paywallGoalsBody: 'Ваши текущие цели остаются как есть. В Plus их можно ставить без ограничений.',
   perMonth: '/ мес',
+  perYear: '/ год',
+  periodMonth: 'На месяц',
+  periodYear: 'На год',
+  yearlySave: (percent: number) => `−${percent}%`,
+  yearlyPerMonth: (price: string) => `${price} в месяц при оплате за год`,
   plusFeatures: [
-    'До 8 000 фотографий вместо 200',
+    'До 500 фотографий вместо 200',
     'Три задания в день',
     'Цели без ограничений',
     'Три восстановления серии в месяц',
@@ -150,7 +158,7 @@ export const ru = {
   ],
   premiumIncludes: 'Всё из Plus, а также:',
   premiumFeatures: [
-    'До 24 000 фотографий',
+    'До 1 200 фотографий',
     'Идеи для свиданий и подборки от AI',
     'Персональные задания для вашей пары',
     'Пять восстановлений серии в месяц',
@@ -161,7 +169,7 @@ export const ru = {
   continueFree: 'Продолжить с бесплатной версией',
   cancelAnytime: 'Вы можете отменить подписку в любое время.',
   photoLimitTitle: (limit: number) => `Все ${limit} фото заняты`,
-  photoLimitBody: 'Всё, что вы уже сохранили, остаётся с вами. В Plus хватит места на тысячи новых фотографий.',
+  photoLimitBody: (next: string, limit: number) => `Всё, что вы уже сохранили, остаётся с вами. В ${next} поместится ${limit} фотографий.`,
   streakUpsellBody: 'Откройте всё, что дальше.',
   moreTask: 'Ещё одно задание',
   moreTaskTomorrow: 'В бесплатной версии одно задание в день. Новое появится завтра.',
@@ -170,7 +178,7 @@ export const ru = {
   allTasksDone: 'На сегодня все задания выполнены. Новые появятся завтра.',
   streakUpsellCta: 'Посмотреть Premium',
   notNow: 'Не сейчас',
-  storageFullCta: 'Больше места в Plus',
+  storageFullCta: (plan: string) => `Больше места в ${plan}`,
   goalLimitCta: 'Открыть Plus',
 
   goals: 'Наши цели',

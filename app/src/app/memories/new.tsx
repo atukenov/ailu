@@ -9,7 +9,7 @@ import { Button, ErrorText, Field, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { MAX_PHOTOS, pickPhotos, toUpload, type Picked } from '@/photos';
-import { isFreePhotoLimit, openPaywall, photoLimitReached } from '@/upsells';
+import { isPhotoLimit, openPaywall, photoLimitReached } from '@/upsells';
 
 // Dates are typed as ДД.ММ.ГГГГ: a picker needs another native module, and most memories are "today".
 function toIso(text: string): string | null {
@@ -64,7 +64,7 @@ export default function NewMemory() {
           await api.addPhoto(memory.id, await toUpload(photo));
         } catch (e) {
           // At the free limit the rest would fail too; the limit screen explains instead.
-          if (isFreePhotoLimit(e, storage.data)) {
+          if (isPhotoLimit(e, storage.data)) {
             full = true;
             break;
           }

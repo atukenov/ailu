@@ -46,6 +46,8 @@ public sealed class BillingOptions
 
     // Placeholder prices from the monetization doc (Plus 1 490 ₸, Premium 2 490 ₸ a month). Lev has not
     // set prices yet; change them here (or in config under Billing:Products) and in both stores.
+    // A year costs twelve months less 20% (Lev, 2026-10-17). On Google both periods are base plans of
+    // one subscription; Apple needs a product for each.
     // Config binding appends to a list, so these apply only when config names no products.
     public static List<BillingProduct> DefaultProducts() =>
     [
@@ -58,8 +60,22 @@ public sealed class BillingOptions
         {
             Id = "premium_monthly", Tier = CouplePlan.Premium, Period = "month", PriceKzt = 2490,
             AppleProductId = "kz.ailu.premium.monthly", GoogleProductId = "premium", GoogleBasePlanId = "monthly"
+        },
+        new()
+        {
+            Id = "plus_yearly", Tier = CouplePlan.Plus, Period = "year", PriceKzt = YearlyPrice(1490),
+            AppleProductId = "kz.ailu.plus.yearly", GoogleProductId = "plus", GoogleBasePlanId = "yearly"
+        },
+        new()
+        {
+            Id = "premium_yearly", Tier = CouplePlan.Premium, Period = "year", PriceKzt = YearlyPrice(2490),
+            AppleProductId = "kz.ailu.premium.yearly", GoogleProductId = "premium", GoogleBasePlanId = "yearly"
         }
     ];
+
+    public const int YearlyDiscountPercent = 20;
+
+    public static int YearlyPrice(int monthly) => monthly * 12 * (100 - YearlyDiscountPercent) / 100;
 
     public List<BillingProduct> Products { get; set; } = [];
 
@@ -116,8 +132,8 @@ public sealed class UnconfiguredStore(StoreProvider provider) : IStoreClient
     public Task AcknowledgeAsync(StorePurchase purchase, CancellationToken ct = default) => Task.CompletedTask;
 }
 
-// Development only (Billing:UseFakeStore). "fake:kz.ailu.plus.monthly" is an active monthly purchase from now on;
-// "fake-expired:..." one that has ended.
+// Development only (Billing:UseFakeStore). "fake:kz.ailu.plus.monthly" is an active monthly purchase from now on
+// ("...yearly" a yearly one); "fake-expired:..." one that has ended.
 public sealed class FakeStore(StoreProvider provider, TimeProvider clock) : IStoreClient
 {
     public StoreProvider Provider => provider;
@@ -130,7 +146,7 @@ public sealed class FakeStore(StoreProvider provider, TimeProvider clock) : ISto
         var now = clock.GetUtcNow();
         return Task.FromResult<StorePurchase?>(new StorePurchase(provider, storeId, parts[1],
             expired ? SubscriptionStatus.Expired : SubscriptionStatus.Active,
-            expired ? now.AddDays(-1) : now.AddMonths(1), !expired, Sandbox: true));
+            expired ? now.AddDays(-1) : parts[1].EndsWith("yearly") ? now.AddYears(1) : now.AddMonths(1), !expired, Sandbox: true));
     }
 
     public Task AcknowledgeAsync(StorePurchase purchase, CancellationToken ct = default) => Task.CompletedTask;

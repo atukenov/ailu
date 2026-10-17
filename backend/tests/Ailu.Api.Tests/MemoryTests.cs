@@ -133,9 +133,11 @@ public class MemoryTests
     }
 
     [Theory]
-    [InlineData(Plans.FreePhotos, 0L)] // the 201st photo on the free plan
-    [InlineData(0, 1_000_000_000L - 1000)] // or one that doesn't fit in the bytes left
-    public async Task Full_quota_refuses_the_upload_and_keeps_no_file(int photos, long bytes)
+    [InlineData(CouplePlan.Free, Plans.FreePhotos, 0L)] // the 201st photo on the free plan
+    [InlineData(CouplePlan.Plus, Plans.PlusPhotos, 0L)] // the 501st on Plus
+    [InlineData(CouplePlan.Premium, Plans.PremiumPhotos, 0L)] // the 1 201st on Premium
+    [InlineData(CouplePlan.Free, 0, 1_000_000_000L - 1000)] // or one that doesn't fit in the bytes left
+    public async Task Full_quota_refuses_the_upload_and_keeps_no_file(CouplePlan plan, int photos, long bytes)
     {
         await using var api = await ApiFactory.StartAsync();
         var (a, _) = await api.PairAsync();
@@ -143,7 +145,8 @@ public class MemoryTests
         using (var scope = api.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AiluDb>();
-            await db.Couples.ExecuteUpdateAsync(s => s.SetProperty(c => c.PhotoCount, photos).SetProperty(c => c.StorageBytes, bytes));
+            await db.Couples.ExecuteUpdateAsync(s => s
+                .SetProperty(c => c.Plan, plan).SetProperty(c => c.PhotoCount, photos).SetProperty(c => c.StorageBytes, bytes));
         }
 
         var res = await Upload(a, memory.Id, Jpeg(800, 600));
@@ -153,6 +156,24 @@ public class MemoryTests
         Assert.Empty(Directory.GetFiles(api.PhotoRoot, "*", SearchOption.AllDirectories));
         var storage = await Storage(a);
         Assert.Equal((photos, bytes), (storage.Photos, storage.UsedBytes));
+        Assert.Equal(Plans.PhotoLimit(plan), storage.PhotoLimit);
+    }
+
+    [Fact]
+    public async Task A_paid_couple_keeps_adding_photos_past_the_free_limit()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        var (a, _) = await api.PairAsync();
+        var memory = await Create(a);
+        using (var scope = api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AiluDb>();
+            await db.Couples.ExecuteUpdateAsync(s => s.SetProperty(c => c.Plan, CouplePlan.Plus).SetProperty(c => c.PhotoCount, Plans.FreePhotos));
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await Upload(a, memory.Id, Jpeg(800, 600))).StatusCode);
+        var storage = await Storage(a);
+        Assert.Equal((Plans.FreePhotos + 1, Plans.PlusPhotos), (storage.Photos, storage.PhotoLimit));
     }
 
     [Fact]
