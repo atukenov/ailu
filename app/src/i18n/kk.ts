@@ -61,6 +61,13 @@ export const kk: Strings = {
 
   streak: (n: number) => `Қатарынан ${n} күн`,
   streakZero: 'Бүгін екеуіңіз де бір нәрсе жасағанда, серия басталады',
+  streakLapsed: 'Серия үзілді',
+  streakRestarted: (n: number) => `Серия қайта басталды. ${n} күніңіз жұптың тарихында қалды`,
+  restoreOffer: (n: number, cost: number) => `${n} күндік серияны ${cost} нұрға қайтаруға болады`,
+  restoresLeft: (left: number, perMonth: number) => `Осы айдағы қалпына келтіру: ${perMonth} ішінен ${left}`,
+  restoreStreak: 'Серияны қайтару',
+  restoreNoneLeft: 'Осы айдағы қалпына келтірулер таусылды',
+  restoreNotEnoughNur: (cost: number) => `${cost} нұр керек. Күн тапсырмаларын орындаңыз, нұр жиналады`,
   nur: 'нұр',
   toNextPhase: (n: number, name: string) => `«${name}» фазасына дейін ${n} нұр`,
   cycle: (n: number) => `${toRoman(n)} цикл`,

@@ -11,6 +11,14 @@ public static class Plans
 
     public static int? PhotoLimit(CouplePlan plan) => plan == CouplePlan.Free ? FreePhotos : null;
 
+    // Streak restores a month, from the gamification design (document 3).
+    public static int StreakRestoresPerMonth(CouplePlan plan) => plan switch
+    {
+        CouplePlan.Plus => 3,
+        CouplePlan.Premium => 5,
+        _ => 1
+    };
+
     public static long QuotaBytes(CouplePlan plan) => plan switch
     {
         CouplePlan.Plus => 10_000_000_000,

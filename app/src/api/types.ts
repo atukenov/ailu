@@ -75,11 +75,23 @@ export type DailyQuestion = {
   revealedAt: string | null;
 };
 
+// Offered when a missed day broke the streak and the couple can pay нұр to bring it back.
+export type StreakRestore = {
+  days: number;
+  missedDays: number;
+  cost: number;
+  restoresLeft: number;
+  restoresPerMonth: number;
+  canAfford: boolean;
+};
+
+export type Streak = { days: number; lastDay: string | null; restore: StreakRestore | null };
+
 export type Today = {
   date: string;
   task: DailyTask;
   question: DailyQuestion;
-  streak: { days: number; lastDay: string | null };
+  streak: Streak;
   phase: Phase;
 };
 

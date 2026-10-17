@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ailu.Api.Data.Migrations
 {
     [DbContext(typeof(AiluDb))]
-    [Migration("20261017090312_Mood")]
+    [Migration("20261017091237_Mood")]
     partial class Mood
     {
         /// <inheritdoc />
@@ -66,6 +66,15 @@ namespace Ailu.Api.Data.Migrations
                         .HasColumnType("date");
 
                     b.Property<DateOnly?>("StreakLastDay")
+                        .HasColumnType("date");
+
+                    b.Property<int>("StreakLostDays")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("StreakLostLastDay")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("StreakRestartedOn")
                         .HasColumnType("date");
 
                     b.Property<string>("TimeZone")

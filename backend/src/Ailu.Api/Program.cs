@@ -26,6 +26,7 @@ else builder.Services.AddSingleton<IPushSender, LoggingPushSender>();
 builder.Services.AddDbContext<AiluDb>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Ailu")));
 builder.Services.AddScoped<NurLedgerService>();
 builder.Services.AddScoped<ActivityService>();
+builder.Services.AddScoped<StreakService>();
 builder.Services.AddScoped<DailyContentService>();
 builder.Services.AddScoped<DailyPushJob>();
 if (builder.Configuration.GetValue("Push:SchedulerEnabled", true)) builder.Services.AddHostedService<DailyPushScheduler>();

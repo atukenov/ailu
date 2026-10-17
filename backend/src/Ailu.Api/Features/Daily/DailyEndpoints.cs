@@ -25,7 +25,6 @@ public sealed record TaskDto(Guid Id, DateOnly Date, string Slug, string Categor
 public sealed record QuestionDto(Guid Id, DateOnly Date, string Text, string? MyAnswer, bool PartnerAnswered,
     string? PartnerAnswer, DateTimeOffset? RevealedAt);
 
-public sealed record StreakDto(int Days, DateOnly? LastDay);
 public sealed record TodayDto(DateOnly Date, TaskDto Task, QuestionDto Question, StreakDto Streak, PhaseDto Phase);
 public sealed record AnswerRequest(string Text);
 
@@ -38,21 +37,27 @@ public static class DailyEndpoints
         g.MapPost("/tasks/{id:guid}/accept", AcceptTask);
         g.MapPost("/tasks/{id:guid}/complete", CompleteTask);
         g.MapPost("/questions/{id:guid}/answer", Answer);
+        g.MapPost("/streak/restore", RestoreStreak);
     }
 
-    private static async Task<IResult> Today(HttpContext http, AiluDb db, DailyContentService content, TimeProvider clock,
-        CancellationToken ct)
+    private static async Task<IResult> Today(HttpContext http, AiluDb db, DailyContentService content, StreakService streaks,
+        TimeProvider clock, CancellationToken ct)
     {
         var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
         if (scope is null) return Errors.NoCouple();
 
         var today = CoupleCalendar.Today(scope.Couple, clock);
         var (task, question) = await content.EnsureAsync(scope.Couple, today, ct);
-        var c = scope.Couple;
-        var streak = Streak.Current(new StreakState(c.StreakDays, c.StreakLastDay, c.StreakForgivenOn), today);
+        var streak = await streaks.DtoAsync(scope.Couple, today, ct);
 
-        return Results.Ok(new TodayDto(today, ToDto(task, scope), ToDto(question, scope),
-            new StreakDto(streak, c.StreakLastDay), PairingEndpoints.ToPhase(c)));
+        return Results.Ok(new TodayDto(today, ToDto(task, scope), ToDto(question, scope), streak,
+            PairingEndpoints.ToPhase(scope.Couple)));
+    }
+
+    private static async Task<IResult> RestoreStreak(HttpContext http, AiluDb db, StreakService streaks, CancellationToken ct)
+    {
+        var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
+        return scope is null ? Errors.NoCouple() : await streaks.RestoreAsync(scope.Couple, ct);
     }
 
     private static async Task<IResult> AcceptTask(Guid id, HttpContext http, AiluDb db, ActivityService activity,
