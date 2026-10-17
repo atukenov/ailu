@@ -74,6 +74,26 @@ export const kk: Strings = {
   ],
   number: (n: number) => n.toLocaleString('ru-RU'),
 
+  mood: 'Көңіл-күй',
+  moodQuestion: 'Бүгін қалайсың?',
+  moodLevels: { hard: 'Ауыр', tired: 'Шаршадым', even: 'Қалыпты', good: 'Жақсы', great: 'Керемет' },
+  moodConsentText:
+    'Көңіл-күй — жеке нәрсе. Серіктесіңіз тек белгіні көреді, ал оған жазған сөздеріңізді — «Көрсету» батырмасын өзіңіз басқанда ғана. Белгілер 12 ай сақталады, кейін тек айлық қорытынды қалады. Келісімді профильде қайтарып алуға болады.',
+  moodConsent: 'Қосу',
+  moodPartner: (name: string, mood: string, time: string) => `${name}: ${mood} · ${time}`,
+  moodPartnerNone: (name: string) => `${name}: әзірге белгі жоқ`,
+  moodBoth: 'Екеуіңіз де белгі қойдыңыз. +10 нұр',
+  moodNote: 'Бірер сөз қосу',
+  moodNotePlaceholder: 'Міндетті емес',
+  moodNotePrivate: 'Бұл сөздерді тек сіз көресіз',
+  moodNoteShared: 'Серіктесіңіз бұл сөздерді көреді',
+  moodShowNote: 'Серіктеске көрсету',
+  moodHideNote: 'Серіктестен жасыру',
+  moodWeek: 'Апта',
+  moodWithdraw: 'Көңіл-күйге келісімді қайтарып алу',
+  moodWithdrawConfirm: 'Көңіл-күй белгілеріңіздің бәрі жойылады. Жалғастырасыз ба?',
+  weekdays: ['Жс', 'Дс', 'Сс', 'Ср', 'Бс', 'Жм', 'Сб'],
+
   memories: 'Естеліктер',
   memoriesEmpty: 'Әзірге бірде-бір естелік жоқ',
   memoriesEmptyHint: 'Әр орындалған тапсырманы осында суретімен бірге сақтауға болады.',
@@ -143,6 +163,10 @@ export const kk: Strings = {
     storage_full: 'Фотоларға орын таусылды. Жаңасын қосу үшін ескілерін жойыңыз.',
     memory_not_found: 'Бұл естелік енді жоқ.',
     not_author: 'Естелікті тек оны қосқан адам ғана өзгерте немесе жоя алады.',
+    consent_required: 'Көңіл-күй белгілеу үшін сіздің келісіміңіз керек.',
+    invalid_mood: 'Көңіл-күйді таңдаңыз.',
+    invalid_note: '280 таңбадан аспасын.',
+    note_not_found: 'Алдымен бүгінгі көңіл-күйге бірер сөз қосыңыз.',
   },
 };
 
