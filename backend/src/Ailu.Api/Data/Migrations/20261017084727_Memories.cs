@@ -11,6 +11,13 @@ namespace Ailu.Api.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<int>(
+                name: "PhotoCount",
+                table: "Couples",
+                type: "integer",
+                nullable: false,
+                defaultValue: 0);
+
             migrationBuilder.AddColumn<string>(
                 name: "Plan",
                 table: "Couples",
@@ -168,6 +175,10 @@ namespace Ailu.Api.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Memories");
+
+            migrationBuilder.DropColumn(
+                name: "PhotoCount",
+                table: "Couples");
 
             migrationBuilder.DropColumn(
                 name: "Plan",

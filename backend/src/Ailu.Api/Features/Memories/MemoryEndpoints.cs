@@ -13,7 +13,7 @@ public sealed record MemoryDto(Guid Id, string Title, string? Text, string? Plac
     bool Mine, bool Favorite, bool ReactedByMe, bool ReactedByPartner, Guid? CoupleTaskId, DateTimeOffset CreatedAt,
     IReadOnlyList<PhotoDto> Photos);
 public sealed record MemoryPage(IReadOnlyList<MemoryDto> Items, string? NextCursor);
-public sealed record StorageDto(string Plan, long UsedBytes, long QuotaBytes, int PhotosLeft);
+public sealed record StorageDto(string Plan, int Photos, int? PhotoLimit, long UsedBytes, long QuotaBytes);
 
 public static class MemoryEndpoints
 {
@@ -126,11 +126,14 @@ public static class MemoryEndpoints
         if (memory.AuthorId != scope.UserId) return NotAuthor();
 
         var bytes = memory.Photos.Sum(p => p.Bytes);
+        var count = memory.Photos.Count;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         memory.DeletedAt = clock.GetUtcNow();
         await db.SaveChangesAsync(ct);
         await db.Couples.Where(c => c.Id == scope.Couple.Id)
-            .ExecuteUpdateAsync(s => s.SetProperty(c => c.StorageBytes, c => c.StorageBytes - bytes), ct);
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(c => c.StorageBytes, c => c.StorageBytes - bytes)
+                .SetProperty(c => c.PhotoCount, c => c.PhotoCount - count), ct);
         await tx.CommitAsync(ct);
         return Results.NoContent();
     }
@@ -154,6 +157,7 @@ public static class MemoryEndpoints
         if (photo is null) return Errors.Validation("file", "Это не похоже на фотографию. Подойдут JPEG, PNG и WebP.");
 
         var quota = Plans.QuotaBytes(scope.Couple.Plan);
+        var limit = Plans.PhotoLimit(scope.Couple.Plan) ?? int.MaxValue;
         var bytes = (long)photo.Jpeg.Length;
         var row = new MemoryPhoto
         {
@@ -169,12 +173,16 @@ public static class MemoryEndpoints
             await using var tx = await db.Database.BeginTransactionAsync(ct);
             // Check and count in one statement, so two uploads at once can't both squeeze under the quota.
             var counted = await db.Couples
-                .Where(c => c.Id == scope.Couple.Id && c.StorageBytes + bytes <= quota)
-                .ExecuteUpdateAsync(s => s.SetProperty(c => c.StorageBytes, c => c.StorageBytes + bytes), ct);
+                .Where(c => c.Id == scope.Couple.Id && c.PhotoCount < limit && c.StorageBytes + bytes <= quota)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(c => c.StorageBytes, c => c.StorageBytes + bytes)
+                    .SetProperty(c => c.PhotoCount, c => c.PhotoCount + 1), ct);
             if (counted == 0)
             {
                 await store.DeleteFolderAsync(PhotoKeys.Folder(row.CoupleId, row.Id), ct);
-                return Errors.Conflict("storage_full", "Место для фотографий закончилось.");
+                return Errors.Conflict("storage_full", limit == Plans.FreePhotos
+                    ? $"В бесплатной версии можно хранить {Plans.FreePhotos} фотографий, и все они заняты."
+                    : "Место для фотографий закончилось.");
             }
             db.MemoryPhotos.Add(row); // fix-up adds it to memory.Photos too
             await db.SaveChangesAsync(ct);
@@ -252,9 +260,8 @@ public static class MemoryEndpoints
         if (scope is null) return Errors.NoCouple();
         var c = scope.Couple;
         await db.Entry(c).ReloadAsync(ct);
-        var quota = Plans.QuotaBytes(c.Plan);
-        return Results.Ok(new StorageDto(c.Plan.ToString().ToLowerInvariant(), c.StorageBytes, quota,
-            (int)Math.Max(0, (quota - c.StorageBytes) / Plans.BytesPerPhoto)));
+        return Results.Ok(new StorageDto(c.Plan.ToString().ToLowerInvariant(), c.PhotoCount, Plans.PhotoLimit(c.Plan),
+            c.StorageBytes, Plans.QuotaBytes(c.Plan)));
     }
 
     // Smaller sizes are made on first request and kept (roadmap: three sizes, generated lazily).

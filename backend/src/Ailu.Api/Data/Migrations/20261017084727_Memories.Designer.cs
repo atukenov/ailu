@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ailu.Api.Data.Migrations
 {
     [DbContext(typeof(AiluDb))]
-    [Migration("20261017082634_Memories")]
+    [Migration("20261017084727_Memories")]
     partial class Memories
     {
         /// <inheritdoc />
@@ -38,6 +38,9 @@ namespace Ailu.Api.Data.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("NurEarned")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PhotoCount")
                         .HasColumnType("integer");
 
                     b.Property<string>("Plan")

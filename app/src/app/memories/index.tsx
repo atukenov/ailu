@@ -6,7 +6,7 @@ import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { api, photoUrl } from '@/api/client';
 import type { Memory } from '@/api/types';
 import { Button, Card, Centered, ErrorText, RoundButton, Screen, T, TopBar } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 
 export default function Memories() {
@@ -59,21 +59,20 @@ export default function Memories() {
           loading={list.isFetchingNextPage}
         />
       )}
-      {storage.data && (
-        <T variant="small" style={styles.storage}>
-          {storage.data.photosLeft === 0
-            ? s.storageFull
-            : s.storageLeft(gb(storage.data.usedBytes), gb(storage.data.quotaBytes), storage.data.photosLeft)}
-        </T>
-      )}
+      {storage.data && <StorageLine photos={storage.data.photos} limit={storage.data.photoLimit} />}
     </Screen>
   );
 }
 
-function gb(bytes: number) {
-  if (bytes < 1_000_000_000) return `${Math.ceil(bytes / 1_000_000).toLocaleString('ru-RU')} МБ`;
-  const value = bytes / 1_000_000_000;
-  return `${value.toLocaleString('ru-RU', { maximumFractionDigits: value < 10 ? 1 : 0 })} ГБ`;
+// Free couples keep up to 200 photos; the paid plans' limits aren't decided yet.
+function StorageLine({ photos, limit }: { photos: number; limit: number | null }) {
+  const s = useStrings();
+  const full = limit !== null && photos >= limit;
+  return (
+    <T variant="small" style={[styles.storage, full && { color: Colors.danger }]}>
+      {limit === null ? s.photosStored(photos) : full ? s.storageFull(limit) : s.photosOfLimit(photos, limit)}
+    </T>
+  );
 }
 
 function MemoryCard({ memory }: { memory: Memory }) {
@@ -140,5 +139,5 @@ const styles = StyleSheet.create({
   captionMeta: { color: Colors.text },
   star: { position: 'absolute', top: Spacing.three, right: Spacing.three, fontSize: 26, color: Colors.moonLit },
   starInline: { fontSize: 22, color: Colors.moonLit },
-  storage: { textAlign: 'center', borderRadius: Radius.pill },
+  storage: { textAlign: 'center' },
 });

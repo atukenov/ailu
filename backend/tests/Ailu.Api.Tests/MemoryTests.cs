@@ -94,7 +94,7 @@ public class MemoryTests
 
         var storage = await Storage(b);
         Assert.Equal(full.Length, storage.UsedBytes);
-        Assert.Equal(1_000_000_000, storage.QuotaBytes);
+        Assert.Equal((1, 200), (storage.Photos, storage.PhotoLimit));
         Assert.Equal("free", storage.Plan);
     }
 
@@ -132,8 +132,10 @@ public class MemoryTests
         Assert.False(Directory.Exists(api.PhotoRoot) && Directory.GetFiles(api.PhotoRoot, "*", SearchOption.AllDirectories).Length > 0);
     }
 
-    [Fact]
-    public async Task Full_quota_refuses_the_upload_and_keeps_no_file()
+    [Theory]
+    [InlineData(Plans.FreePhotos, 0L)] // the 201st photo on the free plan
+    [InlineData(0, 1_000_000_000L - 1000)] // or one that doesn't fit in the bytes left
+    public async Task Full_quota_refuses_the_upload_and_keeps_no_file(int photos, long bytes)
     {
         await using var api = await ApiFactory.StartAsync();
         var (a, _) = await api.PairAsync();
@@ -141,7 +143,7 @@ public class MemoryTests
         using (var scope = api.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AiluDb>();
-            await db.Couples.ExecuteUpdateAsync(s => s.SetProperty(c => c.StorageBytes, Plans.QuotaBytes(CouplePlan.Free) - 1000));
+            await db.Couples.ExecuteUpdateAsync(s => s.SetProperty(c => c.PhotoCount, photos).SetProperty(c => c.StorageBytes, bytes));
         }
 
         var res = await Upload(a, memory.Id, Jpeg(800, 600));
@@ -149,7 +151,8 @@ public class MemoryTests
         Assert.Contains("storage_full", await res.Content.ReadAsStringAsync());
         Assert.Empty((await a.GetFromJsonAsync<MemoryDto>($"/v1/couple/memories/{memory.Id}"))!.Photos);
         Assert.Empty(Directory.GetFiles(api.PhotoRoot, "*", SearchOption.AllDirectories));
-        Assert.Equal(0, (await Storage(a)).PhotosLeft);
+        var storage = await Storage(a);
+        Assert.Equal((photos, bytes), (storage.Photos, storage.UsedBytes));
     }
 
     [Fact]
@@ -170,7 +173,8 @@ public class MemoryTests
 
         Assert.Equal(HttpStatusCode.NoContent, (await a.DeleteAsync($"/v1/couple/memories/{memory.Id}")).StatusCode);
         Assert.Empty((await b.GetFromJsonAsync<MemoryPage>("/v1/couple/memories"))!.Items);
-        Assert.Equal(0, (await Storage(a)).UsedBytes);
+        var freed = await Storage(a);
+        Assert.Equal((0, 0L), (freed.Photos, freed.UsedBytes));
         Assert.Equal(HttpStatusCode.NotFound, (await api.CreateClient().GetAsync(photo.Full)).StatusCode);
 
         // The file stays in the bin for 30 days, then the purge removes it and the rows.

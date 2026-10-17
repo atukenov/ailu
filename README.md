@@ -44,9 +44,10 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
 - **At most two pushes a day per person**, in the couple's time zone: the task at 09:00 (window until 12:00)
   to both, and at 20:00 (until 23:00) a nudge only to someone whose partner already answered the question.
   `PushLog` has one row per sent push, which keeps it to once even across restarts or several instances.
-- **Photo bytes are counted when they are stored, never recounted.** `Couple.StorageBytes` changes in the same
-  transaction as the photo row, through one conditional `UPDATE`, so two uploads at once can't pass the quota.
-  Quotas from the roadmap: Free 1 GB, Plus 10 GB, Premium 30 GB (about 800 photos per GB).
+- **Photos are counted when they are stored, never recounted.** `Couple.PhotoCount` and `StorageBytes` change in
+  the same transaction as the photo row, through one conditional `UPDATE`, so two uploads at once can't pass the
+  limit. A free couple keeps up to 200 photos; the paid plans' limits are not decided yet (only the roadmap's
+  byte quotas apply: Plus 10 GB, Premium 30 GB; Free also has 1 GB as a backstop).
 - **Only the author changes or deletes a memory**; both partners see it. Deleting frees the quota at once and the
   files go 30 days later.
 
@@ -90,7 +91,7 @@ Kazakhstan, so an S3-compatible store replaces the folder once hosting is chosen
 | POST | `/v1/couple/memories/{id}/photos` | add a photo (multipart `file`, author only, up to 10 per memory) |
 | PUT/DELETE | `/v1/couple/memories/{id}/reaction` | heart; the partner's first one earns +20 нұр (3 a day) |
 | PUT/DELETE | `/v1/couple/memories/{id}/favorite` | shared star |
-| GET | `/v1/couple/storage` | plan, bytes used, quota, photos left |
+| GET | `/v1/couple/storage` | plan, photos stored and the limit (200 on Free), bytes used and quota |
 | GET | `/v1/photos/{id}/{320\|1080\|2560}` | the photo, by the signed URL the API hands out |
 
 The product and design documents (in Russian) live in the project's shared files, not in this repo.

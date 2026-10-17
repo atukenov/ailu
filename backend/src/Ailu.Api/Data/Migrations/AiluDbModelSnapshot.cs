@@ -37,6 +37,9 @@ namespace Ailu.Api.Data.Migrations
                     b.Property<int>("NurEarned")
                         .HasColumnType("integer");
 
+                    b.Property<int>("PhotoCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Plan")
                         .IsRequired()
                         .HasMaxLength(10)

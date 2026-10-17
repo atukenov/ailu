@@ -2,11 +2,14 @@ using Ailu.Api.Data;
 
 namespace Ailu.Api.Domain;
 
-// Photo quotas from the roadmap (document 7 overrides the "unlimited" Premium of document 4).
-// One processed photo is about 1.25 MB, so 1 GB is about 800 photos.
+// Free couples keep up to 200 photos (Lev, 2026-10-17). What the paid plans get is decided later;
+// until then they have no photo count limit, only the byte quotas from the roadmap (document 7).
+// The byte quota also backs up the free plan: 200 processed photos are about 250 MB.
 public static class Plans
 {
-    public const long BytesPerPhoto = 1_250_000;
+    public const int FreePhotos = 200;
+
+    public static int? PhotoLimit(CouplePlan plan) => plan == CouplePlan.Free ? FreePhotos : null;
 
     public static long QuotaBytes(CouplePlan plan) => plan switch
     {

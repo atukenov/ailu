@@ -111,7 +111,13 @@ export type MemoryInput = {
 
 export type MemoryPage = { items: Memory[]; nextCursor: string | null };
 
-export type Storage = { plan: 'free' | 'plus' | 'premium'; usedBytes: number; quotaBytes: number; photosLeft: number };
+export type Storage = {
+  plan: 'free' | 'plus' | 'premium';
+  photos: number;
+  photoLimit: number | null;
+  usedBytes: number;
+  quotaBytes: number;
+};
 
 // RFC 9457 problem details, with the API's stable `code`.
 export type Problem = {

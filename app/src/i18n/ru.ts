@@ -86,9 +86,9 @@ export const ru = {
   deleteMemory: 'Удалить воспоминание',
   deleteMemoryConfirm: 'Воспоминание исчезнет у вас обоих. Удалить?',
   delete: 'Удалить',
-  storageLeft: (used: string, quota: string, photos: number) =>
-    `Занято ${used} из ${quota} · ещё примерно ${photos.toLocaleString('ru-RU')} фото`,
-  storageFull: 'Место для фотографий закончилось',
+  photosOfLimit: (n: number, limit: number) => `${n} из ${limit} фото`,
+  photosStored: (n: number) => `${n} фото`,
+  storageFull: (limit: number) => `Все ${limit} фото заняты. Чтобы добавить новые, удалите старые.`,
   date: (iso: string) => {
     const [y, m, d] = iso.split('-').map(Number);
     return `${d} ${MONTHS[m - 1]} ${y}`;

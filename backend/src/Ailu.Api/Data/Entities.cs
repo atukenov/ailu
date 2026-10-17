@@ -59,8 +59,9 @@ public sealed class Couple
     // One subscription covers both partners. There is no payment yet, so every couple is on Free.
     public CouplePlan Plan { get; set; }
 
-    // Bytes of photos the couple currently stores, counted against the plan's quota. Changed only by
+    // Photos and bytes the couple currently stores, counted against the plan's limits. Changed only by
     // an atomic UPDATE in the same transaction as the photo row, never recounted from storage.
+    public int PhotoCount { get; set; }
     public long StorageBytes { get; set; }
 
     public List<CoupleMember> Members { get; set; } = [];
