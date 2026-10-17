@@ -41,6 +41,15 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
 - **Phases never drop.** They follow earned нұр, which only grows.
 - **The partner's answer does not reach the device before the reveal.** Hiding it in the UI is not enough.
 - **A streak day needs both partners.** One missed night per 7 days is forgiven.
+- **At most two pushes a day per person**, in the couple's time zone: the task at 09:00 (window until 12:00)
+  to both, and at 20:00 (until 23:00) a nudge only to someone whose partner already answered the question.
+  `PushLog` has one row per sent push, which keeps it to once even across restarts or several instances.
+
+### Push notifications
+
+`DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Expo's push service
+when `Push:UseExpo` is `true`; otherwise (the default, and in Development) they are written to the log.
+Set `Push:SchedulerEnabled` to `false` to turn the job off.
 
 ### API (Stage 1)
 
@@ -58,5 +67,7 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
 | POST | `/v1/couple/tasks/{id}/complete` | one marks it done, the other confirms: +50 нұр |
 | POST | `/v1/couple/questions/{id}/answer` | blind answer; both answered → revealed, locked, +30 нұр |
 | GET | `/v1/couple/phase` | phase, earned and balance, progress to the next phase |
+| PUT | `/v1/me/devices` | register this device's Expo push token (moves it to the caller if someone else had it) |
+| POST | `/v1/me/devices/unregister` | stop pushes to this device, on sign-out |
 
 The product and design documents (in Russian) live in the project's shared files, not in this repo.

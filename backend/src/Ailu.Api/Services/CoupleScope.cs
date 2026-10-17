@@ -39,16 +39,19 @@ public static class CoupleCalendar
 
     public static DateOnly Today(Couple couple, TimeProvider clock) => DayOf(couple, clock.GetUtcNow());
 
-    public static DateOnly DayOf(Couple couple, DateTimeOffset instant)
+    public static DateOnly DayOf(Couple couple, DateTimeOffset instant) => DateOnly.FromDateTime(Local(couple, instant).DateTime);
+
+    public static TimeOnly TimeOf(Couple couple, DateTimeOffset instant) => TimeOnly.FromDateTime(Local(couple, instant).DateTime);
+
+    private static DateTimeOffset Local(Couple couple, DateTimeOffset instant)
     {
         try
         {
-            var tz = TimeZoneInfo.FindSystemTimeZoneById(couple.TimeZone);
-            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(instant, tz).DateTime);
+            return TimeZoneInfo.ConvertTime(instant, TimeZoneInfo.FindSystemTimeZoneById(couple.TimeZone));
         }
         catch (TimeZoneNotFoundException)
         {
-            return DateOnly.FromDateTime(instant.ToOffset(Fallback).DateTime);
+            return instant.ToOffset(Fallback);
         }
     }
 }

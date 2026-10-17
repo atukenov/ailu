@@ -154,3 +154,27 @@ public sealed class NurLedgerEntry
     public required string IdempotencyKey { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
+
+// An Expo push token for one of a user's devices. A token moves to whoever signs in on that device last.
+public sealed class Device
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public required string PushToken { get; set; }
+    public required string Platform { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset LastSeenAt { get; set; }
+}
+
+public enum PushKind { MorningTask, EveningAnswer }
+
+// One row per push actually sent. The unique (UserId, Date, Kind) key is what keeps each person to
+// at most one morning and one evening push a day, even across restarts or several API instances.
+public sealed class PushLog
+{
+    public Guid UserId { get; set; }
+    public DateOnly Date { get; set; }
+    public PushKind Kind { get; set; }
+    public Guid CoupleId { get; set; }
+    public DateTimeOffset SentAt { get; set; }
+}

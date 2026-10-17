@@ -18,11 +18,15 @@ builder.Services.AddSingleton(auth);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<TokenIssuer>();
 builder.Services.AddSingleton<ISmsSender, LoggingSmsSender>();
+if (builder.Configuration.GetValue<bool>("Push:UseExpo")) builder.Services.AddHttpClient<IPushSender, ExpoPushSender>();
+else builder.Services.AddSingleton<IPushSender, LoggingPushSender>();
 
 builder.Services.AddDbContext<AiluDb>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Ailu")));
 builder.Services.AddScoped<NurLedgerService>();
 builder.Services.AddScoped<ActivityService>();
 builder.Services.AddScoped<DailyContentService>();
+builder.Services.AddScoped<DailyPushJob>();
+if (builder.Configuration.GetValue("Push:SchedulerEnabled", true)) builder.Services.AddHostedService<DailyPushScheduler>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {
@@ -68,6 +72,7 @@ if (app.Environment.IsDevelopment()) app.MapOpenApi();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 AuthEndpoints.Map(app);
+DeviceEndpoints.Map(app);
 PairingEndpoints.Map(app);
 DailyEndpoints.Map(app);
 
