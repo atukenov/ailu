@@ -14,6 +14,9 @@ namespace Ailu.Api.Services;
 // both had joined, the partner's own memories and answers. The user row stays as a bare id (no phone,
 // no name) so those records keep a valid author, and the partner sees them unsigned.
 // A current couple ends, as if the person had ended it: the partner can pair again.
+// Subscription rows stay: they hold no personal data (a store transaction id, product, dates), the tax
+// records need them, and the store keeps billing until the person cancels there, which deleting the
+// account can't do. The app's confirmation says so.
 public sealed class AccountDeletion(AiluDb db, IPhotoStore store, TimeProvider clock, ILogger<AccountDeletion> log)
 {
     public async Task DeleteAsync(Guid userId, CancellationToken ct = default)

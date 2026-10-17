@@ -226,8 +226,24 @@ export const ru = {
   endCoupleConfirm: 'Пара будет закрыта для вас обоих. История сохранится. Продолжить?',
   deleteAccount: 'Удалить аккаунт',
   deleteAccountConfirm:
-    'Удалятся ваш профиль, номер телефона, ваши воспоминания с фотографиями, ответы и настроение. Пара будет закрыта. Общий прогресс останется у партнёра без вашего имени. Отменить удаление нельзя.',
+    'Удалятся ваш профиль, номер телефона, ваши воспоминания с фотографиями, ответы и настроение. Пара будет закрыта. Общий прогресс останется у партнёра без вашего имени. Отменить удаление нельзя. Подписка в App Store или Google Play при этом не отменяется: отмените её в настройках магазина.',
   cancel: 'Отмена',
+
+  // Subscription. Prices and the paywall live on the paywall screen.
+  planTitle: 'Подписка',
+  planName: (plan: 'free' | 'plus' | 'premium') => ({ free: 'Бесплатная версия', plus: 'Plus', premium: 'Premium' })[plan],
+  planRenews: (date: string) => `Следующее списание ${date}`,
+  planEnds: (date: string) => `Действует до ${date}`,
+  planTrialEnds: (date: string) => `Пробный период до ${date}`,
+  planPaidByMe: 'Вы оплачиваете подписку, она действует для вас обоих.',
+  planPaidByPartner: (name: string) => `Подписку оплачивает ${name}, она действует для вас обоих.`,
+  planChoose: 'Выбрать тариф',
+  planTrial: (days: number) => `Попробовать Premium ${days} ${plural(days, 'день', 'дня', 'дней')} бесплатно`,
+  planRestore: 'Восстановить покупки',
+  planRestored: 'Подписка восстановлена.',
+  planNothingToRestore: 'Покупок, которые можно восстановить, нет.',
+  planManage: 'Управлять подпиской',
+  planCancelAnytime: 'Вы можете отменить подписку в любое время',
 
   retry: 'Попробовать ещё раз',
   somethingWrong: 'Что-то пошло не так',
@@ -279,6 +295,11 @@ export const ru = {
     invalid_category: 'Такой категории нет.',
     invalid_targetMonth: 'Срок — месяц не раньше текущего.',
     invalid_steps: 'В цели до 20 этапов, каждый до 120 символов.',
+    purchase_not_found: 'Магазин не нашёл эту покупку.',
+    purchase_other_account: 'Эта подписка оформлена в другом аккаунте Ailu. Войдите в него, чтобы её восстановить.',
+    trial_used: 'Пробный период у вашей пары уже был.',
+    store_unavailable: 'Не получилось связаться с магазином. Попробуйте чуть позже.',
+    purchases_unavailable: 'Подписку можно оформить в приложении из App Store или Google Play.',
   } as Record<string, string>,
 };
 

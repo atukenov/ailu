@@ -1,5 +1,6 @@
 import { tokens } from './tokens';
 import type {
+  Billing,
   Couple,
   DailyQuestion,
   DailyTask,
@@ -153,6 +154,11 @@ export const api = {
   deleteStep: (id: string, stepId: string) => request<Goal>('DELETE', `/v1/couple/goals/${id}/steps/${stepId}`),
   markStep: (id: string, stepId: string, on: boolean) =>
     request<Goal>(on ? 'POST' : 'DELETE', `/v1/couple/goals/${id}/steps/${stepId}/done`),
+
+  billing: () => request<Billing>('GET', '/v1/billing'),
+  claimApple: (transactionId: string) => request<Billing>('POST', '/v1/billing/apple', { transactionId }),
+  claimGoogle: (purchaseToken: string) => request<Billing>('POST', '/v1/billing/google', { purchaseToken }),
+  startTrial: () => request<Billing>('POST', '/v1/billing/trial'),
 };
 
 // Photo URLs from the API are signed paths; they work without the token, so any image view can load them.

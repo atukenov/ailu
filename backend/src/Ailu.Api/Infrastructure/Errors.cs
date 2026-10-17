@@ -12,6 +12,7 @@ public static class Errors
     public static IResult Forbidden(string code, string message) => Problem(StatusCodes.Status403Forbidden, code, message);
     public static IResult NotFound(string code, string message) => Problem(StatusCodes.Status404NotFound, code, message);
     public static IResult Conflict(string code, string message) => Problem(StatusCodes.Status409Conflict, code, message);
+    public static IResult Unavailable(string code, string message) => Problem(StatusCodes.Status503ServiceUnavailable, code, message);
     public static IResult TooManyRequests(string message) => Problem(StatusCodes.Status429TooManyRequests, "too_many_requests", message);
 
     public static IResult NoCouple() => Problem(StatusCodes.Status409Conflict, "no_couple", "Сначала создайте пару.");

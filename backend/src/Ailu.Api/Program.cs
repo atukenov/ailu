@@ -1,5 +1,6 @@
 using Ailu.Api.Data;
 using Ailu.Api.Features.Auth;
+using Ailu.Api.Features.Billing;
 using Ailu.Api.Features.Daily;
 using Ailu.Api.Features.Goals;
 using Ailu.Api.Features.Memories;
@@ -42,6 +43,30 @@ builder.Services.AddScoped<MemoryPurgeJob>();
 if (builder.Configuration.GetValue("Photos:PurgeEnabled", true)) builder.Services.AddHostedService<MemoryPurgeScheduler>();
 builder.Services.AddScoped<MoodRetentionJob>();
 if (builder.Configuration.GetValue("Mood:RetentionEnabled", true)) builder.Services.AddHostedService<MoodRetentionScheduler>();
+
+var billing = builder.Configuration.GetSection("Billing").Get<BillingOptions>() ?? new BillingOptions();
+if (billing.Products.Count == 0) billing.Products = BillingOptions.DefaultProducts();
+builder.Services.AddSingleton(billing);
+if (billing.UseFakeStore)
+{
+    if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
+        throw new InvalidOperationException("Billing:UseFakeStore is for development only.");
+    builder.Services.AddSingleton<IStoreClient>(sp => new FakeStore(StoreProvider.Apple, sp.GetRequiredService<TimeProvider>()));
+    builder.Services.AddSingleton<IStoreClient>(sp => new FakeStore(StoreProvider.Google, sp.GetRequiredService<TimeProvider>()));
+}
+else
+{
+    builder.Services.AddSingleton(billing.Apple);
+    builder.Services.AddSingleton(billing.Google);
+    builder.Services.AddHttpClient<AppleStoreClient>();
+    builder.Services.AddHttpClient<GoogleStoreClient>();
+    builder.Services.AddTransient<IStoreClient>(sp => billing.Apple.Configured
+        ? sp.GetRequiredService<AppleStoreClient>() : new UnconfiguredStore(StoreProvider.Apple));
+    builder.Services.AddTransient<IStoreClient>(sp => billing.Google.Configured
+        ? sp.GetRequiredService<GoogleStoreClient>() : new UnconfiguredStore(StoreProvider.Google));
+}
+builder.Services.AddScoped<BillingService>();
+if (builder.Configuration.GetValue("Billing:ExpiryEnabled", true)) builder.Services.AddHostedService<BillingScheduler>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {
@@ -104,6 +129,7 @@ DailyEndpoints.Map(app);
 MemoryEndpoints.Map(app);
 MoodEndpoints.Map(app);
 GoalEndpoints.Map(app);
+BillingEndpoints.Map(app);
 
 app.Run();
 

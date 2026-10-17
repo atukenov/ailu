@@ -137,6 +137,21 @@ public class AccountDeletionTests
     }
 
     [Fact]
+    public async Task Subscription_records_stay_after_the_payer_deletes_the_account()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        var (a, _) = await api.PairAsync();
+        var aId = (await a.GetFromJsonAsync<UserDto>("/v1/me"))!.Id;
+        (await a.PostAsync("/v1/billing/trial", null)).EnsureSuccessStatusCode();
+
+        (await a.DeleteAsync("/v1/me")).EnsureSuccessStatusCode();
+
+        using var scope = api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AiluDb>();
+        Assert.True(await db.Subscriptions.AnyAsync(x => x.PayerUserId == aId));
+    }
+
+    [Fact]
     public async Task Someone_without_a_couple_can_delete_their_account()
     {
         await using var api = await ApiFactory.StartAsync();
