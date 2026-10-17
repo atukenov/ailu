@@ -41,6 +41,8 @@ public static class PairingEndpoints
         if (phone is null) return Errors.Validation("phone", "Нужен казахстанский номер в формате +7 7XX XXX XX XX.");
 
         var me = await db.Users.SingleAsync(u => u.Id == userId, ct);
+        // The review account is shared by whoever has the code; it must not text real people.
+        if (me.Phone == opt.ReviewNumber) return Errors.Forbidden("demo_account", "В демо-аккаунте нельзя приглашать.");
         if (me.Phone == phone) return Errors.Validation("phone", "Это ваш собственный номер.");
         if (await CurrentUser.CoupleAsync(http.User, db, ct) is not null)
             return Errors.Conflict("already_in_couple", "У вас уже есть пара.");

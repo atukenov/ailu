@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { api } from '@/api/client';
+import { DeleteAccountButton } from '@/components/delete-account';
 import { Button, Card, ErrorText, Field, Screen, T } from '@/components/ui';
 import { useStrings } from '@/i18n';
 import { useSession } from '@/session';
@@ -55,6 +56,7 @@ export default function Pair() {
       </Card>
 
       <Button title={s.signOut} variant="ghost" onPress={signOut} />
+      <DeleteAccountButton />
     </Screen>
   );
 }

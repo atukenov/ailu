@@ -6,7 +6,9 @@ namespace Ailu.Api.Data;
 public sealed class User
 {
     public Guid Id { get; set; }
-    public required string Phone { get; set; }
+
+    // Null only on a deleted account, which keeps its row so shared history still has an author id.
+    public string? Phone { get; set; }
     public string? Name { get; set; }
     public string Locale { get; set; } = "ru";
     public string TimeZone { get; set; } = "Asia/Almaty";
@@ -14,6 +16,9 @@ public sealed class User
 
     // Mood is processed on explicit consent only (privacy doc). Null means not given or withdrawn.
     public DateTimeOffset? MoodConsentAt { get; set; }
+
+    // Set when the person deletes their account. The row is then only an anonymous id: no phone, no name.
+    public DateTimeOffset? DeletedAt { get; set; }
 }
 
 public sealed class PhoneCode
@@ -72,6 +77,9 @@ public sealed class Couple
     // an atomic UPDATE in the same transaction as the photo row, never recounted from storage.
     public int PhotoCount { get; set; }
     public long StorageBytes { get; set; }
+
+    // The ready-made couple store reviewers sign in to (Auth:ReviewPhone). Its partner plays along.
+    public bool IsDemo { get; set; }
 
     public List<CoupleMember> Members { get; set; } = [];
 }
