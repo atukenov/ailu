@@ -632,6 +632,77 @@ namespace Ailu.Api.Data.Migrations
                     b.ToTable("MemoryReactions");
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.MoodEntry", b =>
+                {
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Mood")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(280)
+                        .HasColumnType("character varying(280)");
+
+                    b.Property<DateTimeOffset?>("NoteSharedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CoupleId", "Date", "UserId");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Moods");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.MoodMonth", b =>
+                {
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Month")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Even")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Good")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Great")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Hard")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Tired")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CoupleId", "UserId", "Month");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MoodMonths");
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.NurLedgerEntry", b =>
                 {
                     b.Property<long>("Id")
@@ -870,6 +941,9 @@ namespace Ailu.Api.Data.Migrations
                         .HasMaxLength(5)
                         .HasColumnType("character varying(5)");
 
+                    b.Property<DateTimeOffset?>("MoodConsentAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Name")
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
@@ -1034,6 +1108,36 @@ namespace Ailu.Api.Data.Migrations
                     b.HasOne("Ailu.Api.Data.Memory", null)
                         .WithMany("Reactions")
                         .HasForeignKey("MemoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.MoodEntry", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.MoodMonth", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

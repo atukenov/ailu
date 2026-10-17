@@ -21,6 +21,8 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<Memory> Memories => Set<Memory>();
     public DbSet<MemoryPhoto> MemoryPhotos => Set<MemoryPhoto>();
     public DbSet<MemoryReaction> MemoryReactions => Set<MemoryReaction>();
+    public DbSet<MoodEntry> Moods => Set<MoodEntry>();
+    public DbSet<MoodMonth> MoodMonths => Set<MoodMonth>();
     public DbSet<Goal> Goals => Set<Goal>();
     public DbSet<GoalStep> GoalSteps => Set<GoalStep>();
 
@@ -149,6 +151,23 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         b.Entity<MemoryReaction>(e =>
         {
             e.HasKey(x => new { x.MemoryId, x.UserId });
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
+        });
+
+        b.Entity<MoodEntry>(e =>
+        {
+            e.HasKey(x => new { x.CoupleId, x.Date, x.UserId });
+            e.HasIndex(x => x.Date);
+            e.Property(x => x.Mood).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Note).HasMaxLength(280);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
+        });
+
+        b.Entity<MoodMonth>(e =>
+        {
+            e.HasKey(x => new { x.CoupleId, x.UserId, x.Month });
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
         });
 

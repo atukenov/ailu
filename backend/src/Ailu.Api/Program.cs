@@ -3,6 +3,7 @@ using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Daily;
 using Ailu.Api.Features.Goals;
 using Ailu.Api.Features.Memories;
+using Ailu.Api.Features.Mood;
 using Ailu.Api.Features.Pairing;
 using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
@@ -38,6 +39,8 @@ builder.Services.AddSingleton<PhotoProcessor>();
 builder.Services.AddSingleton<PhotoUrls>();
 builder.Services.AddScoped<MemoryPurgeJob>();
 if (builder.Configuration.GetValue("Photos:PurgeEnabled", true)) builder.Services.AddHostedService<MemoryPurgeScheduler>();
+builder.Services.AddScoped<MoodRetentionJob>();
+if (builder.Configuration.GetValue("Mood:RetentionEnabled", true)) builder.Services.AddHostedService<MoodRetentionScheduler>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {
@@ -87,6 +90,7 @@ DeviceEndpoints.Map(app);
 PairingEndpoints.Map(app);
 DailyEndpoints.Map(app);
 MemoryEndpoints.Map(app);
+MoodEndpoints.Map(app);
 GoalEndpoints.Map(app);
 
 app.Run();

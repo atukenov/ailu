@@ -10,6 +10,8 @@ import type {
   Memory,
   MemoryInput,
   MemoryPage,
+  Mood,
+  MoodLevel,
   Phase,
   Problem,
   Storage,
@@ -129,6 +131,13 @@ export const api = {
   react: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/reaction`),
   favorite: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/favorite`),
   storage: () => request<Storage>('GET', '/v1/couple/storage'),
+
+  mood: () => request<Mood>('GET', '/v1/couple/mood'),
+  // A note left out keeps the one already there; an empty string removes it.
+  setMood: (mood: MoodLevel, note?: string) => request<Mood>('PUT', '/v1/couple/mood', { mood, note }),
+  shareMoodNote: (on: boolean) => request<Mood>(on ? 'PUT' : 'DELETE', '/v1/couple/mood/note-shared'),
+  giveMoodConsent: () => request<void>('PUT', '/v1/me/mood-consent'),
+  withdrawMoodConsent: () => request<void>('DELETE', '/v1/me/mood-consent'),
 
   goals: () => request<GoalList>('GET', '/v1/couple/goals'),
   goal: (id: string) => request<Goal>('GET', `/v1/couple/goals/${id}`),

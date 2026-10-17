@@ -26,9 +26,26 @@ export default function Profile() {
     mutationFn: api.endCouple,
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: ['today'] });
+      queryClient.removeQueries({ queryKey: ['mood'] });
       queryClient.setQueryData(['couple'], null);
     },
   });
+
+  const mood = useQuery({ queryKey: ['mood'], queryFn: api.mood });
+  const withdraw = useMutation({
+    mutationFn: api.withdrawMoodConsent,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mood'] }),
+  });
+  const confirmWithdraw = () => {
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm?.(s.moodWithdrawConfirm)) withdraw.mutate();
+      return;
+    }
+    Alert.alert(s.moodWithdraw, s.moodWithdrawConfirm, [
+      { text: s.cancel, style: 'cancel' },
+      { text: s.delete, style: 'destructive', onPress: () => withdraw.mutate() },
+    ]);
+  };
 
   const confirmEnd = () => {
     if (Platform.OS === 'web') {
@@ -67,6 +84,12 @@ export default function Profile() {
         <ErrorText error={language.error} />
       </Card>
 
+      {mood.data?.consented && (
+        <>
+          <ErrorText error={withdraw.error} />
+          <Button title={s.moodWithdraw} variant="ghost" onPress={confirmWithdraw} loading={withdraw.isPending} />
+        </>
+      )}
       <ErrorText error={end.error} />
       <Button title={s.endCouple} variant="ghost" onPress={confirmEnd} loading={end.isPending} />
       <Button
