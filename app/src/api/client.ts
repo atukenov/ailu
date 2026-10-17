@@ -8,6 +8,8 @@ import type {
   GoalInput,
   GoalList,
   Invitation,
+  LoveLanguage,
+  LoveQuiz,
   Memory,
   MemoryInput,
   MemoryPage,
@@ -154,6 +156,10 @@ export const api = {
   deleteStep: (id: string, stepId: string) => request<Goal>('DELETE', `/v1/couple/goals/${id}/steps/${stepId}`),
   markStep: (id: string, stepId: string, on: boolean) =>
     request<Goal>(on ? 'POST' : 'DELETE', `/v1/couple/goals/${id}/steps/${stepId}/done`),
+
+  loveQuiz: () => request<LoveQuiz>('GET', '/v1/couple/love-quiz'),
+  // One language per question, in question order.
+  answerLoveQuiz: (answers: LoveLanguage[]) => request<LoveQuiz>('POST', '/v1/couple/love-quiz/answers', { answers }),
 
   billing: () => request<Billing>('GET', '/v1/billing'),
   claimApple: (transactionId: string) => request<Billing>('POST', '/v1/billing/apple', { transactionId }),

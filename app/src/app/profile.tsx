@@ -101,6 +101,12 @@ export default function Profile() {
         <ErrorText error={language.error} />
       </Card>
 
+      <Card>
+        <T variant="label">{s.loveQuiz}</T>
+        <T variant="secondary">{s.loveQuizNotLabel}</T>
+        <Button title={s.loveQuiz} variant="ghost" onPress={() => router.push('/love-quiz')} />
+      </Card>
+
       {billing.data && (
         <Card>
           <T variant="label">{s.planTitle}</T>

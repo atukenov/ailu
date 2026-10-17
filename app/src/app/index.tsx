@@ -73,6 +73,7 @@ export default function TodayScreen() {
       ))}
       <QuestionCard question={today.data.question} partnerName={partnerName} />
       <MoodCard partnerName={partnerName} pollMs={POLL_MS} />
+      <LoveQuizNudge partnerName={partnerName} />
     </Screen>
   );
 }
@@ -187,6 +188,22 @@ function StreakUpsell({ coupleId, days }: { coupleId: string; days: number }) {
         }}
       />
       <Button title={s.notNow} variant="ghost" onPress={close} />
+    </Card>
+  );
+}
+
+// Once a partner has taken the love-languages quiz, the other is invited from the Today screen, since the
+// result opens only when both have answered.
+function LoveQuizNudge({ partnerName }: { partnerName: string }) {
+  const s = useStrings();
+  const quiz = useQuery({ queryKey: ['love-quiz'], queryFn: api.loveQuiz, refetchInterval: POLL_MS });
+  const round = quiz.data?.round;
+  if (!round?.partnerAnswered || round.myAnswered) return null;
+  return (
+    <Card>
+      <T variant="label">{s.loveQuiz}</T>
+      <T variant="secondary">{s.loveQuizPartnerDone(partnerName)}</T>
+      <Button title={s.loveQuizStart} onPress={() => router.push('/love-quiz')} />
     </Card>
   );
 }
