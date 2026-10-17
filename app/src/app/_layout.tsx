@@ -59,6 +59,7 @@ function Routes() {
           <Stack.Screen name="goals/index" />
           <Stack.Screen name="goals/new" />
           <Stack.Screen name="goals/[id]" />
+          <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
         </Stack.Protected>
       </Stack>
       {signedIn && named && paired && <PurchaseSync />}

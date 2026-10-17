@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { api } from '@/api/client';
+import { LegalLinks } from '@/components/legal-links';
 import { Button, Card, ErrorText, Field, Screen, T } from '@/components/ui';
 import { useStrings } from '@/i18n';
 import { useSession } from '@/session';
@@ -66,6 +67,7 @@ export default function SignIn() {
           />
         </Card>
       )}
+      <LegalLinks notice />
     </Screen>
   );
 }

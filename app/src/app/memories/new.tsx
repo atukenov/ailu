@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import { Button, ErrorText, Field, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { MAX_PHOTOS, pickPhotos, toUpload, type Picked } from '@/photos';
+import { isFreePhotoLimit, openPaywall, photoLimitReached } from '@/upsells';
 
 // Dates are typed as ДД.ММ.ГГГГ: a picker needs another native module, and most memories are "today".
 function toIso(text: string): string | null {
@@ -36,6 +37,7 @@ export default function NewMemory() {
   const [text, setText] = useState('');
   const [photos, setPhotos] = useState<Picked[]>([]);
   const [progress, setProgress] = useState<string | null>(null);
+  const storage = useQuery({ queryKey: ['storage'], queryFn: api.storage });
 
   const pick = useMutation({
     mutationFn: () => pickPhotos(MAX_PHOTOS - photos.length),
@@ -55,23 +57,30 @@ export default function NewMemory() {
       });
       // The memory exists from here on; a photo that fails can be added again from its page.
       let failed = 0;
+      let full = false;
       for (const [i, photo] of photos.entries()) {
         setProgress(s.uploading(i + 1, photos.length));
         try {
           await api.addPhoto(memory.id, await toUpload(photo));
-        } catch {
+        } catch (e) {
+          // At the free limit the rest would fail too; the limit screen explains instead.
+          if (isFreePhotoLimit(e, storage.data)) {
+            full = true;
+            break;
+          }
           failed++;
         }
       }
-      return { id: memory.id, failed };
+      return { id: memory.id, failed, full };
     },
     onSettled: () => setProgress(null),
-    onSuccess: ({ id, failed }) => {
+    onSuccess: ({ id, failed, full }) => {
       void queryClient.invalidateQueries({ queryKey: ['memories'] });
       void queryClient.invalidateQueries({ queryKey: ['storage'] });
       void queryClient.invalidateQueries({ queryKey: ['today'] });
       if (failed > 0) globalThis.alert?.(s.uploadFailed(failed));
       router.replace(`/memories/${id}`);
+      if (full) openPaywall('photos');
     },
   });
 
@@ -125,7 +134,7 @@ export default function NewMemory() {
         <Button
           title={photos.length ? `${s.addPhotos} · ${s.photosCount(photos.length, MAX_PHOTOS)}` : s.addPhotos}
           variant="ghost"
-          onPress={() => pick.mutate()}
+          onPress={() => (photoLimitReached(storage.data) ? openPaywall('photos') : pick.mutate())}
           disabled={save.isPending}
         />
       )}

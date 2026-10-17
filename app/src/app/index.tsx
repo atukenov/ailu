@@ -12,6 +12,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { registerForPush } from '@/notifications';
 import { useSession } from '@/session';
+import { openPaywall, upsells } from '@/upsells';
 
 // Until the realtime hub exists, poll so a partner's accept or answer shows up without a manual refresh.
 const POLL_MS = 30_000;
@@ -22,6 +23,7 @@ export default function TodayScreen() {
   const queryClient = useQueryClient();
   const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
   const today = useQuery({ queryKey: ['today'], queryFn: api.today, refetchInterval: POLL_MS });
+  const storage = useQuery({ queryKey: ['storage'], queryFn: api.storage });
 
   // Only reachable in a couple, which is when there is something to notify about.
   useEffect(() => {
@@ -39,6 +41,8 @@ export default function TodayScreen() {
     );
 
   const partnerName = couple.data?.partner?.name ?? s.partnerFallback;
+  // Soft upsells only reach free couples; until the plan is known, show none.
+  const free = storage.data?.plan === 'free';
   return (
     <Screen
       refreshControl={
@@ -53,8 +57,11 @@ export default function TodayScreen() {
       }>
       <Header me={user?.name ?? s.someone} partner={partnerName} couple={couple.data ?? null} />
       <PhaseCard phase={today.data.phase} streak={today.data.streak.days} />
+      {free && couple.data && today.data.streak.days >= 7 && (
+        <StreakUpsell coupleId={couple.data.id} days={today.data.streak.days} />
+      )}
       {today.data.streak.restore && <RestoreCard restore={today.data.streak.restore} streak={today.data.streak.days} />}
-      <TaskCard task={today.data.task} />
+      <TaskCard task={today.data.task} free={free} />
       <QuestionCard question={today.data.question} partnerName={partnerName} />
       <MoodCard partnerName={partnerName} pollMs={POLL_MS} />
     </Screen>
@@ -141,6 +148,40 @@ function RestoreCard({ restore, streak }: { restore: StreakRestore; streak: numb
   );
 }
 
+// Day 7 of the streak is a moment of pride, not need: the one place Premium is offered right away,
+// once per couple (monetization doc).
+function StreakUpsell({ coupleId, days }: { coupleId: string; days: number }) {
+  const s = useStrings();
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void upsells.streakShown(coupleId).then((seen) => live && setShow(!seen));
+    return () => {
+      live = false;
+    };
+  }, [coupleId]);
+  if (!show) return null;
+
+  const close = () => {
+    setShow(false);
+    void upsells.markStreakShown(coupleId);
+  };
+  return (
+    <Card>
+      <T variant="heading">{s.streak(days)}</T>
+      <T variant="secondary">{s.streakUpsellBody}</T>
+      <Button
+        title={s.streakUpsellCta}
+        onPress={() => {
+          close();
+          openPaywall('streak');
+        }}
+      />
+      <Button title={s.notNow} variant="ghost" onPress={close} />
+    </Card>
+  );
+}
+
 function useTodayUpdate<T>(fn: () => Promise<T>, apply: (today: Today, result: T) => Today) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -153,8 +194,19 @@ function useTodayUpdate<T>(fn: () => Promise<T>, apply: (today: Today, result: T
   });
 }
 
-function TaskCard({ task }: { task: DailyTask }) {
+function TaskCard({ task, free }: { task: DailyTask; free: boolean }) {
   const s = useStrings();
+  const [tomorrow, setTomorrow] = useState(false);
+  // A free couple asking for another task today is the warmest moment for Plus, but the paywall
+  // opens at most once a day; after that the button only says when the next task comes.
+  const moreTask = async () => {
+    if ((await upsells.taskShownOn()) === task.date) {
+      setTomorrow(true);
+      return;
+    }
+    await upsells.markTaskShown(task.date);
+    openPaywall('task');
+  };
   const accept = useTodayUpdate(() => api.acceptTask(task.id), (t, task) => ({ ...t, task }));
   const complete = useTodayUpdate(() => api.completeTask(task.id), (t, task) => ({ ...t, task }));
 
@@ -187,6 +239,8 @@ function TaskCard({ task }: { task: DailyTask }) {
             variant="ghost"
             onPress={() => router.push({ pathname: '/memories/new', params: { taskId: task.id, title: task.title } })}
           />
+          {free && <Button title={s.moreTask} variant="ghost" onPress={() => void moreTask()} />}
+          {tomorrow && <T variant="small">{s.moreTaskTomorrow}</T>}
         </>
       )}
     </Card>

@@ -1,17 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router, type Href } from 'expo-router';
+import { router } from 'expo-router';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { User } from '@/api/types';
+import { LegalLinks } from '@/components/legal-links';
 import { Button, Card, ErrorText, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { manageSubscription, restorePurchases, startTrial, useBilling } from '@/purchases';
 import { useSession } from '@/session';
-
-// The paywall screen comes from the limit and upsell work; typed as a plain Href until both have landed.
-const PAYWALL = '/paywall' as Href;
 
 // English is left out until it is translated (see i18n/index.ts).
 const LANGUAGES: { value: User['locale']; native: string }[] = [
@@ -112,7 +110,7 @@ export default function Profile() {
               {sub.paidByMe ? s.planPaidByMe : s.planPaidByPartner(couple.data?.partner?.name ?? s.someone)}
             </T>
           )}
-          {billing.data.plan !== 'premium' && <Button title={s.planChoose} onPress={() => router.push(PAYWALL)} />}
+          {billing.data.plan !== 'premium' && <Button title={s.planChoose} onPress={() => router.push('/paywall')} />}
           {billing.data.plan === 'free' && billing.data.trialAvailable && (
             <Button
               title={s.planTrial(billing.data.trialDays)}
@@ -156,6 +154,7 @@ export default function Profile() {
           await signOut();
         }}
       />
+      <LegalLinks />
     </Screen>
   );
 }
