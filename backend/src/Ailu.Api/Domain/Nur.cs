@@ -13,4 +13,7 @@ public static class Nur
     public const int AchievementEarned = 80;
     public const int MoodByBoth = 10;
     public const int LoveQuizByBoth = 120;
+
+    // The design says a restore costs нұр but not how much. Two days of the daily task, until it does.
+    public const int StreakRestoreCost = 100;
 }

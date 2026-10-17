@@ -22,9 +22,6 @@ public sealed class ActivityService(AiluDb db, TimeProvider clock)
         var partnerActive = await db.CoupleActivities.AnyAsync(a => a.CoupleId == couple.Id && a.Date == day && a.UserId != userId, ct);
         if (!partnerActive) return;
 
-        var next = Streak.CountDay(new StreakState(couple.StreakDays, couple.StreakLastDay, couple.StreakForgivenOn), day);
-        couple.StreakDays = next.Days;
-        couple.StreakLastDay = next.LastDay;
-        couple.StreakForgivenOn = next.ForgivenOn;
+        StreakService.Apply(couple, Streak.CountDay(StreakService.StateOf(couple), day));
     }
 }

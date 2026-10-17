@@ -56,6 +56,11 @@ public sealed class Couple
     public DateOnly? StreakLastDay { get; set; }
     public DateOnly? StreakForgivenOn { get; set; }
 
+    // The streak that broke most recently, kept so it can still be restored after starting over.
+    public int StreakLostDays { get; set; }
+    public DateOnly? StreakLostLastDay { get; set; }
+    public DateOnly? StreakRestartedOn { get; set; }
+
     // One subscription covers both partners. There is no payment yet, so every couple is on Free.
     public CouplePlan Plan { get; set; }
 
@@ -154,6 +159,7 @@ public sealed class CoupleActivity
 public enum NurSource { Task, Question, Memory, Date, GoalStep, Achievement, Mood, LoveQuiz, StreakRestore }
 
 // Append-only. The source of truth for every нұр the couple has; nothing updates or deletes rows.
+// Awards are positive; spending (a streak restore) is a negative row that lowers the balance only.
 public sealed class NurLedgerEntry
 {
     public long Id { get; set; }

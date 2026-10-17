@@ -41,6 +41,10 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
 - **Phases never drop.** They follow earned нұр, which only grows.
 - **The partner's answer does not reach the device before the reveal.** Hiding it in the UI is not enough.
 - **A streak day needs both partners.** One missed night per 7 days is forgiven.
+- **A broken streak can be restored with нұр.** Each missed day the free night doesn't cover costs one restore
+  (Free 1, Plus 3, Premium 5 a calendar month) and 100 нұр, written as a negative `NurLedger` row that lowers the
+  balance, never earned нұр. The offer stands while nobody has started over, or for a week after they did,
+  and then adds the new days on top.
 - **At most two pushes a day per person**, in the couple's time zone: the task at 09:00 (window until 12:00)
   to both, and at 20:00 (until 23:00) a nudge only to someone whose partner already answered the question.
   `PushLog` has one row per sent push, which keeps it to once even across restarts or several instances.
@@ -83,6 +87,7 @@ Kazakhstan, so an S3-compatible store replaces the folder once hosting is chosen
 | POST | `/v1/couple/tasks/{id}/accept` | both must accept |
 | POST | `/v1/couple/tasks/{id}/complete` | one marks it done, the other confirms: +50 нұр |
 | POST | `/v1/couple/questions/{id}/answer` | blind answer; both answered → revealed, locked, +30 нұр |
+| POST | `/v1/couple/streak/restore` | spend нұр to bring back a broken streak (offer is in `today.streak.restore`) |
 | GET | `/v1/couple/phase` | phase, earned and balance, progress to the next phase |
 | PUT | `/v1/me/devices` | register this device's Expo push token (moves it to the caller if someone else had it) |
 | POST | `/v1/me/devices/unregister` | stop pushes to this device, on sign-out |
