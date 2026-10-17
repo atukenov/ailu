@@ -52,7 +52,7 @@ for them. Store texts, rating answers, screenshots and the publishing checklist 
 | `src/photos.ts` | Picking photos and shrinking them before upload. |
 | `src/legal.ts` | Links to the privacy policy and terms (`docs/legal`, on GitHub Pages), in the user's language. |
 | `src/notifications.ts` | Permission, push token registration and sign-out unregistration. |
-| `src/i18n/` | Strings. Russian is complete; Kazakh and English fall back to Russian per string. |
+| `src/i18n/` | Strings. Russian and Kazakh are complete; English falls back to Russian per string. Tasks, questions and pushes come from the server in the user's language. |
 | `src/components/` | `ui.tsx` (screen, card, button, field, chip, progress bar), the goal month picker and the phase moon. |
 | `src/constants/theme.ts` | Colors and spacing, taken from the mockups. |
 

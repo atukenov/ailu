@@ -24,7 +24,14 @@ export default function Profile() {
   const { user, setUser, signOut } = useSession();
   const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
 
-  const language = useMutation({ mutationFn: (locale: User['locale']) => api.updateMe({ locale }), onSuccess: setUser });
+  // Tasks and questions come from the server in the reader's language, so they reload with it.
+  const language = useMutation({
+    mutationFn: (locale: User['locale']) => api.updateMe({ locale }),
+    onSuccess: (user) => {
+      setUser(user);
+      void queryClient.invalidateQueries({ queryKey: ['today'] });
+    },
+  });
   const end = useMutation({
     mutationFn: api.endCouple,
     onSuccess: () => {
