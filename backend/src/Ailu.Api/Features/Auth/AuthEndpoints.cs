@@ -63,13 +63,13 @@ public static class AuthEndpoints
             .OrderByDescending(c => c.CreatedAt)
             .FirstOrDefaultAsync(ct);
         if (pending is null || pending.Attempts >= opt.PhoneCodeMaxAttempts)
-            return Errors.Unauthorized("Код истёк. Запросите новый.");
+            return Errors.Unauthorized("code_expired", "Код истёк. Запросите новый.");
 
         if (pending.CodeHash != Codes.Hash(phone, body.Code.Trim()))
         {
             pending.Attempts++;
             await db.SaveChangesAsync(ct);
-            return Errors.Unauthorized("Неверный код.");
+            return Errors.Unauthorized("wrong_code", "Неверный код.");
         }
 
         pending.ConsumedAt = now;
@@ -92,7 +92,7 @@ public static class AuthEndpoints
         var hash = Codes.Hash("refresh", body.RefreshToken ?? "");
         var existing = await db.RefreshTokens.SingleOrDefaultAsync(t => t.TokenHash == hash, ct);
         if (existing is null || existing.RevokedAt is not null || existing.ExpiresAt <= now)
-            return Errors.Unauthorized("Сессия истекла. Войдите снова.");
+            return Errors.Unauthorized("session_expired", "Сессия истекла. Войдите снова.");
 
         // Rotation: every refresh token works once.
         existing.RevokedAt = now;

@@ -97,7 +97,7 @@ function MemoryCard({ memory }: { memory: Memory }) {
               </T>
               <T variant="small" style={styles.captionMeta}>
                 {[s.date(memory.happenedOn), memory.place].filter(Boolean).join(' • ')}
-                {memory.photos.length > 1 ? ` · ${memory.photos.length} фото` : ''}
+                {memory.photos.length > 1 ? ` · ${s.photosStored(memory.photos.length)}` : ''}
               </T>
             </View>
           </View>

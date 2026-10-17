@@ -1,8 +1,149 @@
-import type { Strings } from './ru';
+import { toRoman, type Strings } from './ru';
 
-// Kazakh strings are added as they are translated; anything missing falls back to Russian.
-export const kk: Partial<Strings> = {
-  questionOfDay: 'Күн сұрағы',
+// Machine-drafted from the Russian; a native speaker should read it before the public launch.
+// Kazakh keeps the noun singular after a number ("5 күн"), so there is no plural helper.
+export const kk: Strings = {
+  welcomeTitle: 'Махаббат кеңістігіңізге қош келдіңіз',
+  welcomeSubtitle: 'Сіздің тарихыңыз енді басталады',
+
+  phoneTitle: 'Кіру',
+  phoneHint: 'Телефон нөміріңізді енгізіңіз, біз код жібереміз',
+  phoneLabel: 'Телефон нөмірі',
+  sendCode: 'Код алу',
+
+  codeTitle: 'SMS-тегі код',
+  codeHint: (phone: string) => `${phone} нөміріне жібердік`,
+  codeLabel: 'Алты сан',
+  signIn: 'Кіру',
+  changeNumber: 'Басқа нөмір',
+  resendCode: 'Қайта жіберу',
+
+  nameTitle: 'Атыңыз кім?',
+  nameHint: 'Серіктесіңіз осы атты көреді',
+  nameLabel: 'Аты',
+  save: 'Сақтау',
+
+  pairTitle: 'Сіздің адамыңыз кім?',
+  pairHint: 'Серіктесіңіздің телефон нөмірін енгізіңіз',
+  invite: 'Шақыру',
+  inviteSent: (phone: string) => `Шақыру ${phone} нөміріне жіберілді. Серіктесіңіз кодты енгізгенде, жұп екеуіңізде де пайда болады.`,
+  partnerGetsCode: 'Серіктесіңіз растау үшін код алады',
+  haveCode: 'Мені шақырды',
+  haveCodeHint: 'Серіктесіңізден келген SMS-тегі кодты енгізіңіз',
+  joinCouple: 'Жұп құру',
+  checkAgain: 'Серіктесім қабылдады ма, тексеру',
+
+  // "және" rather than мен/пен/бен, which would depend on how the first name ends.
+  greeting: (a: string, b: string) => `Сәлем,\n${a} және ${b}`,
+  coupleNames: (a: string, b: string) => `${a} және ${b}`,
+  daysTogether: (n: number) => `Бірге ${n} күн`,
+  someone: 'сіз',
+  partnerFallback: 'серіктес',
+
   taskOfDay: 'Бүгінгі тапсырма',
+  taskMeta: (min: number, kzt: number) => `${min} мин · ${kzt === 0 ? 'тегін' : `${kzt.toLocaleString('ru-RU')} ₸ дейін`}`,
+  acceptTask: 'Тапсырманы қабылдау',
+  waitingPartnerAccept: 'Сіз қабылдадыңыз. Серіктесіңізді күтеміз',
+  partnerAccepted: 'Серіктесіңіз қабылдап қойды',
+  markDone: 'Біз мұны орындадық',
+  waitingConfirm: 'Серіктесіңіздің растауын күтеміз',
+  confirmDone: 'Орындалғанын растау',
+  taskDone: 'Дайын. +50 нұр',
+
+  questionOfDay: 'Күн сұрағы',
+  answerPlaceholder: 'Сіздің жауабыңыз',
+  sendAnswer: 'Жауап беру',
+  answerHidden: 'Серіктесіңіздің жауабы сіз жауап бергеннен кейін ашылады',
+  waitingAnswer: (name: string) => `Жауап жіберілді. ${name} жауап бергенде, екеуі де ашылады.`,
+  partnerAnsweredFirst: 'Серіктесіңіз жауап берді. Енді сіздің кезегіңіз',
+  yourAnswer: 'Сіз',
+  partnerAnswerLabel: (name: string) => name,
+
+  streak: (n: number) => `Қатарынан ${n} күн`,
+  streakZero: 'Бүгін екеуіңіз де бір нәрсе жасағанда, серия басталады',
   nur: 'нұр',
+  toNextPhase: (n: number, name: string) => `«${name}» фазасына дейін ${n} нұр`,
+  cycle: (n: number) => `${toRoman(n)} цикл`,
+  phases: [
+    { name: 'Танысу', moon: 'Жаңа ай' },
+    { name: 'Алғашқы ұшқындар', moon: 'Жас ай' },
+    { name: 'Өз ырғағымыз', moon: 'Бірінші ширек' },
+    { name: 'Біз екеуміз', moon: 'Толысып келе жатқан ай' },
+    { name: 'Туыс жандар', moon: 'Толық ай' },
+    { name: 'Ажырамас', moon: 'Супер ай' },
+  ],
+  number: (n: number) => n.toLocaleString('ru-RU'),
+
+  memories: 'Естеліктер',
+  memoriesEmpty: 'Әзірге бірде-бір естелік жоқ',
+  memoriesEmptyHint: 'Әр орындалған тапсырманы осында суретімен бірге сақтауға болады.',
+  addMemory: 'Естелік қосу',
+  saveToMemories: 'Естеліктерге сақтау',
+  showMore: 'Тағы көрсету',
+  newMemory: 'Жаңа естелік',
+  memoryTitle: 'Атауы',
+  memoryTitlePlaceholder: 'Рим, алғашқы кеш',
+  memoryDate: 'Қашан',
+  memoryDatePlaceholder: 'КК.АА.ЖЖЖЖ',
+  memoryDateInvalid: 'Күні КК.АА.ЖЖЖЖ пішімінде, бүгіннен кеш емес',
+  memoryPlace: 'Қайда',
+  memoryText: 'Не есте қалды',
+  addPhotos: 'Фото қосу',
+  photosCount: (n: number, max: number) => `${n} / ${max} фото`,
+  uploading: (done: number, total: number) => `Фото жүктелуде: ${done} / ${total}…`,
+  uploadFailed: (n: number) => `${n} фото жүктелмеді. Оларды естеліктен қайта қосыңыз.`,
+  removePhoto: 'Алып тастау',
+  by: (name: string) => `${name} қосты`,
+  heart: 'Ұнайды',
+  partnerHearted: (name: string) => `${name} осы естелікті белгіледі`,
+  favorite: 'Таңдаулыларға',
+  deleteMemory: 'Естелікті жою',
+  deleteMemoryConfirm: 'Естелік екеуіңізде де жойылады. Жоясыз ба?',
+  delete: 'Жою',
+  photosOfLimit: (n: number, limit: number) => `${n} / ${limit} фото`,
+  photosStored: (n: number) => `${n} фото`,
+  storageFull: (limit: number) => `Барлық ${limit} фото орны толды. Жаңасын қосу үшін ескілерін жойыңыз.`,
+  date: (iso: string) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return `${y} жылғы ${d} ${MONTHS[m - 1]}`;
+  },
+  back: 'Артқа',
+
+  profile: 'Профиль',
+  signOut: 'Аккаунттан шығу',
+  language: 'Тіл',
+  endCouple: 'Жұпты аяқтау',
+  endCoupleConfirm: 'Жұп екеуіңіз үшін де жабылады. Тарих сақталады. Жалғастырасыз ба?',
+  cancel: 'Бас тарту',
+
+  retry: 'Қайталап көру',
+  somethingWrong: 'Бір нәрсе дұрыс болмады',
+
+  errors: {
+    offline: 'Байланыс жоқ. Интернетті тексеріп, қайталап көріңіз.',
+    invalid_phone: 'Қазақстандық нөмір қажет: +7 7XX XXX XX XX.',
+    invalid_code: 'Код қате.',
+    wrong_code: 'Код қате.',
+    code_expired: 'Кодтың мерзімі өтті. Жаңасын сұраңыз.',
+    session_expired: 'Сессия мерзімі өтті. Қайта кіріңіз.',
+    too_many_requests: 'Код жіберілді. Бір минуттан кейін қайталауға болады.',
+    invalid_name: 'Аты 1-ден 60 таңбаға дейін.',
+    no_couple: 'Алдымен жұп құрыңыз.',
+    already_in_couple: 'Біреуіңіз әлдеқашан жұпта тұрсыз.',
+    inviter_in_couple: 'Шақырған адам әлдеқашан жұпта.',
+    invitation_not_found: 'Код сәйкес келмейді немесе мерзімі өтті. Серіктесіңізден жаңасын жіберуін сұраңыз.',
+    retry: 'Болмады. Қайталап көріңіз.',
+    not_accepted: 'Орындалды деп белгілеуден бұрын тапсырманы екеуіңіз де қабылдауыңыз керек.',
+    invalid_text: 'Мәтін тым ұзын.',
+    invalid_title: 'Атауы 1-ден 120 таңбаға дейін.',
+    invalid_place: 'Орны 120 таңбаға дейін.',
+    invalid_happenedOn: 'Күні болашақта болмауы керек.',
+    invalid_file: 'Бұл фото жарамайды. JPEG, PNG және WebP қолдануға болады.',
+    too_many_photos: 'Бір естелікке 10 фотоға дейін.',
+    storage_full: 'Фотоларға орын таусылды. Жаңасын қосу үшін ескілерін жойыңыз.',
+    memory_not_found: 'Бұл естелік енді жоқ.',
+    not_author: 'Естелікті тек оны қосқан адам ғана өзгерте немесе жоя алады.',
+  },
 };
+
+const MONTHS = ['қаңтар', 'ақпан', 'наурыз', 'сәуір', 'мамыр', 'маусым', 'шілде', 'тамыз', 'қыркүйек', 'қазан', 'қараша', 'желтоқсан'];
