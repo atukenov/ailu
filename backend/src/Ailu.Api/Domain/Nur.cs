@@ -7,6 +7,7 @@ public static class Nur
     public const int TaskCompleted = 50;
     public const int QuestionAnsweredByBoth = 30;
     public const int MemoryAdded = 20;
+    public const int MemoryAwardsPerDay = 3;
     public const int DateHappened = 150;
     public const int GoalStepClosed = 100;
     public const int AchievementEarned = 80;

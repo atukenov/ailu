@@ -44,12 +44,28 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
 - **At most two pushes a day per person**, in the couple's time zone: the task at 09:00 (window until 12:00)
   to both, and at 20:00 (until 23:00) a nudge only to someone whose partner already answered the question.
   `PushLog` has one row per sent push, which keeps it to once even across restarts or several instances.
+- **Photo bytes are counted when they are stored, never recounted.** `Couple.StorageBytes` changes in the same
+  transaction as the photo row, through one conditional `UPDATE`, so two uploads at once can't pass the quota.
+  Quotas from the roadmap: Free 1 GB, Plus 10 GB, Premium 30 GB (about 800 photos per GB).
+- **Only the author changes or deletes a memory**; both partners see it. Deleting frees the quota at once and the
+  files go 30 days later.
 
 ### Push notifications
 
 `DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Expo's push service
 when `Push:UseExpo` is `true`; otherwise (the default, and in Development) they are written to the log.
 Set `Push:SchedulerEnabled` to `false` to turn the job off.
+
+### Photos
+
+The app shrinks photos to 2 560 px, JPEG 82, before upload. The server decodes every upload again
+(SkiaSharp), turns it upright, drops EXIF (and with it the location) and re-encodes it, so a client that skipped
+the first step can't eat the quota. The 320 px and 1 080 px sizes are made on first request and kept.
+Photo URLs are signed and stay valid one to two hours, so image views can load them without the token.
+
+Files go to a folder on disk (`Photos:Root`, default `App_Data/photos`). The privacy doc requires storage inside
+Kazakhstan, so an S3-compatible store replaces the folder once hosting is chosen; `IPhotoStore` is the seam.
+`MemoryPurgeScheduler` removes deleted memories' files after 30 days; `Photos:PurgeEnabled` turns it off.
 
 ### API (Stage 1)
 
@@ -69,5 +85,12 @@ Set `Push:SchedulerEnabled` to `false` to turn the job off.
 | GET | `/v1/couple/phase` | phase, earned and balance, progress to the next phase |
 | PUT | `/v1/me/devices` | register this device's Expo push token (moves it to the caller if someone else had it) |
 | POST | `/v1/me/devices/unregister` | stop pushes to this device, on sign-out |
+| GET/POST | `/v1/couple/memories` | memories, newest by the day they happened, 20 per page with `?cursor=` / add one |
+| GET/PATCH/DELETE | `/v1/couple/memories/{id}` | one memory / edit or delete it (author only) |
+| POST | `/v1/couple/memories/{id}/photos` | add a photo (multipart `file`, author only, up to 10 per memory) |
+| PUT/DELETE | `/v1/couple/memories/{id}/reaction` | heart; the partner's first one earns +20 нұр (3 a day) |
+| PUT/DELETE | `/v1/couple/memories/{id}/favorite` | shared star |
+| GET | `/v1/couple/storage` | plan, bytes used, quota, photos left |
+| GET | `/v1/photos/{id}/{320\|1080\|2560}` | the photo, by the signed URL the API hands out |
 
 The product and design documents (in Russian) live in the project's shared files, not in this repo.

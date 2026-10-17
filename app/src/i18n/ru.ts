@@ -60,6 +60,41 @@ export const ru = {
   toNextPhase: (n: number, name: string) => `${n} нұр до фазы «${name}»`,
   cycle: (n: number) => `Цикл ${toRoman(n)}`,
 
+  memories: 'Воспоминания',
+  memoriesEmpty: 'Пока ни одного воспоминания',
+  memoriesEmptyHint: 'Каждое выполненное задание можно сохранить сюда вместе с фотографией.',
+  addMemory: 'Добавить воспоминание',
+  saveToMemories: 'Сохранить в воспоминания',
+  showMore: 'Показать ещё',
+  newMemory: 'Новое воспоминание',
+  memoryTitle: 'Название',
+  memoryTitlePlaceholder: 'Рим, первый вечер',
+  memoryDate: 'Когда',
+  memoryDatePlaceholder: 'ДД.ММ.ГГГГ',
+  memoryDateInvalid: 'Дата в формате ДД.ММ.ГГГГ, не позже сегодняшней',
+  memoryPlace: 'Где',
+  memoryText: 'Что запомнилось',
+  addPhotos: 'Добавить фото',
+  photosCount: (n: number, max: number) => `${n} из ${max} фото`,
+  uploading: (done: number, total: number) => `Загружаем фото ${done} из ${total}…`,
+  uploadFailed: (n: number) => `${n} ${plural(n, 'фото не загрузилось', 'фото не загрузились', 'фото не загрузились')}. Добавьте их ещё раз из воспоминания.`,
+  removePhoto: 'Убрать',
+  by: (name: string) => `Добавил(а) ${name}`,
+  heart: 'Нравится',
+  partnerHearted: (name: string) => `${name} отметил(а) это воспоминание`,
+  favorite: 'В избранное',
+  deleteMemory: 'Удалить воспоминание',
+  deleteMemoryConfirm: 'Воспоминание исчезнет у вас обоих. Удалить?',
+  delete: 'Удалить',
+  storageLeft: (used: string, quota: string, photos: number) =>
+    `Занято ${used} из ${quota} · ещё примерно ${photos.toLocaleString('ru-RU')} фото`,
+  storageFull: 'Место для фотографий закончилось',
+  date: (iso: string) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return `${d} ${MONTHS[m - 1]} ${y}`;
+  },
+  back: 'Назад',
+
   profile: 'Профиль',
   signOut: 'Выйти из аккаунта',
   language: 'Язык',
@@ -72,6 +107,8 @@ export const ru = {
 };
 
 export type Strings = typeof ru;
+
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
 function plural(n: number, one: string, few: string, many: string) {
   const m10 = n % 10;

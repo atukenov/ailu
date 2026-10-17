@@ -1,5 +1,19 @@
 import { tokens } from './tokens';
-import type { Couple, DailyQuestion, DailyTask, Invitation, Phase, Problem, Today, TokenPair, User } from './types';
+import type {
+  Couple,
+  DailyQuestion,
+  DailyTask,
+  Invitation,
+  Memory,
+  MemoryInput,
+  MemoryPage,
+  Phase,
+  Problem,
+  Storage,
+  Today,
+  TokenPair,
+  User,
+} from './types';
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5210';
 
@@ -38,14 +52,16 @@ async function refresh(): Promise<boolean> {
 
 async function send(method: string, path: string, body: unknown, retry: boolean): Promise<Response> {
   const { access } = await tokens.get();
+  // A form (a photo upload) sets its own multipart content type, boundary included.
+  const form = body instanceof FormData;
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: {
       Accept: 'application/json',
-      ...(body !== undefined && { 'Content-Type': 'application/json' }),
+      ...(body !== undefined && !form && { 'Content-Type': 'application/json' }),
       ...(access && { Authorization: `Bearer ${access}` }),
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : form ? body : JSON.stringify(body),
   });
 
   if (res.status === 401 && retry && access) {
@@ -97,4 +113,18 @@ export const api = {
   acceptTask: (id: string) => request<DailyTask>('POST', `/v1/couple/tasks/${id}/accept`),
   completeTask: (id: string) => request<DailyTask>('POST', `/v1/couple/tasks/${id}/complete`),
   answer: (id: string, text: string) => request<DailyQuestion>('POST', `/v1/couple/questions/${id}/answer`, { text }),
+
+  memories: (cursor?: string | null) =>
+    request<MemoryPage>('GET', `/v1/couple/memories${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`),
+  memory: (id: string) => request<Memory>('GET', `/v1/couple/memories/${id}`),
+  createMemory: (input: MemoryInput) => request<Memory>('POST', '/v1/couple/memories', input),
+  updateMemory: (id: string, input: Partial<MemoryInput>) => request<Memory>('PATCH', `/v1/couple/memories/${id}`, input),
+  deleteMemory: (id: string) => request<void>('DELETE', `/v1/couple/memories/${id}`),
+  addPhoto: (id: string, form: FormData) => request<Memory>('POST', `/v1/couple/memories/${id}/photos`, form),
+  react: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/reaction`),
+  favorite: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/favorite`),
+  storage: () => request<Storage>('GET', '/v1/couple/storage'),
 };
+
+// Photo URLs from the API are signed paths; they work without the token, so any image view can load them.
+export const photoUrl = (path: string) => `${API_URL}${path}`;

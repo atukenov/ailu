@@ -35,6 +35,8 @@ public sealed class RefreshToken
 
 public enum CoupleStatus { Active, Paused, Ended }
 
+public enum CouplePlan { Free, Plus, Premium }
+
 public sealed class Couple
 {
     public Guid Id { get; set; }
@@ -53,6 +55,13 @@ public sealed class Couple
     public int StreakDays { get; set; }
     public DateOnly? StreakLastDay { get; set; }
     public DateOnly? StreakForgivenOn { get; set; }
+
+    // One subscription covers both partners. There is no payment yet, so every couple is on Free.
+    public CouplePlan Plan { get; set; }
+
+    // Bytes of photos the couple currently stores, counted against the plan's quota. Changed only by
+    // an atomic UPDATE in the same transaction as the photo row, never recounted from storage.
+    public long StorageBytes { get; set; }
 
     public List<CoupleMember> Members { get; set; } = [];
 }
@@ -177,4 +186,46 @@ public sealed class PushLog
     public PushKind Kind { get; set; }
     public Guid CoupleId { get; set; }
     public DateTimeOffset SentAt { get; set; }
+}
+
+// A shared memory. Each one has an author: only the author can change or delete it, both partners see it.
+public sealed class Memory
+{
+    public Guid Id { get; set; }
+    public Guid CoupleId { get; set; }
+    public Guid AuthorId { get; set; }
+    public required string Title { get; set; }
+    public string? Text { get; set; }
+    public string? Place { get; set; }
+    public DateOnly HappenedOn { get; set; }
+    public Guid? CoupleTaskId { get; set; }
+    public bool Favorite { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+
+    // Deleted memories disappear at once and free their quota; the files go after 30 days in the bin.
+    public DateTimeOffset? DeletedAt { get; set; }
+
+    public List<MemoryPhoto> Photos { get; set; } = [];
+    public List<MemoryReaction> Reactions { get; set; } = [];
+    public User? Author { get; set; }
+}
+
+public sealed class MemoryPhoto
+{
+    public Guid Id { get; set; }
+    public Guid MemoryId { get; set; }
+    public Guid CoupleId { get; set; }
+    public int Position { get; set; }
+    public long Bytes { get; set; }
+    public int Width { get; set; }
+    public int Height { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+// A partner's heart on a memory. The first one from the partner who didn't write it earns the couple нұр.
+public sealed class MemoryReaction
+{
+    public Guid MemoryId { get; set; }
+    public Guid UserId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 }
