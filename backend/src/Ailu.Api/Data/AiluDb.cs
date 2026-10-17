@@ -16,6 +16,8 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<DailyQuestion> DailyQuestions => Set<DailyQuestion>();
     public DbSet<CoupleActivity> CoupleActivities => Set<CoupleActivity>();
     public DbSet<NurLedgerEntry> NurLedger => Set<NurLedgerEntry>();
+    public DbSet<Device> Devices => Set<Device>();
+    public DbSet<PushLog> PushLog => Set<PushLog>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -101,6 +103,21 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.Property(x => x.SourceId).HasMaxLength(64);
             e.Property(x => x.IdempotencyKey).HasMaxLength(160);
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+        });
+
+        b.Entity<Device>(e =>
+        {
+            e.HasIndex(x => x.PushToken).IsUnique();
+            e.HasIndex(x => x.UserId);
+            e.Property(x => x.PushToken).HasMaxLength(200);
+            e.Property(x => x.Platform).HasMaxLength(10);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
+        });
+
+        b.Entity<PushLog>(e =>
+        {
+            e.HasKey(x => new { x.UserId, x.Date, x.Kind });
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
         });
     }
 }

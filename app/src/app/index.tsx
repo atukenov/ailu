@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
@@ -9,6 +9,7 @@ import { Moon } from '@/components/moon';
 import { Button, Card, Centered, ErrorText, Field, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
+import { registerForPush } from '@/notifications';
 import { useSession } from '@/session';
 
 // Until the realtime hub exists, poll so a partner's accept or answer shows up without a manual refresh.
@@ -19,6 +20,11 @@ export default function TodayScreen() {
   const { user } = useSession();
   const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
   const today = useQuery({ queryKey: ['today'], queryFn: api.today, refetchInterval: POLL_MS });
+
+  // Only reachable in a couple, which is when there is something to notify about.
+  useEffect(() => {
+    registerForPush();
+  }, []);
 
   if (today.isPending) return <Centered />;
   if (today.isError)

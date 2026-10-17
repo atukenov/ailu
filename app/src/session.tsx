@@ -4,6 +4,7 @@ import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 import { api, ApiError, setSignedOutHandler } from '@/api/client';
 import { tokens } from '@/api/tokens';
 import type { TokenPair, User } from '@/api/types';
+import { unregisterForPush } from '@/notifications';
 
 type Session = {
   status: 'loading' | 'signedOut' | 'signedIn';
@@ -52,6 +53,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setStatus('signedIn');
     },
     async signOut() {
+      await unregisterForPush();
       await tokens.clear();
       queryClient.clear();
       setUser(null);

@@ -74,6 +74,10 @@ export const api = {
   requestCode: (phone: string) => request<{ phone: string; expiresInSeconds: number }>('POST', '/v1/auth/phone/request', { phone }),
   verifyCode: (phone: string, code: string) => request<TokenPair>('POST', '/v1/auth/phone/verify', { phone, code }),
   me: () => request<User>('GET', '/v1/me'),
+  registerDevice: (pushToken: string, platform: 'ios' | 'android') =>
+    request<void>('PUT', '/v1/me/devices', { pushToken, platform }),
+  unregisterDevice: (pushToken: string, platform: 'ios' | 'android') =>
+    request<void>('POST', '/v1/me/devices/unregister', { pushToken, platform }),
   updateMe: (patch: Partial<Pick<User, 'name' | 'locale' | 'timeZone'>>) => request<User>('PATCH', '/v1/me', patch),
 
   couple: async (): Promise<Couple | null> => {

@@ -333,6 +333,41 @@ namespace Ailu.Api.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.Device", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("PushToken")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PushToken")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Devices");
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.Invitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -446,6 +481,29 @@ namespace Ailu.Api.Data.Migrations
                     b.HasIndex("Phone", "CreatedAt");
 
                     b.ToTable("PhoneCodes");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.PushLog", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Kind")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "Date", "Kind");
+
+                    b.ToTable("PushLog");
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.Question", b =>
@@ -669,6 +727,15 @@ namespace Ailu.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.Device", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.NurLedgerEntry", b =>

@@ -14,6 +14,17 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Ailu.Api.Tests;
 
+public sealed class FakePush : IPushSender
+{
+    public ConcurrentQueue<PushMessage> Sent { get; } = new();
+
+    public Task SendAsync(IReadOnlyList<PushMessage> messages, CancellationToken ct = default)
+    {
+        foreach (var m in messages) Sent.Enqueue(m);
+        return Task.CompletedTask;
+    }
+}
+
 public sealed class FakeSms : ISmsSender
 {
     private readonly ConcurrentDictionary<string, string> last = new();
@@ -33,6 +44,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     public FakeTimeProvider Clock { get; } = new(new DateTimeOffset(2026, 10, 1, 6, 0, 0, TimeSpan.Zero)); // 11:00 in Almaty
     public FakeSms Sms { get; } = new();
+    public FakePush Push { get; } = new();
 
     private readonly string connectionString;
 
@@ -48,12 +60,16 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Ailu", connectionString);
         builder.UseSetting("Auth:SigningKey", "test-signing-key-0123456789abcdef0123456789");
+        // Tests run the push job directly at the times they choose.
+        builder.UseSetting("Push:SchedulerEnabled", "false");
         builder.ConfigureServices(s =>
         {
             s.RemoveAll<TimeProvider>();
             s.AddSingleton<TimeProvider>(Clock);
             s.RemoveAll<ISmsSender>();
             s.AddSingleton<ISmsSender>(Sms);
+            s.RemoveAll<IPushSender>();
+            s.AddSingleton<IPushSender>(Push);
         });
     }
 
