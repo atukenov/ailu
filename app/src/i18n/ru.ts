@@ -190,6 +190,11 @@ export const ru = {
   somethingWrong: 'Что-то пошло не так',
 
   // API problems by `code`. A code missing here shows the server's own (Russian) detail.
+  // Legal documents (docs/legal in the repo, published on GitHub Pages)
+  legalAgree: 'Продолжая, вы принимаете:',
+  terms: 'Пользовательское соглашение',
+  privacyPolicy: 'Политика конфиденциальности',
+
   errors: {
     offline: 'Нет связи. Проверьте интернет и попробуйте ещё раз.',
     invalid_phone: 'Нужен казахстанский номер в формате +7 7XX XXX XX XX.',

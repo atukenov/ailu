@@ -35,6 +35,14 @@ confirms, which earns the couple +100 нұр. Progress is the share of closed st
 Removing a shared goal needs both. Free couples run two goals at a time; the list then shows a soft Plus card
 instead of the "+" button.
 
+## Store builds
+
+Builds go through EAS (`eas.json`): `development` is a dev client for a phone on your network, `preview` an internal APK or
+ad-hoc build, `production` the store build with remote build numbers (`autoIncrement`). Each profile sets
+`EXPO_PUBLIC_API_URL`; production points at the KZ server once it exists. App name and the photo permission text are
+localized for iOS in `locales/`. Camera, microphone and video permissions are blocked on Android because the app never asks
+for them. Store texts, rating answers, screenshots and the publishing checklist are in `../store/`.
+
 ## Layout
 
 | Path | What |
@@ -42,6 +50,7 @@ instead of the "+" button.
 | `src/app/` | Screens. `_layout.tsx` decides which are reachable: signed out → `sign-in`; no name yet → `name`; no couple → `pair`; in a couple → `index` (Today), `profile`, `memories/` and `goals/`. |
 | `src/api/` | Typed client for the API, token storage (Keychain/Keystore), one shared refresh on 401. |
 | `src/photos.ts` | Picking photos and shrinking them before upload. |
+| `src/legal.ts` | Links to the privacy policy and terms (`docs/legal`, on GitHub Pages), in the user's language. |
 | `src/notifications.ts` | Permission, push token registration and sign-out unregistration. |
 | `src/i18n/` | Strings. Russian is complete; Kazakh and English fall back to Russian per string. |
 | `src/components/` | `ui.tsx` (screen, card, button, field, chip, progress bar), the goal month picker and the phase moon. |
