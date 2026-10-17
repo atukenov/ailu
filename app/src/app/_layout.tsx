@@ -54,6 +54,9 @@ function Routes() {
         <Stack.Screen name="memories/index" />
         <Stack.Screen name="memories/new" />
         <Stack.Screen name="memories/[id]" />
+        <Stack.Screen name="goals/index" />
+        <Stack.Screen name="goals/new" />
+        <Stack.Screen name="goals/[id]" />
       </Stack.Protected>
     </Stack>
   );
