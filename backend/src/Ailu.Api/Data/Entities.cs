@@ -185,7 +185,7 @@ public sealed class Device
     public DateTimeOffset LastSeenAt { get; set; }
 }
 
-public enum PushKind { MorningTask, EveningAnswer }
+public enum PushKind { MorningTask, EveningAnswer, GoalReminder }
 
 // One row per push actually sent. The unique (UserId, Date, Kind) key is what keeps each person to
 // at most one morning and one evening push a day, even across restarts or several API instances.
@@ -267,4 +267,48 @@ public sealed class MoodMonth
     public int Even { get; set; }
     public int Good { get; set; }
     public int Great { get; set; }
+}
+
+public enum GoalCategory { Travel, Home, Health, Money, Together }
+
+// A shared goal. One partner proposes it and the other joins; from then on it belongs to both:
+// either can edit it, steps close only when both have marked them, and removing it takes both.
+public sealed class Goal
+{
+    public Guid Id { get; set; }
+    public Guid CoupleId { get; set; }
+    public Guid CreatedById { get; set; }
+    public required string Title { get; set; }
+    public GoalCategory Category { get; set; }
+
+    // The first day of the month the couple aims for, or none.
+    public DateOnly? TargetMonth { get; set; }
+    public bool WeeklyReminder { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? JoinedAt { get; set; }
+
+    // Set when the last step closes, cleared if a new step is added.
+    public DateTimeOffset? CompletedAt { get; set; }
+
+    public Guid? RemovalRequestedById { get; set; }
+    public DateTimeOffset? RemovalRequestedAt { get; set; }
+
+    // Goals are never deleted: a removed goal is only hidden, so its нұр keeps a source.
+    public DateTimeOffset? RemovedAt { get; set; }
+
+    public List<GoalStep> Steps { get; set; } = [];
+}
+
+// One partner marks a step done and the other confirms, like the task of the day.
+public sealed class GoalStep
+{
+    public Guid Id { get; set; }
+    public Guid GoalId { get; set; }
+    public Guid CoupleId { get; set; }
+    public int Position { get; set; }
+    public required string Title { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public Guid? MarkedById { get; set; }
+    public DateTimeOffset? MarkedAt { get; set; }
+    public DateTimeOffset? ClosedAt { get; set; }
 }

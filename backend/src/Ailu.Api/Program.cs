@@ -1,6 +1,7 @@
 using Ailu.Api.Data;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Daily;
+using Ailu.Api.Features.Goals;
 using Ailu.Api.Features.Memories;
 using Ailu.Api.Features.Mood;
 using Ailu.Api.Features.Pairing;
@@ -90,6 +91,7 @@ PairingEndpoints.Map(app);
 DailyEndpoints.Map(app);
 MemoryEndpoints.Map(app);
 MoodEndpoints.Map(app);
+GoalEndpoints.Map(app);
 
 app.Run();
 

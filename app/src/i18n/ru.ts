@@ -133,6 +133,52 @@ export const ru = {
   },
   back: 'Назад',
 
+  goals: 'Наши цели',
+  goalsEmpty: 'Пока ни одной цели',
+  goalsEmptyHint: 'Поставьте цель на двоих и разбейте её на этапы. Каждый этап, который вы закроете вместе, даёт +100 нұр.',
+  newGoal: 'Новая цель',
+  addGoal: 'Поставить цель',
+  goalTitle: 'Название',
+  goalTitlePlaceholder: 'Например, поход в горы',
+  goalCategory: 'Категория',
+  goalCategories: { travel: 'Путешествия', home: 'Дом', health: 'Здоровье', money: 'Финансы', together: 'Вместе' },
+  goalDeadline: 'Срок',
+  noDeadline: 'Без срока',
+  earlier: 'Раньше',
+  later: 'Позже',
+  goalRemind: 'Напоминать раз в неделю',
+  goalSteps: 'Этапы',
+  stepPlaceholder: (n: number) => `Этап ${n}`,
+  addStep: 'Добавить этап',
+  createGoal: 'Создать цель',
+  goalLimitTitle: (n: number) => `В бесплатной версии — ${n} ${plural(n, 'цель', 'цели', 'целей')} одновременно`,
+  goalLimitHint: 'Закройте одну из текущих или откройте Plus, чтобы ставить цели без ограничений.',
+  goalProposed: (name: string) => `Ждём, когда ${name} присоединится. Тогда этапы можно будет отмечать.`,
+  goalJoinNeeded: (name: string) => `${name} предлагает эту цель`,
+  joinGoal: 'Присоединиться',
+  declineGoal: 'Отказаться',
+  withdrawGoal: 'Отозвать цель',
+  goalDone: 'Цель достигнута',
+  stepsProgress: (done: number, total: number) => `${done} из ${total} ${plural(total, 'этапа', 'этапов', 'этапов')}`,
+  noSteps: 'Добавьте этапы — процент считается по закрытым',
+  stepWaiting: 'ждём партнёра',
+  stepConfirm: 'Подтвердить',
+  stepMark: 'Сделали',
+  stepUndo: 'Отменить',
+  stepRemove: 'Убрать этап',
+  needsYou: 'Ждёт вашего ответа',
+  removeGoal: 'Удалить цель',
+  removeGoalConfirm: 'Цель удалится, когда партнёр тоже согласится. Попросить?',
+  removalAsked: 'Вы попросили удалить цель. Ждём ответа партнёра.',
+  removalByPartner: (name: string) => `${name} предлагает удалить эту цель`,
+  removeAgree: 'Удалить',
+  removeKeep: 'Оставить',
+  removeCancel: 'Не удалять',
+  monthYear: (ym: string) => {
+    const [y, m] = ym.split('-').map(Number);
+    return `${MONTHS_NOMINATIVE[m - 1]} ${y}`;
+  },
+
   profile: 'Профиль',
   signOut: 'Выйти из аккаунта',
   language: 'Язык',
@@ -172,10 +218,21 @@ export const ru = {
     invalid_mood: 'Выберите настроение.',
     invalid_note: 'Не больше 280 символов.',
     note_not_found: 'Сначала добавьте пару слов к сегодняшнему настроению.',
+    goal_limit: 'В бесплатной версии можно вести две цели одновременно. Завершите одну или откройте Plus.',
+    goal_not_found: 'Этой цели больше нет.',
+    join_by_partner: 'Цель станет общей, когда к ней присоединится партнёр.',
+    goal_not_joined: 'Этапы отмечаются, когда партнёр присоединится к цели.',
+    step_closed: 'Этот этап вы уже закрыли вдвоём, его не изменить.',
+    too_many_steps: 'В цели до 20 этапов.',
+    invalid_category: 'Такой категории нет.',
+    invalid_targetMonth: 'Срок — месяц не раньше текущего.',
+    invalid_steps: 'В цели до 20 этапов, каждый до 120 символов.',
   } as Record<string, string>,
 };
 
 export type Strings = typeof ru;
+
+const MONTHS_NOMINATIVE = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 

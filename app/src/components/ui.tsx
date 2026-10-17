@@ -129,6 +129,28 @@ export function RoundButton({ label, glyph, onPress, active }: { label: string; 
   );
 }
 
+// A goal's progress: a thin pink bar, as in the mockups.
+export function ProgressBar({ percent }: { percent: number }) {
+  return (
+    <View style={styles.track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: percent }}>
+      <View style={[styles.fill, { width: `${Math.max(0, Math.min(100, percent))}%` }]} />
+    </View>
+  );
+}
+
+// A pill to pick one of a few options, like a goal's category.
+export function Chip({ label, selected, onPress }: { label: string; selected?: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!selected }}
+      onPress={onPress}
+      style={[styles.chip, selected && styles.chipSelected]}>
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function Centered({ children }: { children?: ReactNode }) {
   return <View style={styles.centered}>{children ?? <ActivityIndicator color={Colors.accent} />}</View>;
 }
@@ -195,6 +217,19 @@ const styles = StyleSheet.create({
   roundSpacer: { width: 44 },
   roundText: { color: Colors.text, fontSize: 22, lineHeight: 26 },
   roundTextActive: { color: Colors.onAccent },
+  track: { height: 6, borderRadius: Radius.pill, backgroundColor: Colors.surfaceStrong, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: Radius.pill, backgroundColor: Colors.accent },
+  chip: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 10,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  chipSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  chipText: { color: Colors.text, fontSize: 14, fontWeight: '500' },
+  chipTextSelected: { color: Colors.onAccent },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background },
 });
 
