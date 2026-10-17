@@ -1,6 +1,7 @@
 using Ailu.Api.Data;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Daily;
+using Ailu.Api.Features.Goals;
 using Ailu.Api.Features.Memories;
 using Ailu.Api.Features.Pairing;
 using Ailu.Api.Infrastructure;
@@ -86,6 +87,7 @@ DeviceEndpoints.Map(app);
 PairingEndpoints.Map(app);
 DailyEndpoints.Map(app);
 MemoryEndpoints.Map(app);
+GoalEndpoints.Map(app);
 
 app.Run();
 

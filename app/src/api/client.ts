@@ -3,6 +3,9 @@ import type {
   Couple,
   DailyQuestion,
   DailyTask,
+  Goal,
+  GoalInput,
+  GoalList,
   Invitation,
   Memory,
   MemoryInput,
@@ -126,6 +129,19 @@ export const api = {
   react: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/reaction`),
   favorite: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/favorite`),
   storage: () => request<Storage>('GET', '/v1/couple/storage'),
+
+  goals: () => request<GoalList>('GET', '/v1/couple/goals'),
+  goal: (id: string) => request<Goal>('GET', `/v1/couple/goals/${id}`),
+  createGoal: (input: GoalInput) => request<Goal>('POST', '/v1/couple/goals', input),
+  updateGoal: (id: string, input: Partial<Omit<GoalInput, 'steps'>>) => request<Goal>('PATCH', `/v1/couple/goals/${id}`, input),
+  joinGoal: (id: string) => request<Goal>('POST', `/v1/couple/goals/${id}/join`),
+  // Returns the goal while it waits for the partner's word, nothing once it is gone.
+  removeGoal: (id: string) => request<Goal | undefined>('DELETE', `/v1/couple/goals/${id}`),
+  keepGoal: (id: string) => request<Goal>('POST', `/v1/couple/goals/${id}/keep`),
+  addStep: (id: string, title: string) => request<Goal>('POST', `/v1/couple/goals/${id}/steps`, { title }),
+  deleteStep: (id: string, stepId: string) => request<Goal>('DELETE', `/v1/couple/goals/${id}/steps/${stepId}`),
+  markStep: (id: string, stepId: string, on: boolean) =>
+    request<Goal>(on ? 'POST' : 'DELETE', `/v1/couple/goals/${id}/steps/${stepId}/done`),
 };
 
 // Photo URLs from the API are signed paths; they work without the token, so any image view can load them.

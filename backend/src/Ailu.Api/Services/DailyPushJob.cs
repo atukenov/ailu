@@ -1,4 +1,5 @@
 using Ailu.Api.Data;
+using Ailu.Api.Features.Goals;
 using Ailu.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -7,7 +8,8 @@ namespace Ailu.Api.Services;
 
 // At most two pushes a day per person, both in the couple's own time zone:
 // - 09:00, the task of the day, to both partners (the day's items are created here if needed);
-// - 20:00, only to someone whose partner has already answered the question and who hasn't.
+// - 20:00, only to someone whose partner has already answered the question and who hasn't;
+//   on Sundays, anyone who isn't owed that nudge hears about their goals instead (weekly reminder).
 // Each push has a window so a late start (a restart, a couple paired at night) never sends a
 // morning push in the evening.
 public sealed class DailyPushJob(AiluDb db, DailyContentService content, IPushSender push, TimeProvider clock,
@@ -46,19 +48,37 @@ public sealed class DailyPushJob(AiluDb db, DailyContentService content, IPushSe
     private async Task EveningAsync(Couple couple, DateOnly day, CancellationToken ct)
     {
         var q = await db.DailyQuestions.AsNoTracking().SingleOrDefaultAsync(x => x.CoupleId == couple.Id && x.Date == day, ct);
-        if (q is null || q.RevealedAt is not null) return;
+        var goal = day.DayOfWeek == DayOfWeek.Sunday ? await GoalToRemindAsync(couple, ct) : null;
 
         foreach (var member in couple.Members)
         {
-            var mine = member.Role == MemberRole.A ? q.AnswerA : q.AnswerB;
-            var theirs = member.Role == MemberRole.A ? q.AnswerB : q.AnswerA;
-            if (mine is not null || theirs is null) continue;
+            // One evening push at most, whichever comes first.
+            if (await db.PushLog.AnyAsync(p => p.UserId == member.UserId && p.Date == day &&
+                                               (p.Kind == PushKind.EveningAnswer || p.Kind == PushKind.GoalReminder), ct))
+                continue;
 
-            var partner = couple.Members.First(m => m.UserId != member.UserId).User?.Name ?? "Партнёр";
-            await SendOnceAsync(member, day, PushKind.EveningAnswer, "Вопрос дня",
-                $"{partner} уже ответил(а). Ответы откроются, когда ответите вы.", ct);
+            var mine = member.Role == MemberRole.A ? q?.AnswerA : q?.AnswerB;
+            var theirs = member.Role == MemberRole.A ? q?.AnswerB : q?.AnswerA;
+            if (q is not null && q.RevealedAt is null && mine is null && theirs is not null)
+            {
+                var partner = couple.Members.First(m => m.UserId != member.UserId).User?.Name ?? "Партнёр";
+                await SendOnceAsync(member, day, PushKind.EveningAnswer, "Вопрос дня",
+                    $"{partner} уже ответил(а). Ответы откроются, когда ответите вы.", ct);
+            }
+            else if (goal is not null)
+            {
+                await SendOnceAsync(member, day, PushKind.GoalReminder, "Ваша цель",
+                    $"«{goal.Title}» — {GoalEndpoints.Progress(goal)}%. Какой шаг сделаете на этой неделе?", ct);
+            }
         }
     }
+
+    // The oldest shared goal still in progress that asked for a weekly reminder.
+    private Task<Goal?> GoalToRemindAsync(Couple couple, CancellationToken ct) =>
+        db.Goals.AsNoTracking().Include(g => g.Steps)
+            .Where(g => g.CoupleId == couple.Id && g.WeeklyReminder && g.JoinedAt != null && g.CompletedAt == null && g.RemovedAt == null)
+            .OrderBy(g => g.CreatedAt)
+            .FirstOrDefaultAsync(ct);
 
     // Records the push before sending it: a failed send loses one push, but a retry can never send two.
     private async Task SendOnceAsync(CoupleMember member, DateOnly day, PushKind kind, string title, string body,

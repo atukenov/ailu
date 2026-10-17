@@ -27,16 +27,24 @@ the library, shrunk on the phone to 2 560 px JPEG 82 (`src/photos.ts`), then upl
 is created first, so a failed upload can be retried from its page. A finished task offers "Сохранить в
 воспоминания", which ties the memory to that task. Photo URLs come signed from the API and load without the token.
 
+## Goals
+
+Shared goals (`src/app/goals/`) have a title, a category, an optional month to aim for, a weekly reminder and
+up to 20 steps. One partner proposes a goal and the other joins; then either marks a step done and the other
+confirms, which earns the couple +100 нұр. Progress is the share of closed steps, counted by the server.
+Removing a shared goal needs both. Free couples run two goals at a time; the list then shows a soft Plus card
+instead of the "+" button.
+
 ## Layout
 
 | Path | What |
 | --- | --- |
-| `src/app/` | Screens. `_layout.tsx` decides which are reachable: signed out → `sign-in`; no name yet → `name`; no couple → `pair`; in a couple → `index` (Today), `profile` and `memories/`. |
+| `src/app/` | Screens. `_layout.tsx` decides which are reachable: signed out → `sign-in`; no name yet → `name`; no couple → `pair`; in a couple → `index` (Today), `profile`, `memories/` and `goals/`. |
 | `src/api/` | Typed client for the API, token storage (Keychain/Keystore), one shared refresh on 401. |
 | `src/photos.ts` | Picking photos and shrinking them before upload. |
 | `src/notifications.ts` | Permission, push token registration and sign-out unregistration. |
 | `src/i18n/` | Strings. Russian is complete; Kazakh and English fall back to Russian per string. |
-| `src/components/` | `ui.tsx` (screen, card, button, field) and the phase moon. |
+| `src/components/` | `ui.tsx` (screen, card, button, field, chip, progress bar), the goal month picker and the phase moon. |
 | `src/constants/theme.ts` | Colors and spacing, taken from the mockups. |
 
 The partner's activity shows up by polling `/v1/couple/today` every 30 s until the realtime hub exists.

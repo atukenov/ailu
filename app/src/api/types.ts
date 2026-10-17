@@ -138,3 +138,38 @@ export type Problem = {
   detail?: string;
   errors?: Record<string, string[]>;
 };
+
+export type GoalCategory = 'travel' | 'home' | 'health' | 'money' | 'together';
+export type GoalState = 'proposed' | 'join_needed' | 'active' | 'done';
+export type StepState = 'open' | 'waiting_for_partner' | 'confirm_needed' | 'done';
+
+export type GoalStep = { id: string; title: string; state: StepState; closedAt: string | null };
+
+export type Goal = {
+  id: string;
+  title: string;
+  category: GoalCategory;
+  targetMonth: string | null; // yyyy-MM
+  weeklyReminder: boolean;
+  state: GoalState;
+  progress: number;
+  stepsDone: number;
+  stepsTotal: number;
+  createdByMe: boolean;
+  removalRequestedByMe: boolean;
+  removalRequestedByPartner: boolean;
+  createdAt: string;
+  completedAt: string | null;
+  steps: GoalStep[];
+};
+
+export type GoalList = { items: Goal[]; limit: number | null; unfinished: number; canCreate: boolean };
+
+// On update a missing field stays as is; targetMonth '' removes the deadline.
+export type GoalInput = {
+  title: string;
+  category: GoalCategory;
+  targetMonth: string;
+  weeklyReminder: boolean;
+  steps: string[];
+};
