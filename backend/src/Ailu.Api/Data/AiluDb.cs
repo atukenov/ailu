@@ -18,6 +18,9 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<NurLedgerEntry> NurLedger => Set<NurLedgerEntry>();
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<PushLog> PushLog => Set<PushLog>();
+    public DbSet<Memory> Memories => Set<Memory>();
+    public DbSet<MemoryPhoto> MemoryPhotos => Set<MemoryPhoto>();
+    public DbSet<MemoryReaction> MemoryReactions => Set<MemoryReaction>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -41,6 +44,7 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         b.Entity<Couple>(e =>
         {
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Plan).HasConversion<string>().HasMaxLength(10);
             e.Property(x => x.TimeZone).HasMaxLength(64);
             e.HasMany(x => x.Members).WithOne(m => m.Couple).HasForeignKey(m => m.CoupleId);
         });
@@ -118,6 +122,32 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         {
             e.HasKey(x => new { x.UserId, x.Date, x.Kind });
             e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
+        });
+
+        b.Entity<Memory>(e =>
+        {
+            e.HasIndex(x => new { x.CoupleId, x.HappenedOn, x.CreatedAt });
+            e.HasIndex(x => x.DeletedAt).HasFilter("\"DeletedAt\" IS NOT NULL");
+            e.Property(x => x.Title).HasMaxLength(120);
+            e.Property(x => x.Text).HasMaxLength(2000);
+            e.Property(x => x.Place).HasMaxLength(120);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne(x => x.Author).WithMany().HasForeignKey(x => x.AuthorId);
+            e.HasOne<CoupleTask>().WithMany().HasForeignKey(x => x.CoupleTaskId);
+            e.HasMany(x => x.Photos).WithOne().HasForeignKey(p => p.MemoryId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Reactions).WithOne().HasForeignKey(r => r.MemoryId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<MemoryPhoto>(e =>
+        {
+            e.HasIndex(x => new { x.MemoryId, x.Position }).IsUnique();
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+        });
+
+        b.Entity<MemoryReaction>(e =>
+        {
+            e.HasKey(x => new { x.MemoryId, x.UserId });
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
         });
     }
 }

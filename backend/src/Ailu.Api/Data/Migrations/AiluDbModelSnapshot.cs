@@ -37,6 +37,14 @@ namespace Ailu.Api.Data.Migrations
                     b.Property<int>("NurEarned")
                         .HasColumnType("integer");
 
+                    b.Property<int>("PhotoCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -44,6 +52,9 @@ namespace Ailu.Api.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<long>("StorageBytes")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("StreakDays")
                         .HasColumnType("integer");
@@ -407,6 +418,115 @@ namespace Ailu.Api.Data.Migrations
                     b.ToTable("Invitations");
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.Memory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CoupleTaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Favorite")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly>("HappenedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Place")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("CoupleTaskId");
+
+                    b.HasIndex("DeletedAt")
+                        .HasFilter("\"DeletedAt\" IS NOT NULL");
+
+                    b.HasIndex("CoupleId", "HappenedOn", "CreatedAt");
+
+                    b.ToTable("Memories");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.MemoryPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Bytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("MemoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoupleId");
+
+                    b.HasIndex("MemoryId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("MemoryPhotos");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.MemoryReaction", b =>
+                {
+                    b.Property<Guid>("MemoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("MemoryId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MemoryReactions");
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.NurLedgerEntry", b =>
                 {
                     b.Property<long>("Id")
@@ -738,6 +858,57 @@ namespace Ailu.Api.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.Memory", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.User", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.CoupleTask", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleTaskId");
+
+                    b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.MemoryPhoto", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.Memory", null)
+                        .WithMany("Photos")
+                        .HasForeignKey("MemoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.MemoryReaction", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.Memory", null)
+                        .WithMany("Reactions")
+                        .HasForeignKey("MemoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.NurLedgerEntry", b =>
                 {
                     b.HasOne("Ailu.Api.Data.Couple", null)
@@ -750,6 +921,13 @@ namespace Ailu.Api.Data.Migrations
             modelBuilder.Entity("Ailu.Api.Data.Couple", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.Memory", b =>
+                {
+                    b.Navigation("Photos");
+
+                    b.Navigation("Reactions");
                 });
 #pragma warning restore 612, 618
         }

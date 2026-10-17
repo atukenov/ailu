@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
@@ -58,6 +58,11 @@ function Header({ me, partner, couple }: { me: string; partner: string; couple: 
         <T variant="title">{s.greeting(me, partner)}</T>
         {couple && <T variant="secondary">{s.daysTogether(couple.daysTogether)}</T>}
       </View>
+      <Link href="/memories" asChild>
+        <Pressable accessibilityRole="button" accessibilityLabel={s.memories} style={styles.profileButton}>
+          <T variant="heading">✦</T>
+        </Pressable>
+      </Link>
       <Link href="/profile" asChild>
         <Pressable accessibilityRole="button" accessibilityLabel={s.profile} style={styles.profileButton}>
           <T variant="heading">≡</T>
@@ -134,7 +139,16 @@ function TaskCard({ task }: { task: DailyTask }) {
       {task.state === 'confirm_needed' && (
         <Button title={s.confirmDone} onPress={() => complete.mutate()} loading={complete.isPending} />
       )}
-      {task.state === 'done' && <Status text={s.taskDone} done />}
+      {task.state === 'done' && (
+        <>
+          <Status text={s.taskDone} done />
+          <Button
+            title={s.saveToMemories}
+            variant="ghost"
+            onPress={() => router.push({ pathname: '/memories/new', params: { taskId: task.id, title: task.title } })}
+          />
+        </>
+      )}
     </Card>
   );
 }

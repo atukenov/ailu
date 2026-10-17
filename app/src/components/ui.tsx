@@ -77,11 +77,11 @@ export function Button({
   );
 }
 
-export function Field({ label, ...rest }: TextInputProps & { label: string }) {
+export function Field({ label, style, ...rest }: TextInputProps & { label: string }) {
   return (
     <View style={styles.field}>
       <T variant="label">{label}</T>
-      <TextInput placeholderTextColor={Colors.textMuted} style={styles.input} {...rest} />
+      <TextInput placeholderTextColor={Colors.textMuted} style={[styles.input, style]} {...rest} />
     </View>
   );
 }
@@ -93,6 +93,34 @@ export function ErrorText({ error }: { error: unknown }) {
     <T variant="small" style={{ color: Colors.danger }} accessibilityRole="alert">
       {message}
     </T>
+  );
+}
+
+// A screen's top row: back, title, and an optional action on the right.
+export function TopBar({ title, onBack, right }: { title: string; onBack: () => void; right?: ReactNode }) {
+  return (
+    <View style={styles.topBar}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={onBack} style={styles.round}>
+        <Text style={styles.roundText}>‹</Text>
+      </Pressable>
+      <T variant="heading" style={styles.topTitle} numberOfLines={1}>
+        {title}
+      </T>
+      {right ?? <View style={styles.roundSpacer} />}
+    </View>
+  );
+}
+
+export function RoundButton({ label, glyph, onPress, active }: { label: string; glyph: string; onPress: () => void; active?: boolean }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: !!active }}
+      onPress={onPress}
+      style={[styles.round, active && styles.roundActive]}>
+      <Text style={[styles.roundText, active && styles.roundTextActive]}>{glyph}</Text>
+    </Pressable>
   );
 }
 
@@ -146,6 +174,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     paddingHorizontal: Spacing.three,
   },
+  topBar: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  topTitle: { flex: 1 },
+  round: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.surfaceStrong,
+    borderColor: Colors.border,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  roundActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  roundSpacer: { width: 44 },
+  roundText: { color: Colors.text, fontSize: 22, lineHeight: 26 },
+  roundTextActive: { color: Colors.onAccent },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background },
 });
 

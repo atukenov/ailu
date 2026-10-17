@@ -41,6 +41,14 @@
         {
           "color": "#F2A7C7"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ailu открывает ваши фото, чтобы вы могли добавить их в воспоминания.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

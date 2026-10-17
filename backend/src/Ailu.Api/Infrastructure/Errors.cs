@@ -8,6 +8,7 @@ public static class Errors
         Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] }, detail: message);
 
     public static IResult Unauthorized(string message) => Problem(StatusCodes.Status401Unauthorized, "unauthorized", message);
+    public static IResult Forbidden(string code, string message) => Problem(StatusCodes.Status403Forbidden, code, message);
     public static IResult NotFound(string code, string message) => Problem(StatusCodes.Status404NotFound, code, message);
     public static IResult Conflict(string code, string message) => Problem(StatusCodes.Status409Conflict, code, message);
     public static IResult TooManyRequests(string message) => Problem(StatusCodes.Status429TooManyRequests, "too_many_requests", message);

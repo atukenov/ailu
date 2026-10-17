@@ -1,0 +1,20 @@
+using Ailu.Api.Data;
+
+namespace Ailu.Api.Domain;
+
+// Free couples keep up to 200 photos (Lev, 2026-10-17). What the paid plans get is decided later;
+// until then they have no photo count limit, only the byte quotas from the roadmap (document 7).
+// The byte quota also backs up the free plan: 200 processed photos are about 250 MB.
+public static class Plans
+{
+    public const int FreePhotos = 200;
+
+    public static int? PhotoLimit(CouplePlan plan) => plan == CouplePlan.Free ? FreePhotos : null;
+
+    public static long QuotaBytes(CouplePlan plan) => plan switch
+    {
+        CouplePlan.Plus => 10_000_000_000,
+        CouplePlan.Premium => 30_000_000_000,
+        _ => 1_000_000_000
+    };
+}

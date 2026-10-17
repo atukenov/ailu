@@ -51,6 +51,9 @@ function Routes() {
       <Stack.Protected guard={signedIn && named && paired}>
         <Stack.Screen name="index" />
         <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="memories/index" />
+        <Stack.Screen name="memories/new" />
+        <Stack.Screen name="memories/[id]" />
       </Stack.Protected>
     </Stack>
   );

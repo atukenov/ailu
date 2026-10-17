@@ -46,6 +46,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public FakeSms Sms { get; } = new();
     public FakePush Push { get; } = new();
 
+    public string PhotoRoot { get; } = Path.Combine(Path.GetTempPath(), $"ailu_photos_{Guid.NewGuid():N}");
+
     private readonly string connectionString;
 
     public ApiFactory()
@@ -62,6 +64,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Auth:SigningKey", "test-signing-key-0123456789abcdef0123456789");
         // Tests run the push job directly at the times they choose.
         builder.UseSetting("Push:SchedulerEnabled", "false");
+        builder.UseSetting("Photos:PurgeEnabled", "false");
+        builder.UseSetting("Photos:Root", PhotoRoot);
         builder.ConfigureServices(s =>
         {
             s.RemoveAll<TimeProvider>();
@@ -87,6 +91,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         using (var scope = Services.CreateScope())
             await scope.ServiceProvider.GetRequiredService<AiluDb>().Database.EnsureDeletedAsync();
         await base.DisposeAsync();
+        if (Directory.Exists(PhotoRoot)) Directory.Delete(PhotoRoot, recursive: true);
     }
 
     public async Task<HttpClient> SignInAsync(string phone, string? name = null)

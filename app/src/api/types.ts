@@ -83,6 +83,42 @@ export type Today = {
   phase: Phase;
 };
 
+export type Photo = { id: string; width: number; height: number; thumb: string; screen: string; full: string };
+
+export type Memory = {
+  id: string;
+  title: string;
+  text: string | null;
+  place: string | null;
+  happenedOn: string;
+  author: { id: string; name: string | null };
+  mine: boolean;
+  favorite: boolean;
+  reactedByMe: boolean;
+  reactedByPartner: boolean;
+  coupleTaskId: string | null;
+  createdAt: string;
+  photos: Photo[];
+};
+
+export type MemoryInput = {
+  title: string;
+  text?: string | null;
+  place?: string | null;
+  happenedOn?: string;
+  coupleTaskId?: string | null;
+};
+
+export type MemoryPage = { items: Memory[]; nextCursor: string | null };
+
+export type Storage = {
+  plan: 'free' | 'plus' | 'premium';
+  photos: number;
+  photoLimit: number | null;
+  usedBytes: number;
+  quotaBytes: number;
+};
+
 // RFC 9457 problem details, with the API's stable `code`.
 export type Problem = {
   status: number;

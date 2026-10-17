@@ -20,12 +20,20 @@ in this folder (it writes `extra.eas.projectId` to `app.json`), then use a devel
 Expo Go can't receive remote pushes on Android. Without a project id the app works and simply skips
 registration. Sign-out unregisters the device.
 
+## Memories
+
+Memories (`src/app/memories/`) hold a title, a day, a place, text and up to 10 photos. Photos are picked from
+the library, shrunk on the phone to 2 560 px JPEG 82 (`src/photos.ts`), then uploaded one by one; the memory
+is created first, so a failed upload can be retried from its page. A finished task offers "Сохранить в
+воспоминания", which ties the memory to that task. Photo URLs come signed from the API and load without the token.
+
 ## Layout
 
 | Path | What |
 | --- | --- |
-| `src/app/` | Screens. `_layout.tsx` decides which are reachable: signed out → `sign-in`; no name yet → `name`; no couple → `pair`; in a couple → `index` (Today) and `profile`. |
+| `src/app/` | Screens. `_layout.tsx` decides which are reachable: signed out → `sign-in`; no name yet → `name`; no couple → `pair`; in a couple → `index` (Today), `profile` and `memories/`. |
 | `src/api/` | Typed client for the API, token storage (Keychain/Keystore), one shared refresh on 401. |
+| `src/photos.ts` | Picking photos and shrinking them before upload. |
 | `src/notifications.ts` | Permission, push token registration and sign-out unregistration. |
 | `src/i18n/` | Strings. Russian is complete; Kazakh and English fall back to Russian per string. |
 | `src/components/` | `ui.tsx` (screen, card, button, field) and the phase moon. |
