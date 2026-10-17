@@ -164,11 +164,14 @@ namespace Ailu.Api.Data.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DailyTaskId");
 
-                    b.HasIndex("CoupleId", "Date")
+                    b.HasIndex("CoupleId", "Date", "Ordinal")
                         .IsUnique();
 
                     b.ToTable("CoupleTasks");

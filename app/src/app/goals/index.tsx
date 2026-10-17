@@ -7,6 +7,7 @@ import type { Goal } from '@/api/types';
 import { Button, Card, Centered, ErrorText, ProgressBar, RoundButton, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
+import { openPaywall } from '@/upsells';
 
 // A partner's join, step or removal request shows up without a manual refresh.
 const POLL_MS = 30_000;
@@ -47,6 +48,7 @@ export default function Goals() {
         <Card>
           <T variant="heading">{s.goalLimitTitle(data.limit)}</T>
           <T variant="secondary">{s.goalLimitHint}</T>
+          <Button title={s.goalLimitCta} variant="ghost" onPress={() => openPaywall('goals')} />
         </Card>
       )}
     </Screen>

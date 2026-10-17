@@ -87,9 +87,13 @@ export type StreakRestore = {
 
 export type Streak = { days: number; lastDay: string | null; restore: StreakRestore | null };
 
+// `task` is the task of the day; `moreTasks` are the ones a paid couple asked for after it, and
+// `tasksPerDay` is how many the plan allows, the task of the day included.
 export type Today = {
   date: string;
   task: DailyTask;
+  moreTasks: DailyTask[];
+  tasksPerDay: number;
   question: DailyQuestion;
   streak: Streak;
   phase: Phase;

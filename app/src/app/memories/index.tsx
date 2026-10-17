@@ -8,6 +8,7 @@ import type { Memory } from '@/api/types';
 import { Button, Card, Centered, ErrorText, RoundButton, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
+import { openPaywall, photoLimitReached } from '@/upsells';
 
 export default function Memories() {
   const s = useStrings();
@@ -60,6 +61,9 @@ export default function Memories() {
         />
       )}
       {storage.data && <StorageLine photos={storage.data.photos} limit={storage.data.photoLimit} />}
+      {storage.data && photoLimitReached(storage.data) && (
+        <Button title={s.storageFullCta} variant="ghost" onPress={() => openPaywall('photos')} />
+      )}
     </Screen>
   );
 }

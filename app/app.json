@@ -9,7 +9,15 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "kz.ailu.app"
+      "bundleIdentifier": "kz.ailu.app",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "ru",
+        "CFBundleAllowMixedLocalizations": true
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +27,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "kz.ailu.app"
+      "package": "kz.ailu.app",
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "output": "single",
@@ -54,6 +69,17 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "description": "Одно небольшое совместное дело в день для пары.",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "locales": {
+      "ru": "./locales/ru.json",
+      "kk": "./locales/kk.json"
+    },
+    "extra": {
+      "legalUrl": "https://atukenov.github.io/ailu/legal"
     }
   }
 }
