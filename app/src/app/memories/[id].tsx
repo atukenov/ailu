@@ -10,6 +10,7 @@ import { Button, Card, Centered, ErrorText, RoundButton, Screen, T, TopBar } fro
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { MAX_PHOTOS, pickPhotos, toUpload } from '@/photos';
+import { isFreePhotoLimit, openPhotoLimit, photoLimitReached } from '@/upsells';
 
 export default function MemoryScreen() {
   const s = useStrings();
@@ -17,6 +18,7 @@ export default function MemoryScreen() {
   const queryClient = useQueryClient();
   const memory = useQuery({ queryKey: ['memory', id], queryFn: () => api.memory(id) });
   const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
+  const storage = useQuery({ queryKey: ['storage'], queryFn: api.storage });
   const [shown, setShown] = useState(0);
   const [progress, setProgress] = useState<string | null>(null);
 
@@ -51,6 +53,9 @@ export default function MemoryScreen() {
         update(latest);
       }
       return latest;
+    },
+    onError: (e) => {
+      if (isFreePhotoLimit(e, storage.data)) openPhotoLimit();
     },
     onSettled: () => {
       setProgress(null);
@@ -132,7 +137,9 @@ export default function MemoryScreen() {
             <Button
               title={progress ?? s.addPhotos}
               variant="ghost"
-              onPress={() => addPhotos.mutate(MAX_PHOTOS - m.photos.length)}
+              onPress={() =>
+                photoLimitReached(storage.data) ? openPhotoLimit() : addPhotos.mutate(MAX_PHOTOS - m.photos.length)
+              }
               loading={addPhotos.isPending && !progress}
               disabled={addPhotos.isPending}
             />

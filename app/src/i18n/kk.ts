@@ -129,12 +129,22 @@ export const kk: Strings = {
   delete: 'Жою',
   photosOfLimit: (n: number, limit: number) => `${n} / ${limit} фото`,
   photosStored: (n: number) => `${n} фото`,
-  storageFull: (limit: number) => `Барлық ${limit} фото орны толды. Жаңасын қосу үшін ескілерін жойыңыз.`,
+  storageFull: (limit: number) => `Барлық ${limit} фото орны толды. Жаңасын қосу үшін ескілерін жойыңыз немесе Plus-ты ашыңыз.`,
   date: (iso: string) => {
     const [y, m, d] = iso.split('-').map(Number);
     return `${y} жылғы ${d} ${MONTHS[m - 1]}`;
   },
   back: 'Артқа',
+
+  photoLimitTitle: (limit: number) => `Барлық ${limit} фото орны толды`,
+  photoLimitBody: 'Сақтағандарыңыздың бәрі өзіңізде қалады. Plus-та мыңдаған жаңа фотоға орын жетеді.',
+  streakUpsellBody: 'Алдағының бәрін ашыңыз.',
+  moreTask: 'Тағы бір тапсырма',
+  moreTaskTomorrow: 'Тегін нұсқада күніне бір тапсырма. Жаңасы ертең пайда болады.',
+  streakUpsellCta: 'Premium-ды көру',
+  notNow: 'Кейінірек',
+  storageFullCta: 'Plus-та көбірек орын',
+  goalLimitCta: 'Plus-ты ашу',
 
   goals: 'Біздің мақсаттар',
   goalsEmpty: 'Әзірге бірде-бір мақсат жоқ',

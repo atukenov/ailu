@@ -126,12 +126,22 @@ export const ru = {
   delete: 'Удалить',
   photosOfLimit: (n: number, limit: number) => `${n} из ${limit} фото`,
   photosStored: (n: number) => `${n} фото`,
-  storageFull: (limit: number) => `Все ${limit} фото заняты. Чтобы добавить новые, удалите старые.`,
+  storageFull: (limit: number) => `Все ${limit} фото заняты. Удалите старые или откройте Plus, чтобы добавлять новые.`,
   date: (iso: string) => {
     const [y, m, d] = iso.split('-').map(Number);
     return `${d} ${MONTHS[m - 1]} ${y}`;
   },
   back: 'Назад',
+
+  photoLimitTitle: (limit: number) => `Все ${limit} фото заняты`,
+  photoLimitBody: 'Всё, что вы уже сохранили, остаётся с вами. В Plus хватит места на тысячи новых фотографий.',
+  streakUpsellBody: 'Откройте всё, что дальше.',
+  moreTask: 'Ещё одно задание',
+  moreTaskTomorrow: 'В бесплатной версии одно задание в день. Новое появится завтра.',
+  streakUpsellCta: 'Посмотреть Premium',
+  notNow: 'Не сейчас',
+  storageFullCta: 'Больше места в Plus',
+  goalLimitCta: 'Открыть Plus',
 
   goals: 'Наши цели',
   goalsEmpty: 'Пока ни одной цели',
