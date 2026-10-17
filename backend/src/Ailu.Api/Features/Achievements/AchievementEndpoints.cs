@@ -65,7 +65,7 @@ public static class AchievementEndpoints
     }
 
     // One partner says it happened; the other partner's own mark confirms it and the couple gets +80 нұр.
-    // Marking again before that only changes the date or the memory.
+    // Marking again before that only changes the date or the memory; after it, only the memory.
     private static async Task<IResult> Mark(string slug, MarkRequest? body, HttpContext http, AiluDb db, NurLedgerService nur,
         ActivityService activity, DemoCouple demo, TimeProvider clock, CancellationToken ct)
     {
@@ -88,7 +88,16 @@ public static class AchievementEndpoints
             return Errors.Validation("memoryId", "Этого воспоминания больше нет.");
 
         var row = await db.CoupleAchievements.SingleOrDefaultAsync(x => x.CoupleId == scope.Couple.Id && x.AchievementId == achievement.Id, ct);
-        if (row?.EarnedAt is not null) return Results.Ok(ToDto(achievement, row, scope, Kazakh(scope)));
+        if (row?.EarnedAt is not null)
+        {
+            // An earned achievement keeps its date, but a memory of it can still be added.
+            if (body?.MemoryId is not null)
+            {
+                row.MemoryId = body.MemoryId;
+                await db.SaveChangesAsync(ct);
+            }
+            return Results.Ok(ToDto(achievement, row, scope, Kazakh(scope)));
+        }
 
         if (row is null)
         {

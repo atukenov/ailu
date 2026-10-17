@@ -7,32 +7,19 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { api } from '@/api/client';
 import { Button, ErrorText, Field, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { isoToText, todayText, toIso } from '@/dates';
 import { useStrings } from '@/i18n';
 import { MAX_PHOTOS, pickPhotos, toUpload, type Picked } from '@/photos';
 import { isPhotoLimit, openPaywall, photoLimitReached } from '@/upsells';
 
-// Dates are typed as ДД.ММ.ГГГГ: a picker needs another native module, and most memories are "today".
-function toIso(text: string): string | null {
-  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(text.trim());
-  if (!m) return null;
-  const [d, mo, y] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  const date = new Date(Date.UTC(y, mo - 1, d));
-  if (date.getUTCDate() !== d || date.getUTCMonth() !== mo - 1 || date > new Date()) return null;
-  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-}
-
-function todayText() {
-  const now = new Date();
-  return `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
-}
-
 export default function NewMemory() {
   const s = useStrings();
   const queryClient = useQueryClient();
-  // Opened from a finished task, the memory is tied to it and starts with its title.
-  const params = useLocalSearchParams<{ taskId?: string; title?: string }>();
+  // Opened from a finished task or an earned achievement, the memory is tied to it and starts with its
+  // title (and the achievement's date).
+  const params = useLocalSearchParams<{ taskId?: string; title?: string; achievement?: string; happenedOn?: string }>();
   const [title, setTitle] = useState(params.title ?? '');
-  const [date, setDate] = useState(todayText);
+  const [date, setDate] = useState(() => (params.happenedOn ? isoToText(params.happenedOn) : todayText()));
   const [place, setPlace] = useState('');
   const [text, setText] = useState('');
   const [photos, setPhotos] = useState<Picked[]>([]);
@@ -55,6 +42,10 @@ export default function NewMemory() {
         happenedOn,
         coupleTaskId: params.taskId ?? null,
       });
+      if (params.achievement) {
+        // Only a link: if it fails, the memory is still saved.
+        await api.markAchievement(params.achievement, { memoryId: memory.id }).catch(() => undefined);
+      }
       // The memory exists from here on; a photo that fails can be added again from its page.
       let failed = 0;
       let full = false;
@@ -78,6 +69,7 @@ export default function NewMemory() {
       void queryClient.invalidateQueries({ queryKey: ['memories'] });
       void queryClient.invalidateQueries({ queryKey: ['storage'] });
       void queryClient.invalidateQueries({ queryKey: ['today'] });
+      if (params.achievement) void queryClient.invalidateQueries({ queryKey: ['achievements'] });
       if (failed > 0) globalThis.alert?.(s.uploadFailed(failed));
       router.replace(`/memories/${id}`);
       if (full) openPaywall('photos');

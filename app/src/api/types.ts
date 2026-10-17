@@ -192,6 +192,26 @@ export type GoalInput = {
 
 export type Plan = 'free' | 'plus' | 'premium';
 
+export type AchievementCategory = 'firsts' | 'events' | 'travel';
+export type AchievementState = 'locked' | 'open' | 'waiting_for_partner' | 'confirm_needed' | 'earned';
+
+// Title and body come from the server in the caller's language.
+export type Achievement = {
+  slug: string;
+  category: AchievementCategory;
+  tier: Plan;
+  icon: string;
+  title: string;
+  body: string;
+  state: AchievementState;
+  happenedOn: string | null;
+  memoryId: string | null;
+  earnedAt: string | null;
+  nur: number;
+};
+
+export type AchievementList = { items: Achievement[]; earned: number; total: number; plan: Plan };
+
 export type BillingProduct = {
   id: string;
   tier: Exclude<Plan, 'free'>;

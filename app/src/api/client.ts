@@ -1,5 +1,7 @@
 import { tokens } from './tokens';
 import type {
+  Achievement,
+  AchievementList,
   Billing,
   Couple,
   DailyQuestion,
@@ -154,6 +156,13 @@ export const api = {
   deleteStep: (id: string, stepId: string) => request<Goal>('DELETE', `/v1/couple/goals/${id}/steps/${stepId}`),
   markStep: (id: string, stepId: string, on: boolean) =>
     request<Goal>(on ? 'POST' : 'DELETE', `/v1/couple/goals/${id}/steps/${stepId}/done`),
+
+  achievements: () => request<AchievementList>('GET', '/v1/couple/achievements'),
+  achievement: (slug: string) => request<Achievement>('GET', `/v1/couple/achievements/${slug}`),
+  // The first partner's mark asks the other to confirm; the other's mark earns it. HappenedOn is yyyy-MM-dd.
+  markAchievement: (slug: string, input: { happenedOn?: string; memoryId?: string } = {}) =>
+    request<Achievement>('POST', `/v1/couple/achievements/${slug}/done`, input),
+  unmarkAchievement: (slug: string) => request<Achievement>('DELETE', `/v1/couple/achievements/${slug}/done`),
 
   billing: () => request<Billing>('GET', '/v1/billing'),
   claimApple: (transactionId: string) => request<Billing>('POST', '/v1/billing/apple', { transactionId }),

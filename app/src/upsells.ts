@@ -1,31 +1,13 @@
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import type { Storage } from '@/api/types';
+import { deviceStore } from '@/device-store';
 
 // Remembers on this phone which soft upsells were already shown, so each one stays rare: the
 // second-task paywall once a day, the streak-day-7 offer once per couple (monetization doc).
-const PREFIX = 'ailu.upsell.';
-
-async function read(key: string): Promise<string | null> {
-  try {
-    if (Platform.OS === 'web') return globalThis.localStorage?.getItem(PREFIX + key) ?? null;
-    return await SecureStore.getItemAsync(PREFIX + key);
-  } catch {
-    return null;
-  }
-}
-
-async function write(key: string, value: string): Promise<void> {
-  try {
-    if (Platform.OS === 'web') globalThis.localStorage?.setItem(PREFIX + key, value);
-    else await SecureStore.setItemAsync(PREFIX + key, value);
-  } catch {
-    // Not remembering only means the offer may show once more.
-  }
-}
+const read = (key: string) => deviceStore.read(`upsell.${key}`);
+const write = (key: string, value: string) => deviceStore.write(`upsell.${key}`, value);
 
 export const upsells = {
   // The day the second-task paywall was last shown (the couple's date from /today).
@@ -36,9 +18,10 @@ export const upsells = {
   markStreakShown: (coupleId: string) => write(`streak7.${coupleId}`, '1'),
 };
 
-// Why the paywall opened: the 201st photo, a second task in a day, day 7 of the streak, a third goal.
+// Why the paywall opened: the 201st photo, a second task in a day, day 7 of the streak, a third goal,
+// an achievement outside the free set.
 // Opened without a reason (from the profile), it shows both plans.
-export type PaywallReason = 'photos' | 'task' | 'streak' | 'goals';
+export type PaywallReason = 'photos' | 'task' | 'streak' | 'goals' | 'achievements';
 
 export function openPaywall(reason?: PaywallReason) {
   router.push({ pathname: '/paywall', params: reason ? { reason } : {} });

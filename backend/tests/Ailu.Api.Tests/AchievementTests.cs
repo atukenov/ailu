@@ -133,8 +133,12 @@ public class AchievementTests
         var mine = (await (await a.PostAsJsonAsync("/v1/couple/memories", new { title = "Кино", happenedOn = "2026-09-30" }))
             .Content.ReadFromJsonAsync<MemoryDto>())!;
         await Ok(await Mark(a, "first-movie", new { happenedOn = "2026-09-30" }));
-        var earned = await Ok(await Mark(b, "first-movie", new { memoryId = mine.Id }));
-        Assert.Equal((mine.Id, "2026-09-30"), (earned.MemoryId!.Value, earned.HappenedOn));
+        var earned = await Ok(await Mark(b, "first-movie"));
+        Assert.Null(earned.MemoryId);
+
+        // A memory can be added to an earned achievement; its date stays.
+        var linked = await Ok(await Mark(a, "first-movie", new { memoryId = mine.Id, happenedOn = "2026-09-01" }));
+        Assert.Equal((mine.Id, "2026-09-30"), (linked.MemoryId!.Value, linked.HappenedOn));
         Assert.Equal(HttpStatusCode.NotFound, (await Mark(a, "no-such-thing")).StatusCode);
     }
 
