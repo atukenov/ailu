@@ -25,6 +25,29 @@ public sealed class FakePush : IPushSender
     }
 }
 
+// A store that knows whatever the test tells it. Any id the test registers (a transaction id, a token)
+// resolves to the purchase it maps to.
+public sealed class TestStore(StoreProvider provider) : IStoreClient
+{
+    public ConcurrentDictionary<string, StorePurchase> Purchases { get; } = new();
+    public ConcurrentQueue<string> Acknowledged { get; } = new();
+    public bool Down { get; set; }
+
+    public StoreProvider Provider => provider;
+
+    public Task<StorePurchase?> FetchAsync(string storeId, CancellationToken ct = default)
+    {
+        if (Down) throw new StoreUnavailableException("down");
+        return Task.FromResult(Purchases.GetValueOrDefault(storeId));
+    }
+
+    public Task AcknowledgeAsync(StorePurchase purchase, CancellationToken ct = default)
+    {
+        Acknowledged.Enqueue(purchase.StoreId);
+        return Task.CompletedTask;
+    }
+}
+
 public sealed class FakeSms : ISmsSender
 {
     private readonly ConcurrentDictionary<string, string> last = new();
@@ -45,6 +68,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public FakeTimeProvider Clock { get; } = new(new DateTimeOffset(2026, 10, 1, 6, 0, 0, TimeSpan.Zero)); // 11:00 in Almaty
     public FakeSms Sms { get; } = new();
     public FakePush Push { get; } = new();
+    public TestStore Apple { get; } = new(StoreProvider.Apple);
+    public TestStore Google { get; } = new(StoreProvider.Google);
+    public const string GoogleWebhookSecret = "test-webhook-secret";
 
     public string PhotoRoot { get; } = Path.Combine(Path.GetTempPath(), $"ailu_photos_{Guid.NewGuid():N}");
 
@@ -67,6 +93,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Photos:PurgeEnabled", "false");
         builder.UseSetting("Mood:RetentionEnabled", "false");
         builder.UseSetting("Photos:Root", PhotoRoot);
+        builder.UseSetting("Billing:ExpiryEnabled", "false");
+        builder.UseSetting("Billing:Google:WebhookSecret", GoogleWebhookSecret);
         builder.ConfigureServices(s =>
         {
             s.RemoveAll<TimeProvider>();
@@ -75,6 +103,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             s.AddSingleton<ISmsSender>(Sms);
             s.RemoveAll<IPushSender>();
             s.AddSingleton<IPushSender>(Push);
+            s.RemoveAll<IStoreClient>();
+            s.AddSingleton<IStoreClient>(Apple);
+            s.AddSingleton<IStoreClient>(Google);
         });
     }
 

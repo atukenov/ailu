@@ -189,3 +189,31 @@ export type GoalInput = {
   weeklyReminder: boolean;
   steps: string[];
 };
+
+export type Plan = 'free' | 'plus' | 'premium';
+
+export type BillingProduct = {
+  id: string;
+  tier: Exclude<Plan, 'free'>;
+  period: 'month' | 'year';
+  // A placeholder until the store answers with its own localized price.
+  priceKzt: number;
+  appleProductId: string;
+  googleProductId: string;
+  googleBasePlanId: string;
+};
+
+export type Billing = {
+  plan: Plan;
+  subscription: {
+    tier: Exclude<Plan, 'free'>;
+    provider: 'apple' | 'google' | 'trial';
+    status: 'active' | 'grace';
+    periodEnd: string;
+    autoRenew: boolean;
+    paidByMe: boolean;
+  } | null;
+  trialAvailable: boolean;
+  trialDays: number;
+  products: BillingProduct[];
+};

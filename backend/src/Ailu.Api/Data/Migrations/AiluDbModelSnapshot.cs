@@ -930,6 +930,72 @@ namespace Ailu.Api.Data.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.Subscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AutoRenew")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PayerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("PeriodEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<bool>("Sandbox")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("StoreId")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoupleId");
+
+                    b.HasIndex("PayerUserId");
+
+                    b.HasIndex("PeriodEnd");
+
+                    b.HasIndex("Provider", "StoreId")
+                        .IsUnique();
+
+                    b.ToTable("Subscriptions");
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1156,6 +1222,21 @@ namespace Ailu.Api.Data.Migrations
                     b.HasOne("Ailu.Api.Data.Couple", null)
                         .WithMany()
                         .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.Subscription", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("PayerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
