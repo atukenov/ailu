@@ -119,6 +119,18 @@ export type Storage = {
   quotaBytes: number;
 };
 
+export type MoodLevel = 'hard' | 'tired' | 'even' | 'good' | 'great';
+
+export type MyMood = { mood: MoodLevel; note: string | null; noteShared: boolean; markedAt: string };
+
+// The partner's note is only sent once they have shared it.
+export type PartnerMood = { mood: MoodLevel; markedAt: string; note: string | null };
+
+export type MoodDay = { date: string; mine: MyMood | null; partner: PartnerMood | null };
+
+// `days` runs oldest first and ends with today.
+export type Mood = { date: string; consented: boolean; days: MoodDay[] };
+
 // RFC 9457 problem details, with the API's stable `code`.
 export type Problem = {
   status: number;

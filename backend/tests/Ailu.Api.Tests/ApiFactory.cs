@@ -65,6 +65,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         // Tests run the push job directly at the times they choose.
         builder.UseSetting("Push:SchedulerEnabled", "false");
         builder.UseSetting("Photos:PurgeEnabled", "false");
+        builder.UseSetting("Mood:RetentionEnabled", "false");
         builder.UseSetting("Photos:Root", PhotoRoot);
         builder.ConfigureServices(s =>
         {

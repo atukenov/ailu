@@ -50,6 +50,9 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
   byte quotas apply: Plus 10 GB, Premium 30 GB; Free also has 1 GB as a backstop).
 - **Only the author changes or deletes a memory**; both partners see it. Deleting frees the quota at once and the
   files go 30 days later.
+- **A partner sees a mood, never its note, until the author shares it.** Mood needs the person's explicit consent
+  (`PUT /v1/me/mood-consent`); withdrawing it deletes all their moods. Both marking on the same day earns +10 нұр once.
+  After 12 months a day's mood becomes a count in `MoodMonth` and the day, note included, is deleted.
 
 ### Push notifications
 

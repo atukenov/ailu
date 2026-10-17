@@ -5,6 +5,7 @@ import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { Couple, DailyQuestion, DailyTask, Phase, Today } from '@/api/types';
+import { MoodCard } from '@/components/mood';
 import { Moon } from '@/components/moon';
 import { Button, Card, Centered, ErrorText, Field, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -18,6 +19,7 @@ const POLL_MS = 30_000;
 export default function TodayScreen() {
   const s = useStrings();
   const { user } = useSession();
+  const queryClient = useQueryClient();
   const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
   const today = useQuery({ queryKey: ['today'], queryFn: api.today, refetchInterval: POLL_MS });
 
@@ -40,12 +42,20 @@ export default function TodayScreen() {
   return (
     <Screen
       refreshControl={
-        <RefreshControl refreshing={today.isRefetching} onRefresh={() => void today.refetch()} tintColor={Colors.accent} />
+        <RefreshControl
+          refreshing={today.isRefetching}
+          onRefresh={() => {
+            void today.refetch();
+            void queryClient.invalidateQueries({ queryKey: ['mood'] });
+          }}
+          tintColor={Colors.accent}
+        />
       }>
       <Header me={user?.name ?? s.someone} partner={partnerName} couple={couple.data ?? null} />
       <PhaseCard phase={today.data.phase} streak={today.data.streak.days} />
       <TaskCard task={today.data.task} />
       <QuestionCard question={today.data.question} partnerName={partnerName} />
+      <MoodCard partnerName={partnerName} pollMs={POLL_MS} />
     </Screen>
   );
 }
