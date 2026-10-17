@@ -10,7 +10,7 @@ import { Button, Card, Centered, ErrorText, RoundButton, Screen, T, TopBar } fro
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { MAX_PHOTOS, pickPhotos, toUpload } from '@/photos';
-import { isFreePhotoLimit, openPhotoLimit, photoLimitReached } from '@/upsells';
+import { isFreePhotoLimit, openPaywall, photoLimitReached } from '@/upsells';
 
 export default function MemoryScreen() {
   const s = useStrings();
@@ -55,7 +55,7 @@ export default function MemoryScreen() {
       return latest;
     },
     onError: (e) => {
-      if (isFreePhotoLimit(e, storage.data)) openPhotoLimit();
+      if (isFreePhotoLimit(e, storage.data)) openPaywall('photos');
     },
     onSettled: () => {
       setProgress(null);
@@ -138,7 +138,7 @@ export default function MemoryScreen() {
               title={progress ?? s.addPhotos}
               variant="ghost"
               onPress={() =>
-                photoLimitReached(storage.data) ? openPhotoLimit() : addPhotos.mutate(MAX_PHOTOS - m.photos.length)
+                photoLimitReached(storage.data) ? openPaywall('photos') : addPhotos.mutate(MAX_PHOTOS - m.photos.length)
               }
               loading={addPhotos.isPending && !progress}
               disabled={addPhotos.isPending}

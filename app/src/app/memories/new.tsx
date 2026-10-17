@@ -9,7 +9,7 @@ import { Button, ErrorText, Field, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { MAX_PHOTOS, pickPhotos, toUpload, type Picked } from '@/photos';
-import { isFreePhotoLimit, openPhotoLimit, photoLimitReached } from '@/upsells';
+import { isFreePhotoLimit, openPaywall, photoLimitReached } from '@/upsells';
 
 // Dates are typed as ДД.ММ.ГГГГ: a picker needs another native module, and most memories are "today".
 function toIso(text: string): string | null {
@@ -80,7 +80,7 @@ export default function NewMemory() {
       void queryClient.invalidateQueries({ queryKey: ['today'] });
       if (failed > 0) globalThis.alert?.(s.uploadFailed(failed));
       router.replace(`/memories/${id}`);
-      if (full) openPhotoLimit();
+      if (full) openPaywall('photos');
     },
   });
 
@@ -134,7 +134,7 @@ export default function NewMemory() {
         <Button
           title={photos.length ? `${s.addPhotos} · ${s.photosCount(photos.length, MAX_PHOTOS)}` : s.addPhotos}
           variant="ghost"
-          onPress={() => (photoLimitReached(storage.data) ? openPhotoLimit() : pick.mutate())}
+          onPress={() => (photoLimitReached(storage.data) ? openPaywall('photos') : pick.mutate())}
           disabled={save.isPending}
         />
       )}

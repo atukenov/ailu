@@ -12,7 +12,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { registerForPush } from '@/notifications';
 import { useSession } from '@/session';
-import { openPlans, upsells } from '@/upsells';
+import { openPaywall, upsells } from '@/upsells';
 
 // Until the realtime hub exists, poll so a partner's accept or answer shows up without a manual refresh.
 const POLL_MS = 30_000;
@@ -174,7 +174,7 @@ function StreakUpsell({ coupleId, days }: { coupleId: string; days: number }) {
         title={s.streakUpsellCta}
         onPress={() => {
           close();
-          openPlans('premium');
+          openPaywall('streak');
         }}
       />
       <Button title={s.notNow} variant="ghost" onPress={close} />
@@ -197,15 +197,15 @@ function useTodayUpdate<T>(fn: () => Promise<T>, apply: (today: Today, result: T
 function TaskCard({ task, free }: { task: DailyTask; free: boolean }) {
   const s = useStrings();
   const [tomorrow, setTomorrow] = useState(false);
-  // A free couple asking for another task today is the warmest moment for Plus, but the plans
-  // screen opens at most once a day; after that the button only says when the next task comes.
+  // A free couple asking for another task today is the warmest moment for Plus, but the paywall
+  // opens at most once a day; after that the button only says when the next task comes.
   const moreTask = async () => {
     if ((await upsells.taskShownOn()) === task.date) {
       setTomorrow(true);
       return;
     }
     await upsells.markTaskShown(task.date);
-    openPlans('plus');
+    openPaywall('task');
   };
   const accept = useTodayUpdate(() => api.acceptTask(task.id), (t, task) => ({ ...t, task }));
   const complete = useTodayUpdate(() => api.completeTask(task.id), (t, task) => ({ ...t, task }));
