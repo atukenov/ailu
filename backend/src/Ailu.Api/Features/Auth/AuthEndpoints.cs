@@ -26,9 +26,10 @@ public static class AuthEndpoints
         var me = app.MapGroup("/v1/me").WithTags("Me").RequireAuthorization();
         me.MapGet("/", GetMe);
         me.MapPatch("/", PatchMe);
+        me.MapDelete("/", DeleteMe);
     }
 
-    public static UserDto ToDto(User u) => new(u.Id, u.Phone, u.Name, u.Locale, u.TimeZone);
+    public static UserDto ToDto(User u) => new(u.Id, u.Phone ?? "", u.Name, u.Locale, u.TimeZone);
 
     private static async Task<IResult> RequestCode(PhoneRequest body, AiluDb db, ISmsSender sms, AuthOptions opt,
         TimeProvider clock, CancellationToken ct)
@@ -40,19 +41,21 @@ public static class AuthEndpoints
         var recent = await db.PhoneCodes.AnyAsync(c => c.Phone == phone && c.CreatedAt > now.AddSeconds(-opt.PhoneCodeResendSeconds), ct);
         if (recent) return Errors.TooManyRequests("Код уже отправлен. Повторить можно через минуту.");
 
-        var code = Codes.SixDigits();
+        // The store reviewer's number gets its fixed code and no SMS; everything after that is the usual flow.
+        var review = phone == opt.ReviewNumber;
+        var code = review ? opt.ReviewCode : Codes.SixDigits();
         db.PhoneCodes.Add(new PhoneCode
         {
             Id = Guid.NewGuid(), Phone = phone, CodeHash = Codes.Hash(phone, code),
             CreatedAt = now, ExpiresAt = now.AddMinutes(opt.PhoneCodeMinutes)
         });
         await db.SaveChangesAsync(ct);
-        await sms.SendAsync(phone, $"Ailu: код входа {code}", ct);
+        if (!review) await sms.SendAsync(phone, $"Ailu: код входа {code}", ct);
         return Results.Accepted(value: new { phone, expiresInSeconds = opt.PhoneCodeMinutes * 60 });
     }
 
     private static async Task<IResult> Verify(PhoneVerify body, AiluDb db, AuthOptions opt, TokenIssuer tokens,
-        TimeProvider clock, CancellationToken ct)
+        DemoCouple demo, TimeProvider clock, CancellationToken ct)
     {
         var phone = PhoneNumber.Normalize(body.Phone);
         if (phone is null || string.IsNullOrWhiteSpace(body.Code)) return Errors.Validation("code", "Неверный код.");
@@ -79,6 +82,7 @@ public static class AuthEndpoints
             user = new User { Id = Guid.NewGuid(), Phone = phone, CreatedAt = now };
             db.Users.Add(user);
         }
+        if (phone == opt.ReviewNumber) await demo.EnsureAsync(user, ct);
 
         var pair = Issue(user, db, opt, tokens, now);
         await db.SaveChangesAsync(ct);
@@ -119,6 +123,13 @@ public static class AuthEndpoints
         var id = CurrentUser.Id(http.User);
         var user = await db.Users.SingleOrDefaultAsync(u => u.Id == id, ct);
         return user is null ? Results.NotFound() : Results.Ok(ToDto(user));
+    }
+
+    // Store rules (Apple 5.1.1(v), Google Play) want deletion inside the app. AccountDeletion says what goes.
+    private static async Task<IResult> DeleteMe(HttpContext http, AccountDeletion deletion, CancellationToken ct)
+    {
+        await deletion.DeleteAsync(CurrentUser.Id(http.User), ct);
+        return Results.NoContent();
     }
 
     private static async Task<IResult> PatchMe(UpdateMe body, HttpContext http, AiluDb db, CancellationToken ct)

@@ -49,9 +49,11 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public string PhotoRoot { get; } = Path.Combine(Path.GetTempPath(), $"ailu_photos_{Guid.NewGuid():N}");
 
     private readonly string connectionString;
+    private readonly IReadOnlyDictionary<string, string> settings;
 
-    public ApiFactory()
+    public ApiFactory(IReadOnlyDictionary<string, string>? settings = null)
     {
+        this.settings = settings ?? new Dictionary<string, string>();
         var server = Environment.GetEnvironmentVariable("AILU_TEST_PG")
                      ?? "Host=localhost;Port=5432;Username=postgres;Password=postgres";
         connectionString = $"{server};Database=ailu_test_{Guid.NewGuid():N}";
@@ -67,6 +69,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Photos:PurgeEnabled", "false");
         builder.UseSetting("Mood:RetentionEnabled", "false");
         builder.UseSetting("Photos:Root", PhotoRoot);
+        foreach (var (key, value) in settings) builder.UseSetting(key, value);
         builder.ConfigureServices(s =>
         {
             s.RemoveAll<TimeProvider>();
@@ -79,9 +82,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     }
 
     // One database per test: tests move the clock and create couples, so they must not share state.
-    public static async Task<ApiFactory> StartAsync()
+    public static async Task<ApiFactory> StartAsync(IReadOnlyDictionary<string, string>? settings = null)
     {
-        var api = new ApiFactory();
+        var api = new ApiFactory(settings);
         using var scope = api.Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<AiluDb>().Database.MigrateAsync();
         return api;

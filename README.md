@@ -57,12 +57,25 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
 - **A partner sees a mood, never its note, until the author shares it.** Mood needs the person's explicit consent
   (`PUT /v1/me/mood-consent`); withdrawing it deletes all their moods. Both marking on the same day earns +10 нұр once.
   After 12 months a day's mood becomes a count in `MoodMonth` and the day, note included, is deleted.
+- **Deleting an account doesn't erase the partner's history** (privacy doc). `DELETE /v1/me` removes the person's
+  phone, name, sessions, devices, moods, invitations, reactions, their memories with the photo files, the text of
+  their answers and goals the partner never joined, and ends their couple. The нұр ledger, phase, streak, tasks
+  done together, joined goals and the partner's own records stay; the user row stays as a bare id so those keep
+  an author. The same number can sign up again as a new person.
 
 ### Push notifications
 
 `DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Expo's push service
 when `Push:UseExpo` is `true`; otherwise (the default, and in Development) they are written to the log.
 Set `Push:SchedulerEnabled` to `false` to turn the job off.
+
+### Store review sign-in
+
+Reviewers can't get our SMS, so `Auth:ReviewPhone` + `Auth:ReviewCode` (six digits) give one number a fixed code
+and no SMS. Signing in with it creates a demo couple with 12 days of history, two memories and a goal; the
+partner (Айгерим, no phone, so nobody can sign in as her) accepts the task, confirms it, answers the question and
+marks a mood whenever the reviewer opens Today. If the reviewer ends the couple or deletes the account, the next
+sign-in makes a fresh one. The review account can't send invitations. Both settings empty (the default) turn it off.
 
 ### Photos
 
@@ -83,6 +96,7 @@ Kazakhstan, so an S3-compatible store replaces the folder once hosting is chosen
 | POST | `/v1/auth/phone/verify` | code → access + refresh token; creates the user on first sign-in |
 | POST | `/v1/auth/refresh` | rotate the refresh token |
 | GET/PATCH | `/v1/me` | name, locale (`kk`/`ru`/`en`), time zone |
+| DELETE | `/v1/me` | delete the account (see above) |
 | POST | `/v1/couple/invitations` | invite a partner by phone; they get a code by SMS, valid 24 h |
 | POST | `/v1/couple/invitations/{code}/accept` | only from the invited number; creates the couple |
 | GET/DELETE | `/v1/couple` | couple, partner, days together / end the couple |

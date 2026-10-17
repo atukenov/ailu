@@ -31,6 +31,9 @@ namespace Ailu.Api.Data.Migrations
                     b.Property<DateTimeOffset?>("EndedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsDemo")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("NurBalance")
                         .HasColumnType("integer");
 
@@ -936,6 +939,9 @@ namespace Ailu.Api.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Locale")
                         .IsRequired()
                         .HasMaxLength(5)
@@ -949,7 +955,6 @@ namespace Ailu.Api.Data.Migrations
                         .HasColumnType("character varying(60)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 

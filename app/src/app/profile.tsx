@@ -4,6 +4,7 @@ import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { User } from '@/api/types';
+import { DeleteAccountButton } from '@/components/delete-account';
 import { Button, Card, ErrorText, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
@@ -100,6 +101,7 @@ export default function Profile() {
           await signOut();
         }}
       />
+      <DeleteAccountButton />
     </Screen>
   );
 }

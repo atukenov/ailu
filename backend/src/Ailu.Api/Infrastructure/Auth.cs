@@ -58,6 +58,25 @@ public sealed class AuthOptions
     public int PhoneCodeMaxAttempts { get; set; } = 5;
     public int InvitationHours { get; set; } = 24;
 
+    // Store review sign-in (see DemoCouple). Off unless both are set.
+    public string ReviewPhone { get; set; } = "";
+    public string ReviewCode { get; set; } = "";
+
+    public string? ReviewNumber => ReviewPhone.Length > 0 && ReviewCode.Length > 0 ? PhoneNumber.Normalize(ReviewPhone) : null;
+
+    public void Validate()
+    {
+        if (SigningKey.Length < 32)
+            throw new InvalidOperationException("Auth:SigningKey must be set to at least 32 characters.");
+        if (ReviewPhone.Length > 0 || ReviewCode.Length > 0)
+        {
+            if (PhoneNumber.Normalize(ReviewPhone) is null)
+                throw new InvalidOperationException("Auth:ReviewPhone must be a Kazakhstan number like +77001234567.");
+            if (ReviewCode.Length != 6 || !ReviewCode.All(char.IsAsciiDigit))
+                throw new InvalidOperationException("Auth:ReviewCode must be six digits.");
+        }
+    }
+
     public SymmetricSecurityKey Key() => new(Encoding.UTF8.GetBytes(SigningKey));
 }
 

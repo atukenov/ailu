@@ -41,10 +41,11 @@ public static class DailyEndpoints
     }
 
     private static async Task<IResult> Today(HttpContext http, AiluDb db, DailyContentService content, StreakService streaks,
-        TimeProvider clock, CancellationToken ct)
+        DemoCouple demo, TimeProvider clock, CancellationToken ct)
     {
         var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
         if (scope is null) return Errors.NoCouple();
+        if (scope.Couple.IsDemo) await demo.PlayPartnerAsync(scope, ct);
 
         var today = CoupleCalendar.Today(scope.Couple, clock);
         var (task, question) = await content.EnsureAsync(scope.Couple, today, ct);

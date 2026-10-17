@@ -100,6 +100,7 @@ export const api = {
     request<void>('PUT', '/v1/me/devices', { pushToken, platform }),
   unregisterDevice: (pushToken: string, platform: 'ios' | 'android') =>
     request<void>('POST', '/v1/me/devices/unregister', { pushToken, platform }),
+  deleteAccount: () => request<void>('DELETE', '/v1/me'),
   updateMe: (patch: Partial<Pick<User, 'name' | 'locale' | 'timeZone'>>) => request<User>('PATCH', '/v1/me', patch),
 
   couple: async (): Promise<Couple | null> => {

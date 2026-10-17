@@ -14,8 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 var auth = builder.Configuration.GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions();
-if (auth.SigningKey.Length < 32)
-    throw new InvalidOperationException("Auth:SigningKey must be set to at least 32 characters.");
+auth.Validate();
 
 builder.Services.AddSingleton(auth);
 builder.Services.AddSingleton(TimeProvider.System);
@@ -30,6 +29,8 @@ builder.Services.AddScoped<ActivityService>();
 builder.Services.AddScoped<StreakService>();
 builder.Services.AddScoped<DailyContentService>();
 builder.Services.AddScoped<DailyPushJob>();
+builder.Services.AddScoped<AccountDeletion>();
+builder.Services.AddScoped<DemoCouple>();
 if (builder.Configuration.GetValue("Push:SchedulerEnabled", true)) builder.Services.AddHostedService<DailyPushScheduler>();
 
 var photoRoot = builder.Configuration["Photos:Root"];
@@ -50,6 +51,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidAudience = auth.Audience,
         IssuerSigningKey = auth.Key(),
         ClockSkew = TimeSpan.FromMinutes(1)
+    };
+    // An access token outlives a deleted account by up to an hour; it must stop working at once.
+    o.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async ctx =>
+        {
+            var id = CurrentUser.Id(ctx.Principal!);
+            var db = ctx.HttpContext.RequestServices.GetRequiredService<AiluDb>();
+            if (!await db.Users.AnyAsync(u => u.Id == id && u.DeletedAt == null, ctx.HttpContext.RequestAborted))
+                ctx.Fail("Account deleted.");
+        }
     };
 });
 // Validate token lifetimes against the app's clock rather than the machine's, so tests can move time.
