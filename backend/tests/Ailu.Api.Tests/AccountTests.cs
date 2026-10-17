@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Ailu.Api.Data;
+using Ailu.Api.Features.Achievements;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Daily;
 using Ailu.Api.Features.Memories;
@@ -218,6 +219,14 @@ public class ReviewLoginTests
 
         var mood = (await r.GetFromJsonAsync<MoodDto>("/v1/couple/mood"))!;
         Assert.NotNull(mood.Days.Single(d => d.Date == after.Date).Partner);
+
+        // One achievement already earned, one waiting for the reviewer, and the partner confirms new marks at once.
+        var achievements = (await r.GetFromJsonAsync<AchievementList>("/v1/couple/achievements"))!;
+        Assert.Equal(1, achievements.Earned);
+        Assert.Equal(AchievementState.ConfirmNeeded, achievements.Items.Single(x => x.Slug == "sunrise").State);
+        var marked = await (await r.PostAsJsonAsync("/v1/couple/achievements/first-movie/done", new { }))
+            .Content.ReadFromJsonAsync<AchievementDto>();
+        Assert.Equal(AchievementState.Earned, marked!.State);
 
         // No SMS goes to the review number, and the account can't text anyone else.
         Assert.Throws<KeyNotFoundException>(() => api.Sms.LastCode(ReviewPhone));
