@@ -190,6 +190,48 @@ export type GoalInput = {
   steps: string[];
 };
 
+export type TimelineKind =
+  | 'start'
+  | 'days_together'
+  | 'anniversary'
+  | 'phase'
+  | 'first_task'
+  | 'first_answers'
+  | 'memory'
+  | 'goal_done'
+  | 'achievement';
+
+// One moment in the couple's history. The app writes the words from `kind`; titles are the couple's own,
+// except an achievement's, which comes from the library in the person's language.
+export type TimelineEvent = {
+  id: string;
+  kind: TimelineKind;
+  date: string;
+  at: string;
+  days: number | null;
+  years: number | null;
+  cycle: number | null;
+  phase: number | null;
+  memoryId: string | null;
+  goalId: string | null;
+  title: string | null;
+  place: string | null;
+  thumb: string | null;
+  photos: number | null;
+  slug: string | null;
+  icon: string | null;
+};
+
+// Newest first. On the free plan `hidden` counts the older moments and `freeDays` is how far back a free
+// couple sees; both are null on a paid plan. The couple's start is always the last item.
+export type TimelinePage = {
+  summary: { daysTogether: number; memories: number; goalsDone: number; nurEarned: number };
+  items: TimelineEvent[];
+  nextCursor: string | null;
+  hidden: number | null;
+  freeDays: number | null;
+};
+
 export type Plan = 'free' | 'plus' | 'premium';
 
 export type AchievementCategory = 'firsts' | 'events' | 'travel';

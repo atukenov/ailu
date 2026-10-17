@@ -59,6 +59,7 @@ function Routes() {
           <Stack.Screen name="goals/index" />
           <Stack.Screen name="goals/new" />
           <Stack.Screen name="goals/[id]" />
+          <Stack.Screen name="timeline" />
           <Stack.Screen name="achievements/index" />
           <Stack.Screen name="achievements/[slug]" />
           <Stack.Screen name="achievements/celebrate" options={{ presentation: 'modal' }} />

@@ -35,6 +35,13 @@ confirms, which earns the couple +100 нұр. Progress is the share of closed st
 Removing a shared goal needs both. Free couples run two goals at a time; the list then shows a soft Plus card
 instead of the "+" button.
 
+## Achievements
+
+Achievements (`src/app/achievements/`) are a collection of real-life moments: Первые, События, Путешествия. One
+partner taps "Мы это сделали" with the date, the other confirms, and both see the "Новое достижение" screen once
+(remembered per phone in `src/celebrations.ts`). Free couples collect the firsts; the rest show locked with a Plus
+card. An earned achievement can get a memory, which opens the new-memory screen with its title and date.
+
 ## Store builds
 
 Builds go through EAS (`eas.json`): `development` is a dev client for a phone on your network, `preview` an internal APK or
@@ -47,12 +54,12 @@ for them. Store texts, rating answers, screenshots and the publishing checklist 
 
 | Path | What |
 | --- | --- |
-| `src/app/` | Screens. `_layout.tsx` decides which are reachable: signed out → `sign-in`; no name yet → `name`; no couple → `pair`; in a couple → `index` (Today), `profile`, `memories/` and `goals/`. |
+| `src/app/` | Screens. `_layout.tsx` decides which are reachable: signed out → `sign-in`; no name yet → `name`; no couple → `pair`; in a couple → `index` (Today), `profile`, `memories/`, `goals/` and `achievements/`. |
 | `src/api/` | Typed client for the API, token storage (Keychain/Keystore), one shared refresh on 401. |
 | `src/photos.ts` | Picking photos and shrinking them before upload. |
 | `src/legal.ts` | Links to the privacy policy and terms (`docs/legal`, on GitHub Pages), in the user's language. |
 | `src/notifications.ts` | Permission, push token registration and sign-out unregistration. |
-| `src/i18n/` | Strings. Russian is complete; Kazakh and English fall back to Russian per string. |
+| `src/i18n/` | Strings. Russian and Kazakh are complete; English falls back to Russian per string. Tasks, questions and pushes come from the server in the user's language. |
 | `src/components/` | `ui.tsx` (screen, card, button, field, chip, progress bar), the goal month picker and the phase moon. |
 | `src/constants/theme.ts` | Colors and spacing, taken from the mockups. |
 

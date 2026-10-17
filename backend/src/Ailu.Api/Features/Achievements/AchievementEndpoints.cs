@@ -49,7 +49,7 @@ public static class AchievementEndpoints
         var library = await db.Achievements.OrderBy(a => a.Position).ToListAsync(ct);
         var mine = await db.CoupleAchievements.Where(x => x.CoupleId == scope.Couple.Id).ToDictionaryAsync(x => x.AchievementId, ct);
         var items = library.Where(a => only is null || a.Category == only)
-            .Select(a => ToDto(a, mine.GetValueOrDefault(a.Id), scope, Kazakh(scope))).ToList();
+            .Select(a => ToDto(a, mine.GetValueOrDefault(a.Id), scope, Locale(scope))).ToList();
         return Results.Ok(new AchievementList(items, mine.Values.Count(x => x.EarnedAt is not null), library.Count,
             PlanName(scope.Couple.Plan)));
     }
@@ -61,7 +61,7 @@ public static class AchievementEndpoints
         var achievement = await db.Achievements.SingleOrDefaultAsync(a => a.Slug == slug, ct);
         if (achievement is null) return NotFound();
         var row = await db.CoupleAchievements.SingleOrDefaultAsync(x => x.CoupleId == scope.Couple.Id && x.AchievementId == achievement.Id, ct);
-        return Results.Ok(ToDto(achievement, row, scope, Kazakh(scope)));
+        return Results.Ok(ToDto(achievement, row, scope, Locale(scope)));
     }
 
     // One partner says it happened; the other partner's own mark confirms it and the couple gets +80 нұр.
@@ -96,7 +96,7 @@ public static class AchievementEndpoints
                 row.MemoryId = body.MemoryId;
                 await db.SaveChangesAsync(ct);
             }
-            return Results.Ok(ToDto(achievement, row, scope, Kazakh(scope)));
+            return Results.Ok(ToDto(achievement, row, scope, Locale(scope)));
         }
 
         if (row is null)
@@ -134,7 +134,7 @@ public static class AchievementEndpoints
         }
         // The store reviewer's partner confirms at once, so the whole flow can be seen alone.
         if (scope.Couple.IsDemo && row.EarnedAt is null) await demo.PlayPartnerAsync(scope, ct);
-        return Results.Ok(ToDto(achievement, row, scope, Kazakh(scope)));
+        return Results.Ok(ToDto(achievement, row, scope, Locale(scope)));
     }
 
     // Takes back a mark, or turns the partner's mark down. Nothing undoes an earned achievement.
@@ -153,10 +153,10 @@ public static class AchievementEndpoints
             db.CoupleAchievements.Remove(row);
             await db.SaveChangesAsync(ct);
         }
-        return Results.Ok(ToDto(achievement, null, scope, Kazakh(scope)));
+        return Results.Ok(ToDto(achievement, null, scope, Locale(scope)));
     }
 
-    private static AchievementDto ToDto(Achievement a, CoupleAchievement? row, CoupleScope scope, bool kazakh)
+    private static AchievementDto ToDto(Achievement a, CoupleAchievement? row, CoupleScope scope, string? locale)
     {
         var state =
             row?.EarnedAt is not null ? AchievementState.Earned :
@@ -164,12 +164,12 @@ public static class AchievementEndpoints
             scope.Couple.Plan < a.Tier ? AchievementState.Locked :
             AchievementState.Open;
         return new AchievementDto(a.Slug, a.Category.ToString().ToLowerInvariant(), PlanName(a.Tier), a.Icon,
-            kazakh ? a.TitleKk : a.Title, kazakh ? a.BodyKk : a.Body, state, row?.HappenedOn.ToString("yyyy-MM-dd"),
+            a.TitleIn(locale), a.BodyIn(locale), state, row?.HappenedOn.ToString("yyyy-MM-dd"),
             row?.MemoryId, row?.EarnedAt, Nur.AchievementEarned);
     }
 
-    // Library texts follow the caller's language; anything but Kazakh gets Russian until English exists.
-    private static bool Kazakh(CoupleScope scope) => scope.Me.User?.Locale == "kk";
+    // Library texts follow the caller's language; anything but Kazakh reads Russian until English exists.
+    private static string? Locale(CoupleScope scope) => scope.Me.User?.Locale;
 
     private static string PlanName(CouplePlan plan) => plan.ToString().ToLowerInvariant();
 

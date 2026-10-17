@@ -7,6 +7,7 @@ using Ailu.Api.Features.Goals;
 using Ailu.Api.Features.Memories;
 using Ailu.Api.Features.Mood;
 using Ailu.Api.Features.Pairing;
+using Ailu.Api.Features.Timeline;
 using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -130,6 +131,7 @@ DailyEndpoints.Map(app);
 MemoryEndpoints.Map(app);
 MoodEndpoints.Map(app);
 GoalEndpoints.Map(app);
+TimelineEndpoints.Map(app);
 AchievementEndpoints.Map(app);
 BillingEndpoints.Map(app);
 

@@ -110,7 +110,9 @@ public sealed class Invitation
     public Guid? CoupleId { get; set; }
 }
 
-// Content library. Tasks and questions come from the server, not the app bundle.
+// Content library. Tasks and questions come from the server, not the app bundle. Every item is
+// written in Russian and Kazakh; each partner reads it in their own language (English reads Russian).
+// An item added to the library without its Kazakh text yet shows the Russian one.
 public sealed class DailyTask
 {
     public int Id { get; set; }
@@ -118,8 +120,13 @@ public sealed class DailyTask
     public required string Category { get; set; }
     public required string Title { get; set; }
     public required string Body { get; set; }
+    public required string TitleKk { get; set; }
+    public required string BodyKk { get; set; }
     public int CostKzt { get; set; }
     public int DurationMin { get; set; }
+
+    public string TitleIn(string? locale) => Locales.Pick(locale, Title, TitleKk);
+    public string BodyIn(string? locale) => Locales.Pick(locale, Body, BodyKk);
 }
 
 public sealed class Question
@@ -127,6 +134,17 @@ public sealed class Question
     public int Id { get; set; }
     public required string Slug { get; set; }
     public required string Text { get; set; }
+    public required string TextKk { get; set; }
+
+    public string TextIn(string? locale) => Locales.Pick(locale, Text, TextKk);
+}
+
+public static class Locales
+{
+    public const string Kazakh = "kk";
+
+    public static string Pick(string? locale, string ru, string kk) =>
+        locale == Kazakh && !string.IsNullOrWhiteSpace(kk) ? kk : ru;
 }
 
 public sealed class CoupleTask
@@ -327,7 +345,7 @@ public sealed class GoalStep
 public enum AchievementCategory { Firsts, Events, Travel }
 
 // The achievement library. Like tasks and questions it is server content, not part of the app build, so
-// a new set (say, for Наурыз) ships without a release. Texts come in Russian and Kazakh.
+// a new set (say, for Наурыз) ships without a release. Texts come in Russian and Kazakh, like the tasks.
 public sealed class Achievement
 {
     public int Id { get; set; }
@@ -342,6 +360,9 @@ public sealed class Achievement
     public required string Body { get; set; }
     public required string TitleKk { get; set; }
     public required string BodyKk { get; set; }
+
+    public string TitleIn(string? locale) => Locales.Pick(locale, Title, TitleKk);
+    public string BodyIn(string? locale) => Locales.Pick(locale, Body, BodyKk);
 }
 
 // A couple's achievement. Achievements are for things that happened in real life (gamification doc), so

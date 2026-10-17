@@ -4,6 +4,7 @@ using Ailu.Api.Data;
 using Ailu.Api.Features.Achievements;
 using Ailu.Api.Features.Memories;
 using Ailu.Api.Features.Pairing;
+using Ailu.Api.Features.Timeline;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -151,6 +152,23 @@ public class AchievementTests
 
         Assert.Equal("Первое кофе", (await a.GetFromJsonAsync<AchievementDto>($"{Url}/first-coffee"))!.Title);
         Assert.Equal("Алғашқы кофе", (await b.GetFromJsonAsync<AchievementDto>($"{Url}/first-coffee"))!.Title);
+    }
+
+    [Fact]
+    public async Task Earned_achievement_shows_in_the_history_on_the_day_it_was_earned()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        var (a, b) = await api.PairAsync();
+        (await b.PatchAsJsonAsync("/v1/me", new { locale = "kk" })).EnsureSuccessStatusCode();
+        await Ok(await Mark(a, "first-coffee", new { happenedOn = "2026-09-28" }));
+        Assert.DoesNotContain((await a.GetFromJsonAsync<TimelinePage>("/v1/couple/timeline"))!.Items,
+            e => e.Kind == TimelineKind.Achievement); // not until the partner confirms
+        await Ok(await Mark(b, "first-coffee"));
+
+        var mine = (await a.GetFromJsonAsync<TimelinePage>("/v1/couple/timeline"))!.Items.Single(e => e.Kind == TimelineKind.Achievement);
+        Assert.Equal((new DateOnly(2026, 10, 1), "first-coffee", "Первое кофе", "☕"), (mine.Date, mine.Slug, mine.Title, mine.Icon));
+        var theirs = (await b.GetFromJsonAsync<TimelinePage>("/v1/couple/timeline"))!.Items.Single(e => e.Kind == TimelineKind.Achievement);
+        Assert.Equal("Алғашқы кофе", theirs.Title);
     }
 
     [Fact]
