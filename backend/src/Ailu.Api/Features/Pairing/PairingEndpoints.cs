@@ -67,7 +67,8 @@ public static class PairingEndpoints
         return Results.Created($"/v1/couple/invitations/{invitation.Id}", new InvitationDto(invitation.Id, phone, invitation.ExpiresAt));
     }
 
-    private static async Task<IResult> Accept(string code, HttpContext http, AiluDb db, TimeProvider clock, CancellationToken ct)
+    private static async Task<IResult> Accept(string code, HttpContext http, AiluDb db, BillingService billing, TimeProvider clock,
+        CancellationToken ct)
     {
         var userId = CurrentUser.Id(http.User);
         var now = clock.GetUtcNow();
@@ -106,6 +107,7 @@ public static class PairingEndpoints
         {
             return Errors.Conflict("already_in_couple", "Один из вас уже состоит в паре.");
         }
+        await billing.AttachPayersAsync(couple, ct);
 
         return Results.Ok(new CoupleDto(couple.Id, couple.StartedAt, couple.Status.ToString(), 1, new PartnerDto(inviter.Id, inviter.Name)));
     }

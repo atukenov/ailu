@@ -64,7 +64,8 @@ public sealed class Couple
     public DateOnly? StreakLostLastDay { get; set; }
     public DateOnly? StreakRestartedOn { get; set; }
 
-    // One subscription covers both partners. There is no payment yet, so every couple is on Free.
+    // One subscription covers both partners. A cache of the best live row in Subscriptions, set by
+    // BillingService whenever a subscription changes and by the expiry job when one runs out.
     public CouplePlan Plan { get; set; }
 
     // Photos and bytes the couple currently stores, counted against the plan's limits. Changed only by
@@ -311,4 +312,34 @@ public sealed class GoalStep
     public Guid? MarkedById { get; set; }
     public DateTimeOffset? MarkedAt { get; set; }
     public DateTimeOffset? ClosedAt { get; set; }
+}
+
+public enum StoreProvider { Apple, Google, Trial }
+
+public enum SubscriptionStatus { Active, Grace, Pending, Expired, Revoked, Replaced }
+
+// A store subscription (or the free trial) that pays for a couple. One partner pays, both get the plan.
+// The store is the source of truth: rows are only ever written from what Apple or Google return to the
+// server, never from what the app says. StoreId is Apple's original transaction id or Google's purchase
+// token, so renewals update the same row.
+public sealed class Subscription
+{
+    public Guid Id { get; set; }
+    public Guid CoupleId { get; set; }
+    public Guid PayerUserId { get; set; }
+    public StoreProvider Provider { get; set; }
+    public required string StoreId { get; set; }
+    public required string ProductId { get; set; }
+    public CouplePlan Tier { get; set; }
+    public SubscriptionStatus Status { get; set; }
+
+    // The end of the paid period, or of the grace period while the store retries a failed payment.
+    public DateTimeOffset PeriodEnd { get; set; }
+    public bool AutoRenew { get; set; }
+    public bool Sandbox { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+
+    public bool Entitles(DateTimeOffset now) =>
+        Status is SubscriptionStatus.Active or SubscriptionStatus.Grace && PeriodEnd > now;
 }

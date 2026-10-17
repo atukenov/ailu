@@ -25,6 +25,7 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<MoodMonth> MoodMonths => Set<MoodMonth>();
     public DbSet<Goal> Goals => Set<Goal>();
     public DbSet<GoalStep> GoalSteps => Set<GoalStep>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -186,6 +187,22 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.HasIndex(x => new { x.GoalId, x.Position });
             e.Property(x => x.Title).HasMaxLength(120);
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+        });
+
+        b.Entity<Subscription>(e =>
+        {
+            // One row per store subscription: a second couple can never claim the same purchase.
+            e.HasIndex(x => new { x.Provider, x.StoreId }).IsUnique();
+            e.HasIndex(x => x.CoupleId);
+            e.HasIndex(x => x.PayerUserId);
+            e.HasIndex(x => x.PeriodEnd);
+            e.Property(x => x.Provider).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Tier).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.StoreId).HasMaxLength(500);
+            e.Property(x => x.ProductId).HasMaxLength(100);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.PayerUserId);
         });
     }
 }
