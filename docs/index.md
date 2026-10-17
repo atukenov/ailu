@@ -1,0 +1,15 @@
+---
+title: Ailu
+---
+
+# Ailu
+
+Ваша луна наполняется вместе с вами · Айыңыз бірге толады
+
+| Русский | Қазақша |
+| --- | --- |
+| [Политика конфиденциальности](legal/privacy-ru.html) | [Құпиялылық саясаты](legal/privacy-kk.html) |
+| [Пользовательское соглашение](legal/terms-ru.html) | [Пайдаланушы келісімі](legal/terms-kk.html) |
+| [Удаление аккаунта](legal/delete-account-ru.html) | [Аккаунтты жою](legal/delete-account-kk.html) |
+
+Поддержка · Қолдау: [EMAIL ПОДДЕРЖКИ]
