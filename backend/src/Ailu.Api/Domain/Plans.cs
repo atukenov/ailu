@@ -21,6 +21,10 @@ public static class Plans
     // a day; Premium has "всё из Plus", its personal tasks come later).
     public static int TasksPerDay(CouplePlan plan) => plan == CouplePlan.Free ? 1 : 3;
 
+    // The love-languages quiz is a Plus feature (gamification doc). A result taken on a paid plan stays
+    // visible after the plan ends; taking it again needs the plan.
+    public static bool LoveQuiz(CouplePlan plan) => plan != CouplePlan.Free;
+
     public static int PhotoLimit(CouplePlan plan) => plan switch
     {
         CouplePlan.Plus => PlusPhotos,

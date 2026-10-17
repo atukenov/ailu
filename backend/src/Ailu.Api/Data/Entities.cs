@@ -324,6 +324,31 @@ public sealed class GoalStep
     public DateTimeOffset? ClosedAt { get; set; }
 }
 
+// One taking of the love-languages quiz by the couple. It completes when both partners have answered;
+// until then neither sees the other's picks. Taking it again starts a new round, and the latest
+// completed one is the couple's result.
+public sealed class LoveQuizRound
+{
+    public Guid Id { get; set; }
+    public Guid CoupleId { get; set; }
+    public DateTimeOffset StartedAt { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
+
+    // What completing it earned: 0 when the couple already had the quiz's нұр this quarter.
+    public int NurAwarded { get; set; }
+
+    public List<LoveQuizAnswer> Answers { get; set; } = [];
+}
+
+// One partner's picks for one round: a language code per question, in question order.
+public sealed class LoveQuizAnswer
+{
+    public Guid RoundId { get; set; }
+    public Guid UserId { get; set; }
+    public required string[] Picks { get; set; }
+    public DateTimeOffset SubmittedAt { get; set; }
+}
+
 public enum StoreProvider { Apple, Google, Trial }
 
 public enum SubscriptionStatus { Active, Grace, Pending, Expired, Revoked, Replaced }

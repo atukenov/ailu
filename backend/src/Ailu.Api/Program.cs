@@ -3,6 +3,7 @@ using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Billing;
 using Ailu.Api.Features.Daily;
 using Ailu.Api.Features.Goals;
+using Ailu.Api.Features.LoveQuiz;
 using Ailu.Api.Features.Memories;
 using Ailu.Api.Features.Mood;
 using Ailu.Api.Features.Pairing;
@@ -129,6 +130,7 @@ DailyEndpoints.Map(app);
 MemoryEndpoints.Map(app);
 MoodEndpoints.Map(app);
 GoalEndpoints.Map(app);
+LoveQuizEndpoints.Map(app);
 BillingEndpoints.Map(app);
 
 app.Run();
