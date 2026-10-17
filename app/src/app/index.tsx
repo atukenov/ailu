@@ -95,13 +95,15 @@ function PhaseCard({ phase, streak }: { phase: Phase; streak: number }) {
       <Moon fill={moonFill(phase)} glow={phase.index === 5} />
       <View style={styles.phaseText}>
         {phase.cycle > 1 && <T variant="label">{s.cycle(phase.cycle)}</T>}
-        <T variant="heading">{phase.name}</T>
-        <T variant="small">{phase.moon}</T>
+        <T variant="heading">{s.phases[phase.index]?.name ?? phase.name}</T>
+        <T variant="small">{s.phases[phase.index]?.moon ?? phase.moon}</T>
         <T variant="body">
-          {phase.earned.toLocaleString('ru-RU')} {s.nur}
+          {s.number(phase.earned)} {s.nur}
         </T>
         {phase.nextAt !== null && phase.nextName && (
-          <T variant="small">{s.toNextPhase(phase.nextAt - phase.earned, phase.nextName)}</T>
+          <T variant="small">
+            {s.toNextPhase(phase.nextAt - phase.earned, s.phases[(phase.index + 1) % s.phases.length]?.name ?? phase.nextName)}
+          </T>
         )}
         <T variant="small" style={{ color: streak > 0 ? Colors.success : Colors.textMuted }}>
           {streak > 0 ? s.streak(streak) : s.streakZero}

@@ -42,6 +42,25 @@ public class AuthTests
         Assert.Equal(HttpStatusCode.Unauthorized, (await c.PostAsJsonAsync("/v1/auth/phone/verify", new { phone, code = real })).StatusCode);
     }
 
+    // The app translates problems by `code`, so each sign-in failure needs its own.
+    [Fact]
+    public async Task Sign_in_problems_carry_codes_the_app_can_translate()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        var c = api.CreateClient();
+        Assert.Equal("invalid_phone", await CodeOf(await c.PostAsJsonAsync("/v1/auth/phone/request", new { phone = "123" })));
+
+        var phone = "+77010000001";
+        await c.PostAsJsonAsync("/v1/auth/phone/request", new { phone });
+        var wrong = api.Sms.LastCode(phone) == "000000" ? "111111" : "000000";
+        Assert.Equal("wrong_code", await CodeOf(await c.PostAsJsonAsync("/v1/auth/phone/verify", new { phone, code = wrong })));
+        Assert.Equal("invalid_code", await CodeOf(await c.PostAsJsonAsync("/v1/auth/phone/verify", new { phone, code = " " })));
+        Assert.Equal("session_expired", await CodeOf(await c.PostAsJsonAsync("/v1/auth/refresh", new { refreshToken = "nope" })));
+    }
+
+    private static async Task<string?> CodeOf(HttpResponseMessage res) =>
+        (await res.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString();
+
     [Fact]
     public async Task Refresh_token_rotates_and_works_once()
     {

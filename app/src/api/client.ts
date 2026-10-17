@@ -80,7 +80,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   try {
     res = await send(method, path, body, true);
   } catch {
-    throw new ApiError({ status: 0, code: 'offline', detail: 'Нет связи. Проверьте интернет и попробуйте ещё раз.' });
+    throw new ApiError({ status: 0, code: 'offline' });
   }
   if (res.status === 204) return undefined as T;
   const json = await res.json().catch(() => ({}));

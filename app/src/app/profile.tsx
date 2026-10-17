@@ -9,10 +9,10 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { useSession } from '@/session';
 
+// English is left out until it is translated (see i18n/index.ts).
 const LANGUAGES: { value: User['locale']; native: string }[] = [
-  { value: 'kk', native: 'Қазақша' },
   { value: 'ru', native: 'Русский' },
-  { value: 'en', native: 'English' },
+  { value: 'kk', native: 'Қазақша' },
 ];
 
 export default function Profile() {
@@ -62,8 +62,7 @@ export default function Profile() {
     <Screen>
       <Card>
         <T variant="heading">
-          {user?.name}
-          {couple.data?.partner?.name ? ` и ${couple.data.partner.name}` : ''}
+          {couple.data?.partner?.name ? s.coupleNames(user?.name ?? s.someone, couple.data.partner.name) : user?.name}
         </T>
         <T variant="secondary">{user?.phone}</T>
       </Card>
