@@ -49,6 +49,8 @@ function heading(s: Strings, reason: PaywallReason | undefined, storage: Storage
       return { title: s.paywallGoalsTitle, body: s.paywallGoalsBody };
     case 'quiz':
       return { title: s.paywallQuizTitle, body: s.paywallQuizBody };
+    case 'history':
+      return { title: s.paywallHistoryTitle, body: s.paywallHistoryBody };
   }
   return { title: s.paywallTitle, body: s.paywallBody };
 }

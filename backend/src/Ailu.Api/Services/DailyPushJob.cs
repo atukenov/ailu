@@ -10,6 +10,7 @@ namespace Ailu.Api.Services;
 // - 09:00, the task of the day, to both partners (the day's items are created here if needed);
 // - 20:00, only to someone whose partner has already answered the question and who hasn't;
 //   on Sundays, anyone who isn't owed that nudge hears about their goals instead (weekly reminder).
+// Each push is in the language the person chose in the app (Kazakh or Russian).
 // Each push has a window so a late start (a restart, a couple paired at night) never sends a
 // morning push in the evening.
 public sealed class DailyPushJob(AiluDb db, DailyContentService content, IPushSender push, TimeProvider clock,
@@ -42,7 +43,11 @@ public sealed class DailyPushJob(AiluDb db, DailyContentService content, IPushSe
     {
         var (task, _) = await content.EnsureAsync(couple, day, ct);
         foreach (var member in couple.Members)
-            await SendOnceAsync(member, day, PushKind.MorningTask, "Задание на сегодня", task.DailyTask!.Title, ct);
+        {
+            var kk = member.User?.Locale == Locales.Kazakh;
+            await SendOnceAsync(member, day, PushKind.MorningTask, kk ? "Бүгінгі тапсырма" : "Задание на сегодня",
+                task.DailyTask!.TitleIn(member.User?.Locale), ct);
+        }
     }
 
     private async Task EveningAsync(Couple couple, DateOnly day, CancellationToken ct)
@@ -57,18 +62,21 @@ public sealed class DailyPushJob(AiluDb db, DailyContentService content, IPushSe
                                                (p.Kind == PushKind.EveningAnswer || p.Kind == PushKind.GoalReminder), ct))
                 continue;
 
+            var kk = member.User?.Locale == Locales.Kazakh;
             var mine = member.Role == MemberRole.A ? q?.AnswerA : q?.AnswerB;
             var theirs = member.Role == MemberRole.A ? q?.AnswerB : q?.AnswerA;
             if (q is not null && q.RevealedAt is null && mine is null && theirs is not null)
             {
-                var partner = couple.Members.First(m => m.UserId != member.UserId).User?.Name ?? "Партнёр";
-                await SendOnceAsync(member, day, PushKind.EveningAnswer, "Вопрос дня",
-                    $"{partner} уже ответил(а). Ответы откроются, когда ответите вы.", ct);
+                var partner = couple.Members.First(m => m.UserId != member.UserId).User?.Name ?? (kk ? "Серіктесіңіз" : "Партнёр");
+                await SendOnceAsync(member, day, PushKind.EveningAnswer, kk ? "Күн сұрағы" : "Вопрос дня",
+                    kk ? $"{partner} жауап берді. Сіз жауап бергенде, жауаптар ашылады."
+                       : $"{partner} уже ответил(а). Ответы откроются, когда ответите вы.", ct);
             }
             else if (goal is not null)
             {
-                await SendOnceAsync(member, day, PushKind.GoalReminder, "Ваша цель",
-                    $"«{goal.Title}» — {GoalEndpoints.Progress(goal)}%. Какой шаг сделаете на этой неделе?", ct);
+                await SendOnceAsync(member, day, PushKind.GoalReminder, kk ? "Ортақ мақсатыңыз" : "Ваша цель",
+                    kk ? $"«{goal.Title}» — {GoalEndpoints.Progress(goal)}%. Осы аптада екеуіңіз қандай қадам жасайсыз?"
+                       : $"«{goal.Title}» — {GoalEndpoints.Progress(goal)}%. Какой шаг сделаете на этой неделе?", ct);
             }
         }
     }

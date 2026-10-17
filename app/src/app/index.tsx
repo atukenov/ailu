@@ -84,7 +84,13 @@ function Header({ me, partner, couple }: { me: string; partner: string; couple: 
     <View style={styles.header}>
       <View style={styles.headerText}>
         <T variant="title">{s.greeting(me, partner)}</T>
-        {couple && <T variant="secondary">{s.daysTogether(couple.daysTogether)}</T>}
+        {couple && (
+          <Link href="/timeline" asChild>
+            <Pressable accessibilityRole="link" accessibilityLabel={s.timeline} hitSlop={8}>
+              <T variant="secondary">{s.daysTogether(couple.daysTogether)} ›</T>
+            </Pressable>
+          </Link>
+        )}
       </View>
       <Link href="/memories" asChild>
         <Pressable accessibilityRole="button" accessibilityLabel={s.memories} style={styles.profileButton}>

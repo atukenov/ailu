@@ -207,7 +207,8 @@ public static class DailyEndpoints
             TaskState.Offered;
 
         var d = t.DailyTask!;
-        return new TaskDto(t.Id, t.Date, d.Slug, d.Category, d.Title, d.Body, d.CostKzt, d.DurationMin, state,
+        var locale = scope.Me.User?.Locale;
+        return new TaskDto(t.Id, t.Date, d.Slug, d.Category, d.TitleIn(locale), d.BodyIn(locale), d.CostKzt, d.DurationMin, state,
             mine is not null, theirs is not null, t.CompletedAt, t.ConfirmedAt);
     }
 
@@ -215,7 +216,7 @@ public static class DailyEndpoints
     {
         var mine = scope.Role == MemberRole.A ? q.AnswerA : q.AnswerB;
         var theirs = scope.Role == MemberRole.A ? q.AnswerB : q.AnswerA;
-        return new QuestionDto(q.Id, q.Date, q.Question!.Text, mine, theirs is not null,
+        return new QuestionDto(q.Id, q.Date, q.Question!.TextIn(scope.Me.User?.Locale), mine, theirs is not null,
             q.RevealedAt is not null ? theirs : null, q.RevealedAt);
     }
 }

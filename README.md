@@ -62,6 +62,11 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
   their answers and goals the partner never joined, and ends their couple. The нұр ledger, phase, streak, tasks
   done together, joined goals and the partner's own records stay; the user row stays as a bare id so those keep
   an author. The same number can sign up again as a new person.
+- **The relationship history is built, not stored.** `GET /v1/couple/timeline` assembles it from the couple's own
+  records on each request (start, days together and anniversaries, phases replayed from `NurLedger`, the first task
+  and the first revealed answers, memories, finished goals), so it needs no table and can't drift from them. The
+  server sends kinds and numbers and the app writes the words. Free couples see their last 90 days plus the day they
+  began; Plus and Premium see everything. Nothing is locked: memories stay open in their own tab.
 
 ### Push notifications
 

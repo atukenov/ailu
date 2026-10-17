@@ -37,9 +37,9 @@ export const upsells = {
 };
 
 // Why the paywall opened: the 201st photo, a second task in a day, day 7 of the streak, a third goal,
-// the love-languages quiz.
+// history older than the free plan shows, the love-languages quiz.
 // Opened without a reason (from the profile), it shows both plans.
-export type PaywallReason = 'photos' | 'task' | 'streak' | 'goals' | 'quiz';
+export type PaywallReason = 'photos' | 'task' | 'streak' | 'goals' | 'history' | 'quiz';
 
 export function openPaywall(reason?: PaywallReason) {
   router.push({ pathname: '/paywall', params: reason ? { reason } : {} });

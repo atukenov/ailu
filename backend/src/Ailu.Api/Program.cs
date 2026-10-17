@@ -7,6 +7,7 @@ using Ailu.Api.Features.LoveQuiz;
 using Ailu.Api.Features.Memories;
 using Ailu.Api.Features.Mood;
 using Ailu.Api.Features.Pairing;
+using Ailu.Api.Features.Timeline;
 using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -131,6 +132,7 @@ MemoryEndpoints.Map(app);
 MoodEndpoints.Map(app);
 GoalEndpoints.Map(app);
 LoveQuizEndpoints.Map(app);
+TimelineEndpoints.Map(app);
 BillingEndpoints.Map(app);
 
 app.Run();
