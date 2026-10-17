@@ -68,6 +68,15 @@ namespace Ailu.Api.Data.Migrations
                     b.Property<DateOnly?>("StreakLastDay")
                         .HasColumnType("date");
 
+                    b.Property<int>("StreakLostDays")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("StreakLostLastDay")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("StreakRestartedOn")
+                        .HasColumnType("date");
+
                     b.Property<string>("TimeZone")
                         .IsRequired()
                         .HasMaxLength(64)
