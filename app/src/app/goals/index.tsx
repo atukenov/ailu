@@ -67,7 +67,7 @@ function GoalCard({ goal }: { goal: Goal }) {
             <T variant="heading" style={styles.flex} numberOfLines={2}>
               {goal.title}
             </T>
-            {needsMe && <View style={styles.dot} accessibilityLabel="•" />}
+            {needsMe && <View style={styles.dot} accessibilityLabel={s.needsYou} />}
           </View>
           <T variant="body" style={goal.state === 'done' && { color: Colors.success }}>
             {goal.state === 'done' ? `${s.goalDone} · 100%` : `${goal.progress}%`}

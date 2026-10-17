@@ -11,6 +11,9 @@ public sealed class User
     public string Locale { get; set; } = "ru";
     public string TimeZone { get; set; } = "Asia/Almaty";
     public DateTimeOffset CreatedAt { get; set; }
+
+    // Mood is processed on explicit consent only (privacy doc). Null means not given or withdrawn.
+    public DateTimeOffset? MoodConsentAt { get; set; }
 }
 
 public sealed class PhoneCode
@@ -235,6 +238,35 @@ public sealed class MemoryReaction
     public Guid MemoryId { get; set; }
     public Guid UserId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+}
+
+public enum MoodLevel { Hard, Tired, Even, Good, Great }
+
+// One person's mood for one of the couple's days. The partner sees the mood and when it was marked;
+// the note stays with the author until they share it.
+public sealed class MoodEntry
+{
+    public Guid CoupleId { get; set; }
+    public DateOnly Date { get; set; }
+    public Guid UserId { get; set; }
+    public MoodLevel Mood { get; set; }
+    public string? Note { get; set; }
+    public DateTimeOffset? NoteSharedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+// Moods older than 12 months survive only as counts per person per month.
+public sealed class MoodMonth
+{
+    public Guid CoupleId { get; set; }
+    public Guid UserId { get; set; }
+    public DateOnly Month { get; set; }
+    public int Hard { get; set; }
+    public int Tired { get; set; }
+    public int Even { get; set; }
+    public int Good { get; set; }
+    public int Great { get; set; }
 }
 
 public enum GoalCategory { Travel, Home, Health, Money, Together }

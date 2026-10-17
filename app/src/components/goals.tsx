@@ -25,21 +25,21 @@ export function MonthPicker({ value, onChange }: { value: string | null; onChang
     <View style={styles.group}>
       <T variant="label">{s.goalDeadline}</T>
       <View style={styles.month}>
-        <Arrow glyph="‹" disabled={value === null} onPress={() => onChange(value === null || value <= now ? null : shiftMonth(value, -1))} />
+        <Arrow glyph="‹" label={s.earlier} disabled={value === null} onPress={() => onChange(value === null || value <= now ? null : shiftMonth(value, -1))} />
         <T variant="body" style={styles.monthText}>
           {value ? s.monthYear(value) : s.noDeadline}
         </T>
-        <Arrow glyph="›" onPress={() => onChange(value === null ? now : shiftMonth(value, 1))} />
+        <Arrow glyph="›" label={s.later} onPress={() => onChange(value === null ? now : shiftMonth(value, 1))} />
       </View>
     </View>
   );
 }
 
-function Arrow({ glyph, onPress, disabled }: { glyph: string; onPress: () => void; disabled?: boolean }) {
+function Arrow({ glyph, label, onPress, disabled }: { glyph: string; label: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={glyph === '‹' ? 'Раньше' : 'Позже'}
+      accessibilityLabel={label}
       onPress={onPress}
       disabled={disabled}
       style={[styles.arrow, disabled && styles.disabled]}>
