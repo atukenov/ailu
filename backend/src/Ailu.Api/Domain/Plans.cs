@@ -15,6 +15,10 @@ public static class Plans
 
     public static int? GoalLimit(CouplePlan plan) => plan == CouplePlan.Free ? FreeGoals : null;
 
+    // The task of the day, plus two more on request for paid couples (monetization doc: Free 1, Plus 3
+    // a day; Premium has "всё из Plus", its personal tasks come later).
+    public static int TasksPerDay(CouplePlan plan) => plan == CouplePlan.Free ? 1 : 3;
+
     public static int? PhotoLimit(CouplePlan plan) => plan == CouplePlan.Free ? FreePhotos : null;
 
     // Streak restores a month, from the gamification design (document 3).

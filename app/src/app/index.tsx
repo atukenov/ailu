@@ -61,7 +61,16 @@ export default function TodayScreen() {
         <StreakUpsell coupleId={couple.data.id} days={today.data.streak.days} />
       )}
       {today.data.streak.restore && <RestoreCard restore={today.data.streak.restore} streak={today.data.streak.days} />}
-      <TaskCard task={today.data.task} free={free} />
+      {[today.data.task, ...today.data.moreTasks].map((task, i, tasks) => (
+        <TaskCard
+          key={task.id}
+          task={task}
+          index={i}
+          last={i === tasks.length - 1}
+          tasksPerDay={today.data.tasksPerDay}
+          free={free}
+        />
+      ))}
       <QuestionCard question={today.data.question} partnerName={partnerName} />
       <MoodCard partnerName={partnerName} pollMs={POLL_MS} />
     </Screen>
@@ -194,12 +203,31 @@ function useTodayUpdate<T>(fn: () => Promise<T>, apply: (today: Today, result: T
   });
 }
 
-function TaskCard({ task, free }: { task: DailyTask; free: boolean }) {
+// Puts a changed task back where it came from: the task of the day or one of the extra tasks.
+function withTask(today: Today, task: DailyTask): Today {
+  if (today.task.id === task.id) return { ...today, task };
+  const known = today.moreTasks.some((t) => t.id === task.id);
+  return {
+    ...today,
+    moreTasks: known ? today.moreTasks.map((t) => (t.id === task.id ? task : t)) : [...today.moreTasks, task],
+  };
+}
+
+type TaskCardProps = { task: DailyTask; index: number; last: boolean; tasksPerDay: number; free: boolean };
+
+function TaskCard({ task, index, last, tasksPerDay, free }: TaskCardProps) {
   const s = useStrings();
   const [tomorrow, setTomorrow] = useState(false);
-  // A free couple asking for another task today is the warmest moment for Plus, but the paywall
-  // opens at most once a day; after that the button only says when the next task comes.
+  const paid = tasksPerDay > 1;
+  const next = useTodayUpdate(api.moreTask, withTask);
+  // Paid couples get the next task right away, up to their plan's number a day. A free couple
+  // asking for another task is the warmest moment for Plus, but the paywall opens at most once a
+  // day; after that the button only says when the next task comes.
   const moreTask = async () => {
+    if (paid) {
+      next.mutate();
+      return;
+    }
     if ((await upsells.taskShownOn()) === task.date) {
       setTomorrow(true);
       return;
@@ -207,16 +235,17 @@ function TaskCard({ task, free }: { task: DailyTask; free: boolean }) {
     await upsells.markTaskShown(task.date);
     openPaywall('task');
   };
-  const accept = useTodayUpdate(() => api.acceptTask(task.id), (t, task) => ({ ...t, task }));
-  const complete = useTodayUpdate(() => api.completeTask(task.id), (t, task) => ({ ...t, task }));
+  const accept = useTodayUpdate(() => api.acceptTask(task.id), withTask);
+  const complete = useTodayUpdate(() => api.completeTask(task.id), withTask);
+  const showMore = last && (paid ? index + 1 < tasksPerDay : free);
 
   return (
     <Card>
-      <T variant="label">{s.taskOfDay}</T>
+      <T variant="label">{index === 0 ? s.taskOfDay : s.extraTask(index + 1, tasksPerDay)}</T>
       <T variant="heading">{task.title}</T>
       <T variant="secondary">{task.body}</T>
       <T variant="small">{s.taskMeta(task.durationMin, task.costKzt)}</T>
-      <ErrorText error={accept.error ?? complete.error} />
+      <ErrorText error={accept.error ?? complete.error ?? next.error} />
       {task.state === 'offered' && (
         <>
           {task.acceptedByPartner && <T variant="small">{s.partnerAccepted}</T>}
@@ -233,13 +262,17 @@ function TaskCard({ task, free }: { task: DailyTask; free: boolean }) {
       )}
       {task.state === 'done' && (
         <>
-          <Status text={s.taskDone} done />
+          {/* Нұр for tasks is one a day, so only the task of the day promises it. */}
+          <Status text={index === 0 ? s.taskDone : s.extraTaskDone} done />
           <Button
             title={s.saveToMemories}
             variant="ghost"
             onPress={() => router.push({ pathname: '/memories/new', params: { taskId: task.id, title: task.title } })}
           />
-          {free && <Button title={s.moreTask} variant="ghost" onPress={() => void moreTask()} />}
+          {showMore && (
+            <Button title={s.moreTask} variant="ghost" onPress={() => void moreTask()} loading={next.isPending} />
+          )}
+          {last && paid && index + 1 >= tasksPerDay && <T variant="small">{s.allTasksDone}</T>}
           {tomorrow && <T variant="small">{s.moreTaskTomorrow}</T>}
         </>
       )}
