@@ -9,6 +9,12 @@ public static class Plans
 {
     public const int FreePhotos = 200;
 
+    // Free couples work on two goals at a time; finished and removed goals don't count (gamification
+    // and monetization docs: "Free 2 цели, Plus и выше без лимита").
+    public const int FreeGoals = 2;
+
+    public static int? GoalLimit(CouplePlan plan) => plan == CouplePlan.Free ? FreeGoals : null;
+
     public static int? PhotoLimit(CouplePlan plan) => plan == CouplePlan.Free ? FreePhotos : null;
 
     public static long QuotaBytes(CouplePlan plan) => plan switch

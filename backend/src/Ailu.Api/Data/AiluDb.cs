@@ -21,6 +21,8 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<Memory> Memories => Set<Memory>();
     public DbSet<MemoryPhoto> MemoryPhotos => Set<MemoryPhoto>();
     public DbSet<MemoryReaction> MemoryReactions => Set<MemoryReaction>();
+    public DbSet<Goal> Goals => Set<Goal>();
+    public DbSet<GoalStep> GoalSteps => Set<GoalStep>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -148,6 +150,23 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         {
             e.HasKey(x => new { x.MemoryId, x.UserId });
             e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
+        });
+
+        b.Entity<Goal>(e =>
+        {
+            e.HasIndex(x => x.CoupleId);
+            e.Property(x => x.Title).HasMaxLength(80);
+            e.Property(x => x.Category).HasConversion<string>().HasMaxLength(10);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedById);
+            e.HasMany(x => x.Steps).WithOne().HasForeignKey(s => s.GoalId);
+        });
+
+        b.Entity<GoalStep>(e =>
+        {
+            e.HasIndex(x => new { x.GoalId, x.Position });
+            e.Property(x => x.Title).HasMaxLength(120);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
         });
     }
 }
