@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
@@ -7,7 +7,11 @@ import type { User } from '@/api/types';
 import { Button, Card, ErrorText, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
+import { manageSubscription, restorePurchases, startTrial, useBilling } from '@/purchases';
 import { useSession } from '@/session';
+
+// The paywall screen comes from the limit and upsell work; typed as a plain Href until both have landed.
+const PAYWALL = '/paywall' as Href;
 
 // English is left out until it is translated (see i18n/index.ts).
 const LANGUAGES: { value: User['locale']; native: string }[] = [
@@ -47,6 +51,20 @@ export default function Profile() {
     ]);
   };
 
+  const billing = useBilling();
+  const trial = useMutation({ mutationFn: startTrial });
+  const restore = useMutation({ mutationFn: restorePurchases });
+  const manage = useMutation({ mutationFn: manageSubscription });
+  const native = Platform.OS === 'ios' || Platform.OS === 'android';
+  const sub = billing.data?.subscription;
+  const subLine = !sub
+    ? null
+    : sub.provider === 'trial'
+      ? s.planTrialEnds(s.date(sub.periodEnd.slice(0, 10)))
+      : sub.autoRenew && sub.paidByMe
+        ? s.planRenews(s.date(sub.periodEnd.slice(0, 10)))
+        : s.planEnds(s.date(sub.periodEnd.slice(0, 10)));
+
   const confirmEnd = () => {
     if (Platform.OS === 'web') {
       if (globalThis.confirm?.(s.endCoupleConfirm)) end.mutate();
@@ -83,6 +101,44 @@ export default function Profile() {
         </View>
         <ErrorText error={language.error} />
       </Card>
+
+      {billing.data && (
+        <Card>
+          <T variant="label">{s.planTitle}</T>
+          <T variant="heading">{s.planName(billing.data.plan)}</T>
+          {subLine && <T variant="secondary">{subLine}</T>}
+          {sub && sub.provider !== 'trial' && (
+            <T variant="secondary">
+              {sub.paidByMe ? s.planPaidByMe : s.planPaidByPartner(couple.data?.partner?.name ?? s.someone)}
+            </T>
+          )}
+          {billing.data.plan !== 'premium' && <Button title={s.planChoose} onPress={() => router.push(PAYWALL)} />}
+          {billing.data.plan === 'free' && billing.data.trialAvailable && (
+            <Button
+              title={s.planTrial(billing.data.trialDays)}
+              variant="ghost"
+              onPress={() => trial.mutate()}
+              loading={trial.isPending}
+            />
+          )}
+          {native && sub?.paidByMe && sub.provider !== 'trial' && (
+            <Button
+              title={s.planManage}
+              variant="ghost"
+              onPress={() => manage.mutate(billing.data)}
+              loading={manage.isPending}
+            />
+          )}
+          {native && (
+            <Button title={s.planRestore} variant="ghost" onPress={() => restore.mutate()} loading={restore.isPending} />
+          )}
+          {restore.isSuccess && (
+            <T variant="small">{restore.data ? s.planRestored : s.planNothingToRestore}</T>
+          )}
+          <T variant="small">{s.planCancelAnytime}</T>
+          <ErrorText error={trial.error ?? restore.error ?? manage.error} />
+        </Card>
+      )}
 
       {mood.data?.consented && (
         <>

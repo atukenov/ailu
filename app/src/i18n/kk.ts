@@ -189,6 +189,21 @@ export const kk: Strings = {
   endCoupleConfirm: 'Жұп екеуіңіз үшін де жабылады. Тарих сақталады. Жалғастырасыз ба?',
   cancel: 'Бас тарту',
 
+  planTitle: 'Жазылым',
+  planName: (plan: 'free' | 'plus' | 'premium') => ({ free: 'Тегін нұсқа', plus: 'Plus', premium: 'Premium' })[plan],
+  planRenews: (date: string) => `Келесі төлем: ${date}`,
+  planEnds: (date: string) => `Әрекет ету мерзімі: ${date}`,
+  planTrialEnds: (date: string) => `Сынақ кезеңінің соңы: ${date}`,
+  planPaidByMe: 'Жазылымды сіз төлейсіз, ол екеуіңізге де әрекет етеді.',
+  planPaidByPartner: (name: string) => `Жазылымды ${name} төлейді, ол екеуіңізге де әрекет етеді.`,
+  planChoose: 'Тарифті таңдау',
+  planTrial: (days: number) => `Premium-ды ${days} күн тегін байқап көру`,
+  planRestore: 'Сатып алуларды қалпына келтіру',
+  planRestored: 'Жазылым қалпына келтірілді.',
+  planNothingToRestore: 'Қалпына келтіретін сатып алу жоқ.',
+  planManage: 'Жазылымды басқару',
+  planCancelAnytime: 'Жазылымнан кез келген уақытта бас тартуға болады',
+
   retry: 'Қайталап көру',
   somethingWrong: 'Бір нәрсе дұрыс болмады',
 
@@ -229,6 +244,11 @@ export const kk: Strings = {
     invalid_category: 'Мұндай санат жоқ.',
     invalid_targetMonth: 'Мерзім — ағымдағы айдан ерте емес ай.',
     invalid_steps: 'Мақсатта 20 кезеңге дейін, әрқайсысы 120 таңбаға дейін.',
+    purchase_not_found: 'Дүкен бұл сатып алуды таппады.',
+    purchase_other_account: 'Бұл жазылым басқа Ailu аккаунтында рәсімделген. Қалпына келтіру үшін сол аккаунтқа кіріңіз.',
+    trial_used: 'Жұбыңыз сынақ кезеңін пайдаланып қойған.',
+    store_unavailable: 'Дүкенмен байланысу мүмкін болмады. Сәлден кейін қайталап көріңіз.',
+    purchases_unavailable: 'Жазылымды App Store немесе Google Play-дегі қолданбада рәсімдеуге болады.',
   },
 };
 

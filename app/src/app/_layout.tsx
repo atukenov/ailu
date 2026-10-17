@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 
 import { api } from '@/api/client';
 import { Colors } from '@/constants/theme';
+import { usePurchaseSync } from '@/purchases';
 import { SessionProvider, useSession } from '@/session';
 
 SplashScreen.preventAutoHideAsync();
@@ -38,26 +39,34 @@ function Routes() {
   const paired = !!couple.data;
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="sign-in" />
-      </Stack.Protected>
-      <Stack.Protected guard={signedIn && !named}>
-        <Stack.Screen name="name" />
-      </Stack.Protected>
-      <Stack.Protected guard={signedIn && named && !paired}>
-        <Stack.Screen name="pair" />
-      </Stack.Protected>
-      <Stack.Protected guard={signedIn && named && paired}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="memories/index" />
-        <Stack.Screen name="memories/new" />
-        <Stack.Screen name="memories/[id]" />
-        <Stack.Screen name="goals/index" />
-        <Stack.Screen name="goals/new" />
-        <Stack.Screen name="goals/[id]" />
-      </Stack.Protected>
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="sign-in" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !named}>
+          <Stack.Screen name="name" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && named && !paired}>
+          <Stack.Screen name="pair" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && named && paired}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="memories/index" />
+          <Stack.Screen name="memories/new" />
+          <Stack.Screen name="memories/[id]" />
+          <Stack.Screen name="goals/index" />
+          <Stack.Screen name="goals/new" />
+          <Stack.Screen name="goals/[id]" />
+        </Stack.Protected>
+      </Stack>
+      {signedIn && named && paired && <PurchaseSync />}
+    </>
   );
+}
+
+function PurchaseSync() {
+  usePurchaseSync();
+  return null;
 }
