@@ -107,6 +107,16 @@ public class PairingTests
     }
 
     [Fact]
+    public async Task Days_together_counts_in_the_couples_time_zone()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        // 20:00 UTC is already 01:00 the next day in Almaty; pairing then is still day one.
+        api.Clock.SetUtcNow(new DateTimeOffset(2026, 10, 1, 20, 0, 0, TimeSpan.Zero));
+        var (a, _) = await api.PairAsync();
+        Assert.Equal(1, (await a.GetFromJsonAsync<CoupleDto>("/v1/couple"))!.DaysTogether);
+    }
+
+    [Fact]
     public async Task Cannot_invite_while_in_a_couple()
     {
         await using var api = await ApiFactory.StartAsync();

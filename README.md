@@ -9,7 +9,7 @@ levels are **moon phases**.
 | Path | What |
 | --- | --- |
 | `backend/` | .NET 10 Minimal API, PostgreSQL via EF Core. One folder per scenario under `src/Ailu.Api/Features`. |
-| `app/` | React 19 + Capacitor 7 client (not started yet). |
+| `app/` | React Native app (Expo, Expo Router, TanStack Query). See `app/README.md`. |
 
 ## Backend
 

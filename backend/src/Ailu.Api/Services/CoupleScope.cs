@@ -37,17 +37,18 @@ public static class CoupleCalendar
     // Kazakhstan has been on a single UTC+5 zone since March 2024; used if the zone id is unknown.
     private static readonly TimeSpan Fallback = TimeSpan.FromHours(5);
 
-    public static DateOnly Today(Couple couple, TimeProvider clock)
+    public static DateOnly Today(Couple couple, TimeProvider clock) => DayOf(couple, clock.GetUtcNow());
+
+    public static DateOnly DayOf(Couple couple, DateTimeOffset instant)
     {
-        var now = clock.GetUtcNow();
         try
         {
             var tz = TimeZoneInfo.FindSystemTimeZoneById(couple.TimeZone);
-            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, tz).DateTime);
+            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(instant, tz).DateTime);
         }
         catch (TimeZoneNotFoundException)
         {
-            return DateOnly.FromDateTime(now.ToOffset(Fallback).DateTime);
+            return DateOnly.FromDateTime(instant.ToOffset(Fallback).DateTime);
         }
     }
 }

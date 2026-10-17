@@ -115,8 +115,8 @@ public static class PairingEndpoints
         var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
         if (scope is null) return Errors.NoCouple();
         var c = scope.Couple;
-        var startDay = DateOnly.FromDateTime(c.StartedAt.UtcDateTime);
-        var days = CoupleCalendar.Today(c, clock).DayNumber - startDay.DayNumber + 1;
+        // Both days in the couple's own time zone, or a late-evening pairing counts as two days.
+        var days = CoupleCalendar.Today(c, clock).DayNumber - CoupleCalendar.DayOf(c, c.StartedAt).DayNumber + 1;
         var partner = scope.Partner?.User;
         return Results.Ok(new CoupleDto(c.Id, c.StartedAt, c.Status.ToString(), Math.Max(days, 1),
             partner is null ? null : new PartnerDto(partner.Id, partner.Name)));
