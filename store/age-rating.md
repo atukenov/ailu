@@ -25,7 +25,7 @@
 | Messaging and Chat | No | Чата нет; ответ на вопрос дня — не переписка |
 | Advertising | No | |
 | Parental Controls | No | |
-| Age Assurance | No | Дату рождения не спрашиваем (см. чек-лист) |
+| Age Assurance | No | Дату рождения не спрашиваем |
 
 Итог анкеты, скорее всего, 9+ или 13+ из-за пользовательского контента. **Выбрать вручную 18+** («Override to a higher rating»), чтобы рейтинг совпадал с соглашением.
 
@@ -45,4 +45,4 @@
 - **Ads:** приложение не содержит рекламы.
 - **News app:** No. **COVID-19 contact tracing:** No. **Government app:** No.
 - **Financial features:** No. **Health apps:** No (отметка настроения — не медицинская функция).
-- **Account deletion:** ссылка на страницу удаления аккаунта обязательна (см. чек-лист: функция удаления ещё не построена).
+- **Account deletion:** https://atukenov.github.io/ailu/legal/delete-account-ru.html (удаление в приложении — PR #13).

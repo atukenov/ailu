@@ -27,7 +27,7 @@
 
 - **Does your app collect or share any of the required user data types?** Yes.
 - **Is all of the user data collected by your app encrypted in transit?** Yes (HTTPS).
-- **Do you provide a way for users to request that their data is deleted?** Yes — в приложении и по ссылке на странице удаления (нужна до отправки, см. чек-лист).
+- **Do you provide a way for users to request that their data is deleted?** Yes — в приложении и по ссылке на странице удаления https://atukenov.github.io/ailu/legal/delete-account-ru.html.
 
 | Категория → тип | Collected | Shared | Обязательно? | Цель |
 | --- | --- | --- | --- | --- |

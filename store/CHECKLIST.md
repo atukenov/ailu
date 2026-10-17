@@ -6,8 +6,9 @@
 
 Без этого Apple и Google отклонят сборку.
 
-- [ ] **Удаление аккаунта из приложения.** Apple (правило 5.1.1(v)) и Google Play требуют удаления аккаунта внутри приложения, а Google ещё и веб-ссылку на страницу удаления. Политика уже описывает «Профиль → Удалить аккаунт» и обезличивание общей истории пары по документу 6.
-- [ ] **Вход для ревьюеров.** Вход только по SMS, поэтому ревьюеру нужен демо-номер с постоянным кодом и уже готовая пара с партнёром. Номер и код вписываются в App Review Information и в Play Console → App access.
+- [ ] **Удаление аккаунта и вход для ревьюеров** — строятся в PR #13 («Профиль → Удалить аккаунт»; демо-номер с постоянным кодом и готовой демо-парой). Отметить, когда PR #13 смёржен. Веб-страница удаления для Google Play уже есть: https://atukenov.github.io/ailu/legal/delete-account-ru.html (и `-kk`).
+- [ ] **Включить вход для ревьюеров на продакшн-сервере:** задать `Auth__ReviewPhone` (например `+77000000000`, номер, который не может принадлежать реальному клиенту) и `Auth__ReviewCode` (шесть цифр). Пока они не заданы, вход для ревьюеров выключен.
+- [ ] **Архив пары после распада.** Политика обещает, что после завершения пары оба сохраняют доступ к архиву только для чтения; сервер пока этого не даёт. Либо построить, либо убрать раздел 5 из политики до публикации.
 - [ ] **SMS-провайдер.** Сейчас коды только пишутся в лог сервера (открытое решение).
 - [ ] **Сервер в Казахстане с HTTPS-доменом.** В `app/eas.json` стоит заглушка `https://api.ailu.kz`, её нужно заменить на настоящий адрес.
 - [ ] **Удаление номеров из непринятых приглашений через 24 часа.** Политика это обещает; нужно проверить, что сервер действительно чистит такие приглашения.
@@ -32,15 +33,16 @@
 1. Создать приложение: бандл `kz.ailu.app`, основной язык — русский, SKU `ailu`.
 2. Вписать Apple ID приложения в `app/eas.json` → `submit.production.ios.ascAppId`.
 3. Сборка и отправка: `cd app && npx eas-cli@latest build -p ios --profile production`, затем `npx eas-cli@latest submit -p ios --profile production`. EAS сам создаст сертификаты при первой сборке.
-4. Заполнить: текст из `store/listing-ru.md`, App Privacy из `store/data-safety.md`, Age Rating из `store/age-rating.md` (вручную поднять до 18+), скриншоты из `store/screenshots/ru/ios/` (1320 × 2868, слот 6.9").
-5. Для подписок позже: Agreements, Tax, and Banking → Paid Apps.
+4. App Review Information → Sign-in required: «Phone +7 700 000 00 00 (номер из `Auth__ReviewPhone`), tap «Получить код», enter <код из `Auth__ReviewCode`>. The account is already paired with a demo partner who answers and confirms tasks. Account deletion: Profile → «Удалить аккаунт».»
+5. Заполнить: текст из `store/listing-ru.md`, App Privacy из `store/data-safety.md`, Age Rating из `store/age-rating.md` (вручную поднять до 18+), скриншоты из `store/screenshots/ru/ios/` (1320 × 2868, слот 6.9").
+6. Для подписок позже: Agreements, Tax, and Banking → Paid Apps.
 
 ### Google Play Console
 
 1. Создать приложение: пакет `kz.ailu.app`, язык по умолчанию — русский, добавить казахский перевод из `store/listing-kk.md`.
 2. Создать сервисный аккаунт с доступом к Play Console и положить его JSON-ключ рядом с `app/` (не в git), затем указать путь в `submit.production.android.serviceAccountKeyPath`.
 3. Сборка: `npx eas-cli@latest build -p android --profile production`. Первую AAB Google требует загрузить вручную; дальше работает `eas submit` во внутреннее тестирование.
-4. Заполнить: Data safety из `store/data-safety.md`, Content rating и Target audience из `store/age-rating.md`, App access (демо-номер), Ads: нет, ссылку на удаление аккаунта, скриншоты из `store/screenshots/ru/android/` (1080 × 1920).
+4. Заполнить: Data safety из `store/data-safety.md`, Content rating и Target audience из `store/age-rating.md`, App access (тот же текст, что для Apple: демо-номер и код), Ads: нет, ссылку на удаление аккаунта https://atukenov.github.io/ailu/legal/delete-account-ru.html, скриншоты из `store/screenshots/ru/android/` (1080 × 1920).
 
 ## 4. Скриншоты на казахском
 
