@@ -86,6 +86,49 @@ public class StreakTests
         Assert.Equal(3, Streak.Current(s, D0.AddDays(4))); // one night can still be forgiven
         Assert.Equal(0, Streak.Current(s, D0.AddDays(5)));
     }
+
+    [Fact]
+    public void Live_streak_has_nothing_to_restore() => Assert.Null(Streak.Offer(Run(0, 1, 2), D0.AddDays(4)));
+
+    [Fact]
+    public void Lapsed_streak_pays_for_missed_days_the_free_night_does_not_cover()
+    {
+        var s = Run(0, 1, 2);
+        var offer = Streak.Offer(s, D0.AddDays(6))!; // missed days 3, 4 and 5
+        Assert.Equal(3, offer.Days);
+        Assert.Equal(D0.AddDays(3), offer.Forgiven);
+        Assert.Equal([D0.AddDays(4), D0.AddDays(5)], offer.PaidDays);
+
+        var restored = Streak.Restore(s, D0.AddDays(6), offer);
+        Assert.Equal(3, Streak.Current(restored, D0.AddDays(6)));
+        Assert.Equal(4, Streak.CountDay(restored, D0.AddDays(6)).Days);
+    }
+
+    [Fact]
+    public void Streak_lost_on_starting_over_can_be_restored_for_a_week()
+    {
+        var s = Run(0, 1, 2, 3, 4, 7, 8); // missed 5 and 6: restarted on day 7
+        Assert.Equal(2, s.Days);
+        var offer = Streak.Offer(s, D0.AddDays(8))!;
+        Assert.Equal(5, offer.Days);
+        Assert.Equal([D0.AddDays(6)], offer.PaidDays);
+
+        var restored = Streak.Restore(s, D0.AddDays(8), offer);
+        Assert.Equal(7, restored.Days);
+        Assert.Null(Streak.Offer(restored, D0.AddDays(8)));
+        Assert.Equal(8, Streak.CountDay(restored, D0.AddDays(9)).Days);
+
+        Assert.NotNull(Streak.Offer(Run(0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13), D0.AddDays(13)));
+        Assert.Null(Streak.Offer(Run(0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14), D0.AddDays(14)));
+    }
+
+    [Fact]
+    public void Night_forgiven_this_week_is_paid_for()
+    {
+        var s = Run(0, 2, 3, 5); // forgave day 1, then missing day 4 restarted the streak
+        Assert.Equal(1, s.Days);
+        Assert.Equal([D0.AddDays(4)], Streak.Offer(s, D0.AddDays(5))!.PaidDays);
+    }
 }
 
 public class PhoneNumberTests

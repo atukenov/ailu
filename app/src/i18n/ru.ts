@@ -56,6 +56,13 @@ export const ru = {
 
   streak: (n: number) => `${n} ${plural(n, 'день', 'дня', 'дней')} подряд`,
   streakZero: 'Серия начнётся, когда вы оба что-то сделаете сегодня',
+  streakLapsed: 'Серия прервалась',
+  streakRestarted: (n: number) => `Серия началась заново. Ваши ${n} ${plural(n, 'день', 'дня', 'дней')} остались в истории пары`,
+  restoreOffer: (n: number, cost: number) => `Можно вернуть серию в ${n} ${plural(n, 'день', 'дня', 'дней')} за ${cost} нұр`,
+  restoresLeft: (left: number, perMonth: number) => `Восстановлений в этом месяце: ${left} из ${perMonth}`,
+  restoreStreak: 'Вернуть серию',
+  restoreNoneLeft: 'Восстановления на этот месяц закончились',
+  restoreNotEnoughNur: (cost: number) => `Нужно ${cost} нұр. Выполняйте задания дня, и нұр накопится`,
   nur: 'нұр',
   toNextPhase: (n: number, name: string) => `${n} нұр до фазы «${name}»`,
   cycle: (n: number) => `Цикл ${toRoman(n)}`,

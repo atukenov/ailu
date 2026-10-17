@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
-import type { Couple, DailyQuestion, DailyTask, Phase, Today } from '@/api/types';
+import type { Couple, DailyQuestion, DailyTask, Phase, StreakRestore, Today } from '@/api/types';
 import { Moon } from '@/components/moon';
 import { Button, Card, Centered, ErrorText, Field, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -44,6 +44,7 @@ export default function TodayScreen() {
       }>
       <Header me={user?.name ?? s.someone} partner={partnerName} couple={couple.data ?? null} />
       <PhaseCard phase={today.data.phase} streak={today.data.streak.days} />
+      {today.data.streak.restore && <RestoreCard restore={today.data.streak.restore} streak={today.data.streak.days} />}
       <TaskCard task={today.data.task} />
       <QuestionCard question={today.data.question} partnerName={partnerName} />
     </Screen>
@@ -97,6 +98,28 @@ function PhaseCard({ phase, streak }: { phase: Phase; streak: number }) {
           {streak > 0 ? s.streak(streak) : s.streakZero}
         </T>
       </View>
+    </Card>
+  );
+}
+
+// The reset is worded without blame (gamification design): the days stay in the couple's history.
+function RestoreCard({ restore, streak }: { restore: StreakRestore; streak: number }) {
+  const s = useStrings();
+  const mutation = useTodayUpdate(api.restoreStreak, (t, streak) => ({ ...t, streak }));
+  const noneLeft = restore.restoresLeft < restore.missedDays;
+  return (
+    <Card>
+      <T variant="heading">{streak > 0 ? s.streakRestarted(restore.days) : s.streakLapsed}</T>
+      <T variant="secondary">{s.restoreOffer(restore.days, restore.cost)}</T>
+      <T variant="small">{s.restoresLeft(restore.restoresLeft, restore.restoresPerMonth)}</T>
+      <ErrorText error={mutation.error} />
+      {noneLeft ? (
+        <Status text={s.restoreNoneLeft} />
+      ) : !restore.canAfford ? (
+        <Status text={s.restoreNotEnoughNur(restore.cost)} />
+      ) : (
+        <Button title={s.restoreStreak} onPress={() => mutation.mutate()} loading={mutation.isPending} />
+      )}
     </Card>
   );
 }

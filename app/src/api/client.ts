@@ -10,6 +10,7 @@ import type {
   Phase,
   Problem,
   Storage,
+  Streak,
   Today,
   TokenPair,
   User,
@@ -113,6 +114,7 @@ export const api = {
   acceptTask: (id: string) => request<DailyTask>('POST', `/v1/couple/tasks/${id}/accept`),
   completeTask: (id: string) => request<DailyTask>('POST', `/v1/couple/tasks/${id}/complete`),
   answer: (id: string, text: string) => request<DailyQuestion>('POST', `/v1/couple/questions/${id}/answer`, { text }),
+  restoreStreak: () => request<Streak>('POST', '/v1/couple/streak/restore'),
 
   memories: (cursor?: string | null) =>
     request<MemoryPage>('GET', `/v1/couple/memories${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`),
