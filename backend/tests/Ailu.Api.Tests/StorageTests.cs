@@ -36,7 +36,7 @@ public class StorageTests
 
     private static string[] Files(string root) =>
         Directory.Exists(root)
-            ? Directory.GetFiles(root, "*.jpg", SearchOption.AllDirectories).Select(Path.GetFileName).Order().ToArray()!
+            ? Directory.GetFiles(root, "*.jpg", SearchOption.AllDirectories).Select(f => Path.GetFileName(f)!).Order().ToArray()
             : [];
 
     private static async Task<int> Run<TJob>(ApiFactory api, Func<TJob, Task<int>> run) where TJob : notnull
