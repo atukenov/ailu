@@ -127,6 +127,16 @@ export type MemoryInput = {
 
 export type MemoryPage = { items: Memory[]; nextCursor: string | null };
 
+// A couple that ended; its memories stay readable for both (privacy doc).
+export type PastCouple = {
+  id: string;
+  partner: Partner | null;
+  startedAt: string;
+  endedAt: string;
+  memories: number;
+  partnerPhotosUntil: string;
+};
+
 export type Storage = {
   plan: 'free' | 'plus' | 'premium';
   photos: number;

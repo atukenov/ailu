@@ -6,6 +6,7 @@ import { api } from '@/api/client';
 import type { User } from '@/api/types';
 import { DeleteAccountButton } from '@/components/delete-account';
 import { LegalLinks } from '@/components/legal-links';
+import { PastCouples } from '@/components/past-couples';
 import { Button, Card, ErrorText, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
@@ -121,6 +122,8 @@ export default function Profile() {
         <T variant="secondary">{s.loveQuizNotLabel}</T>
         <Button title={s.loveQuiz} variant="ghost" onPress={() => router.push('/love-quiz')} />
       </Card>
+
+      <PastCouples />
 
       {billing.data && (
         <Card>

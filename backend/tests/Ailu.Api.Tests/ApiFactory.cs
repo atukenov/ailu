@@ -105,6 +105,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public const string AdminKey = "test-admin-key";
 
     public string PhotoRoot { get; } = Path.Combine(Path.GetTempPath(), $"ailu_photos_{Guid.NewGuid():N}");
+    public string ArchiveRoot => PhotoRoot + "-archive";
 
     private readonly string connectionString;
     private readonly IReadOnlyDictionary<string, string> settings;
@@ -163,6 +164,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             await scope.ServiceProvider.GetRequiredService<AiluDb>().Database.EnsureDeletedAsync();
         await base.DisposeAsync();
         if (Directory.Exists(PhotoRoot)) Directory.Delete(PhotoRoot, recursive: true);
+        if (Directory.Exists(ArchiveRoot)) Directory.Delete(ArchiveRoot, recursive: true);
     }
 
     public async Task<HttpClient> SignInAsync(string phone, string? name = null)

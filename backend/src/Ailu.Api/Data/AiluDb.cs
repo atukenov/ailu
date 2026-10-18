@@ -153,6 +153,8 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         b.Entity<MemoryPhoto>(e =>
         {
             e.HasIndex(x => new { x.MemoryId, x.Position }).IsUnique();
+            // The archive job looks for old photos still in the standard class.
+            e.HasIndex(x => x.CreatedAt).HasFilter("\"ArchivedAt\" IS NULL");
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
         });
 

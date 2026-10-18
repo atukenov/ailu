@@ -1139,6 +1139,9 @@ namespace Ailu.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<long>("Bytes")
                         .HasColumnType("bigint");
 
@@ -1163,6 +1166,9 @@ namespace Ailu.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CoupleId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasFilter("\"ArchivedAt\" IS NULL");
 
                     b.HasIndex("MemoryId", "Position")
                         .IsUnique();
