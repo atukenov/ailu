@@ -30,6 +30,11 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<LoveQuizAnswer> LoveQuizAnswers => Set<LoveQuizAnswer>();
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<CoupleAchievement> CoupleAchievements => Set<CoupleAchievement>();
+    public DbSet<AiPick> AiPicks => Set<AiPick>();
+    public DbSet<AiPickItem> AiPickItems => Set<AiPickItem>();
+
+    // The shared task library, without the personal tasks AI wrote for single couples.
+    public IQueryable<DailyTask> TaskLibrary => DailyTasks.Where(t => t.CoupleId == null);
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -77,6 +82,10 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         b.Entity<DailyTask>(e =>
         {
             e.HasIndex(x => x.Slug).IsUnique();
+            e.HasIndex(x => x.CoupleId);
+            e.Property(x => x.Slug).HasMaxLength(60);
+            e.Property(x => x.Category).HasMaxLength(30);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
             e.HasData(Seed.Tasks);
         });
 
@@ -236,6 +245,31 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.Property(x => x.Body).HasMaxLength(200);
             e.Property(x => x.BodyKk).HasMaxLength(200);
             e.HasData(Seed.Achievements);
+        });
+
+        b.Entity<AiPick>(e =>
+        {
+            e.HasIndex(x => new { x.CoupleId, x.CreatedAt });
+            e.HasIndex(x => new { x.CoupleId, x.Month });
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Budget).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Note).HasMaxLength(140);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.RequestedById);
+            e.HasMany(x => x.Items).WithOne().HasForeignKey(i => i.PickId);
+        });
+
+        b.Entity<AiPickItem>(e =>
+        {
+            e.HasIndex(x => new { x.PickId, x.Position }).IsUnique();
+            e.HasIndex(x => new { x.CoupleId, x.SavedAt }).HasFilter("\"SavedAt\" IS NOT NULL");
+            e.Property(x => x.Title).HasMaxLength(120);
+            e.Property(x => x.TitleKk).HasMaxLength(120);
+            e.Property(x => x.Body).HasMaxLength(600);
+            e.Property(x => x.BodyKk).HasMaxLength(600);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.SavedById);
         });
 
         b.Entity<CoupleAchievement>(e =>

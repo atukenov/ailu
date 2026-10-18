@@ -1,4 +1,4 @@
-import type { LoveLanguage } from '@/api/types';
+import type { AiBudget, AiKind, LoveLanguage } from '@/api/types';
 
 // Brand voice: warm and to the point, "вы" to the couple, never "ты" to one partner.
 export const ru = {
@@ -328,6 +328,36 @@ export const ru = {
   extraTask: (n: number, total: number) => `Задание ${n}/${total}`,
   extraTaskDone: 'Готово',
   allTasksDone: 'На сегодня все задания выполнены. Новые появятся завтра.',
+  personalTask: 'Персональное',
+
+  aiPicks: 'Подборки для вас',
+  aiPicksHint: 'Идеи от AI под вашу пару: куда сходить, чем заняться дома, что посмотреть и послушать.',
+  aiKinds: { date: 'Идеи для свидания', home: 'Вечер дома', film: 'Фильм для вас', music: 'Музыка на вечер' } as Record<
+    AiKind,
+    string
+  >,
+  aiBudgets: { any: 'Любой бюджет', free: 'Бесплатно', low: 'До 5 000 ₸' } as Record<AiBudget, string>,
+  aiNoteLabel: 'Пожелание, если есть',
+  aiNotePlaceholder: 'Например: на воздухе, без кино',
+  aiPrivacy: 'AI получает ваше пожелание и то, что вам нравится, но не ваши имена, ответы и воспоминания. Пожелание увидит и партнёр.',
+  aiAsk: 'Подобрать',
+  aiLeft: (left: number, limit: number) => `Осталось ${left} из ${limit} ${plural(limit, 'подборки', 'подборок', 'подборок')} в этом месяце`,
+  aiQuotaUsed: 'Все подборки этого месяца готовы. Новые появятся 1-го числа.',
+  aiTabPicks: 'Подборки',
+  aiTabSaved: 'Сохранённое',
+  aiEmpty: 'Здесь появятся ваши подборки. Выберите, что подобрать.',
+  aiSavedEmpty: 'Нажмите ♡ у идеи, и она сохранится для вас обоих.',
+  aiAskedBy: (name: string) => `По просьбе: ${name}`,
+  aiSave: 'Сохранить идею',
+  aiUnsave: 'Убрать из сохранённого',
+  aiLocked: 'Новые подборки от AI открыты в Premium. Всё, что вы уже сохранили, остаётся с вами.',
+  aiUnlock: 'Открыть Premium',
+  aiMeta: (kind: AiKind, min: number, kzt: number) =>
+    kind === 'film' || kind === 'music'
+      ? `${min} мин`
+      : `${min} мин · ${kzt === 0 ? 'бесплатно' : `около ${kzt.toLocaleString('ru-RU')} ₸`}`,
+  paywallAiTitle: 'Пусть приложение придумает за вас',
+  paywallAiBody: 'Идеи для свиданий, фильмы, музыка на вечер и персональные задания под вашу пару открыты в Premium.',
   streakUpsellCta: 'Посмотреть Premium',
   notNow: 'Не сейчас',
   storageFullCta: (plan: string) => `Больше места в ${plan}`,
@@ -518,6 +548,13 @@ export const ru = {
     achievement_earned: 'Это достижение уже ваше, его не отменить.',
     achievement_marked: 'Партнёр только что отметил это достижение. Подтвердите его.',
     invalid_memoryId: 'Этого воспоминания больше нет.',
+    ai_plan: 'Подборки от AI открыты в Premium.',
+    ai_quota: 'Все подборки этого месяца готовы. Новые появятся 1-го числа.',
+    ai_unavailable: 'Не получилось составить подборку. Попробуйте чуть позже, попытка не потрачена.',
+    ai_not_found: 'Эта подборка не найдена.',
+    invalid_kind: 'Выберите, что подобрать.',
+    invalid_budget: 'Такого бюджета нет.',
+    invalid_wish: 'Пожелание до 140 символов.',
   } as Record<string, string>,
 };
 

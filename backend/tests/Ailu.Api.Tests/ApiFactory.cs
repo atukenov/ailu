@@ -48,6 +48,28 @@ public sealed class TestStore(StoreProvider provider) : IStoreClient
     }
 }
 
+// The built-in stub writer, which a test can take down and whose requests it can read.
+public sealed class TestAiWriter : IAiWriter
+{
+    private readonly StubAiWriter stub = new();
+    public ConcurrentQueue<object> Requests { get; } = new();
+    public bool Down { get; set; }
+
+    public Task<IReadOnlyList<AiIdea>> IdeasAsync(IdeaRequest request, CancellationToken ct = default)
+    {
+        Requests.Enqueue(request);
+        if (Down) throw new AiUnavailableException("down");
+        return stub.IdeasAsync(request, ct);
+    }
+
+    public Task<AiTask> TaskAsync(TaskRequest request, CancellationToken ct = default)
+    {
+        Requests.Enqueue(request);
+        if (Down) throw new AiUnavailableException("down");
+        return stub.TaskAsync(request, ct);
+    }
+}
+
 public sealed class FakeSms : ISmsSender
 {
     private readonly ConcurrentDictionary<string, string> last = new();
@@ -70,6 +92,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public FakePush Push { get; } = new();
     public TestStore Apple { get; } = new(StoreProvider.Apple);
     public TestStore Google { get; } = new(StoreProvider.Google);
+    public TestAiWriter Ai { get; } = new();
     public const string GoogleWebhookSecret = "test-webhook-secret";
 
     public string PhotoRoot { get; } = Path.Combine(Path.GetTempPath(), $"ailu_photos_{Guid.NewGuid():N}");
@@ -109,6 +132,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             s.RemoveAll<IStoreClient>();
             s.AddSingleton<IStoreClient>(Apple);
             s.AddSingleton<IStoreClient>(Google);
+            s.RemoveAll<IAiWriter>();
+            s.AddSingleton<IAiWriter>(Ai);
         });
     }
 

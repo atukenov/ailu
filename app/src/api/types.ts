@@ -63,6 +63,8 @@ export type DailyTask = {
   acceptedByPartner: boolean;
   completedAt: string | null;
   confirmedAt: string | null;
+  // A task AI wrote for this couple: Premium's extra tasks.
+  personal: boolean;
 };
 
 export type DailyQuestion = {
@@ -297,3 +299,33 @@ export type Billing = {
   trialDays: number;
   products: BillingProduct[];
 };
+
+// AI selections (Premium). Ideas come in the reader's language; `saved` is shared by both partners.
+export type AiKind = 'date' | 'home' | 'film' | 'music';
+export type AiBudget = 'any' | 'free' | 'low';
+
+export type AiItem = {
+  id: string;
+  pickId: string;
+  kind: AiKind;
+  title: string;
+  body: string;
+  costKzt: number;
+  durationMin: number;
+  saved: boolean;
+  savedAt: string | null;
+};
+
+export type AiPick = {
+  id: string;
+  kind: AiKind;
+  budget: AiBudget;
+  wish: string | null;
+  byMe: boolean;
+  createdAt: string;
+  items: AiItem[];
+};
+
+// `available`: the plan lets the couple ask for new selections. `used` of `limit` this month; `resetsOn`
+// is the first day of the next month.
+export type Ai = { available: boolean; used: number; limit: number; resetsOn: string; picks: AiPick[]; saved: AiItem[] };

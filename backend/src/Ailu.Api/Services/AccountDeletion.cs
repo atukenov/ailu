@@ -9,7 +9,7 @@ namespace Ailu.Api.Services;
 //
 // Gone: phone, name, sign-in sessions, devices, push history, moods, invitations, their memories with
 // the photo files, their reactions, their answers to daily questions and to the love-languages quiz, goals they proposed that the
-// partner never joined.
+// partner never joined, the wishes they typed for AI selections.
 // Kept, anonymous: the couple's нұр ledger, phase and streak, the days of tasks done together, goals
 // both had joined, the partner's own memories and answers. The user row stays as a bare id (no phone,
 // no name) so those records keep a valid author, and the partner sees them unsigned.
@@ -77,6 +77,9 @@ public sealed class AccountDeletion(AiluDb db, IPhotoStore store, TimeProvider c
                 .ExecuteUpdateAsync(s => s.SetProperty(g => g.RemovedAt, now), ct);
             // A mark the partner never confirmed goes with them; earned achievements stay the couple's.
             await db.CoupleAchievements.Where(a => a.MarkedById == userId && a.EarnedAt == null).ExecuteDeleteAsync(ct);
+            // The wish they typed for an AI selection is their own words; the ideas stay the couple's.
+            await db.AiPicks.Where(p => p.RequestedById == userId && p.Note != null)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.Note, (string?)null), ct);
 
             user.Phone = null;
             user.Name = null;

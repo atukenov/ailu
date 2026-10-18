@@ -22,10 +22,11 @@ const MONTHLY_KZT: Record<Tier, number> = { plus: 1490, premium: 2490 };
 const tenge = (n: number) => `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} ₸`;
 
 // Each soft moment offers Plus; only day 7 of the streak offers Premium right away (monetization
-// doc). A Plus couple out of photo room is offered Premium. Opened without a reason, the paywall
-// shows both.
+// doc). A Plus couple out of photo room is offered Premium, and AI selections are Premium only. Opened
+// without a reason, the paywall shows both.
 function tiersFor(reason: PaywallReason | undefined, plan: Storage['plan'] | undefined): Tier[] {
   if (reason === 'streak') return ['premium', 'plus'];
+  if (reason === 'ai') return ['premium'];
   if (reason === 'photos') return [biggerPlan(plan) ?? 'plus'];
   if (reason) return ['plus'];
   return ['plus', 'premium'];
@@ -53,6 +54,8 @@ function heading(s: Strings, reason: PaywallReason | undefined, storage: Storage
       return { title: s.paywallHistoryTitle, body: s.paywallHistoryBody };
     case 'achievements':
       return { title: s.paywallAchievementsTitle, body: s.paywallAchievementsBody };
+    case 'ai':
+      return { title: s.paywallAiTitle, body: s.paywallAiBody };
   }
   return { title: s.paywallTitle, body: s.paywallBody };
 }

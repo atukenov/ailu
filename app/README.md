@@ -42,6 +42,13 @@ partner taps "Мы это сделали" with the date, the other confirms, and
 (remembered per phone in `src/celebrations.ts`). Free couples collect the firsts; the rest show locked with a Plus
 card. An earned achievement can get a memory, which opens the new-memory screen with its title and date.
 
+## AI selections
+
+`src/app/ai-picks.tsx` is Premium's "Подборки для вас": pick a date, an evening at home, a film or music, maybe a budget
+and a short wish, and get five ideas both partners see; the heart saves an idea for both (the "Сохранённое" tab). Today
+shows the four kinds as a row; on other plans it opens the Premium paywall (`reason=ai`). Premium's extra tasks are
+personal ones written by AI and carry the "Персональное" label.
+
 ## Store builds
 
 Builds go through EAS (`eas.json`): `development` is a dev client for a phone on your network, `preview` an internal APK or

@@ -73,6 +73,22 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
   with the day it happened, the other confirms, and the couple gets +80 нұр once. An earned achievement is never
   undone, not even when the plan lapses; only a new mark checks the plan.
 
+- **AI ideas are Premium's, and the model never learns who the couple is.** A Premium couple asks for selections
+  (`POST /v1/couple/ai/picks`: five ideas for a date, an evening at home, a film or music), 30 a calendar month
+  (`Plans.PremiumAiPicksPerMonth`); the place is taken under the couple row lock before the model is called, and a
+  failed call gives it back. Premium's two extra tasks a day are personal tasks the model writes; they are stored as
+  `DailyTask` rows with the couple's `CoupleId`, which keeps them out of the shared library (`AiluDb.TaskLibrary`), and a
+  library task stands in when the model can't be reached. The model gets only `CoupleProfile` (season, days together,
+  love-language leanings, library tasks they did, goal categories) and the partner's typed wish: no names, phones,
+  answers, memories or moods. Selections and saved ideas stay readable after the plan ends.
+
+### AI
+
+`IAiWriter` writes selections and personal tasks. With `Ai:ApiKey` set it is `ClaudeAiWriter` (Anthropic API,
+`Ai:Model` default `claude-opus-5-5`, `Ai:Effort` default `low`, structured JSON output, server-side refusal
+fallbacks); without a key, `StubAiWriter` serves a small built-in set in Russian and Kazakh, so everything works
+before a key exists. The prompts and the checks on what comes back are in `Services/AiPrompts.cs`.
+
 ### Push notifications
 
 `DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Expo's push service
