@@ -445,6 +445,37 @@ export const kk: Strings = {
   planManage: 'Жазылымды басқару',
   planCancelAnytime: 'Жазылымнан кез келген уақытта бас тартуға болады',
 
+  planEnterCode: 'Кодты енгізу',
+  planGiftEnds: (date: string) => `Сыйлық мерзімі: ${date}`,
+  planPromoEnds: (date: string) => `Промокод мерзімі: ${date}`,
+  paywallHaveCode: 'Менде код бар',
+
+  redeemHint: 'Сыйлықтағы кодты немесе промокодты енгізіңіз. Тариф екеуіңізге де қосылады.',
+  redeemCodeLabel: 'Код',
+  redeemButton: 'Белсендіру',
+  redeemStoreNote:
+    'Егер App Store немесе Google Play-де жазылым төлеп жүрсеңіз, ондағы төлемдер жалғаса береді. Оларды дүкен баптауларында тоқтатуға болады.',
+  redeemGiftDone: 'Сыйлық қабылданды!',
+  redeemPromoDone: 'Промокод қолданылды!',
+  redeemDoneBody: (plan: string, date: string) => `${plan} екеуіңізге қосылды. Мерзімі: ${date}.`,
+  redeemDone: 'Дайын',
+  giftsTitle: 'Ailu сыйлау',
+  giftsHint: 'Жақын жұпқа Ailu-дің бірнеше айын сыйлаңыз. Төлемнен кейін код аласыз, оны кез келген мессенджермен жіберуге болады.',
+  giftsSoon: 'Сыйлық жазылымдары жақында пайда болады.',
+  giftsLength: 'Мерзімі',
+  giftsPay: (price: string) => `${price} төлеу`,
+  giftsMine: 'Сіздің сыйлықтарыңыз',
+  giftName: (plan: string, months: number) => `${plan} · ${months} ай`,
+  giftPending: 'Төлемді күтуде',
+  giftPayNow: 'Төлеу',
+  giftCodeHint: 'Сыйлық коды. Оны сыйлайтын адамға жіберіңіз.',
+  giftSend: 'Кодты жіберу',
+  giftRedeemed: 'Сыйлық белсендірілді',
+  giftCancelled: 'Төлем өтпеді',
+  giftRefunded: 'Ақша қайтарылды, код енді жарамсыз',
+  giftShare: (plan: string, months: number, code: string) =>
+    `Сізге Ailu ${plan} ${months} айға сыйлаймын! Ailu-ді ашып, профильде «Кодты енгізу» батырмасын басып, ${code} кодын енгізіңіз.`,
+
   retry: 'Қайталап көру',
   somethingWrong: 'Бір нәрсе дұрыс болмады',
 
@@ -513,6 +544,12 @@ export const kk: Strings = {
     achievement_earned: 'Бұл жетістік сіздікі, оны болдырмау мүмкін емес.',
     achievement_marked: 'Серіктесіңіз бұл жетістікті жаңа ғана белгіледі. Оны растаңыз.',
     invalid_memoryId: 'Бұл естелік енді жоқ.',
+    plan_code_not_found: 'Мұндай код жоқ. Қате терілмегенін тексеріңіз.',
+    plan_code_used: 'Бұл код қолданылып қойған.',
+    plan_code_ended: 'Бұл промокодтың мерзімі аяқталды.',
+    gifts_unavailable: 'Сыйлық жазылымдары әзірге қолжетімсіз. Кейінірек көріңіз.',
+    gift_not_found: 'Мұндай сыйлық жоқ.',
+    invalid_productId: 'Мұндай сыйлық жоқ.',
   },
 };
 

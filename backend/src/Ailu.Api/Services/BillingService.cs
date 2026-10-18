@@ -139,7 +139,7 @@ public sealed class BillingService(AiluDb db, IEnumerable<IStoreClient> stores, 
         return true;
     }
 
-    // A new couple: whatever either partner still pays for comes along.
+    // A new couple: whatever either partner still pays for comes along, gifts and promo codes they entered too.
     public async Task AttachPayersAsync(Couple couple, CancellationToken ct)
     {
         var now = clock.GetUtcNow();
@@ -175,7 +175,8 @@ public sealed class BillingService(AiluDb db, IEnumerable<IStoreClient> stores, 
 
         foreach (var s in due)
         {
-            if (s.Provider != StoreProvider.Trial)
+            // Only a store can renew; a trial or a code simply ends.
+            if (s.Provider is StoreProvider.Apple or StoreProvider.Google)
             {
                 try
                 {

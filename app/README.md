@@ -42,6 +42,12 @@ partner taps "Мы это сделали" with the date, the other confirms, and
 (remembered per phone in `src/celebrations.ts`). Free couples collect the firsts; the rest show locked with a Plus
 card. An earned achievement can get a memory, which opens the new-memory screen with its title and date.
 
+## Gifts and codes
+
+The profile's plan card has "Ввести код" (`src/app/redeem.tsx`, also linked from the paywall) for a gift or promo
+code, and "Подарить Ailu" (`src/app/gifts.tsx`) once the server sells gifts or the person has bought one. The gift is
+paid on the provider's page in the browser; back in the app, the order shows its code and a share button.
+
 ## Store builds
 
 Builds go through EAS (`eas.json`): `development` is a dev client for a phone on your network, `preview` an internal APK or

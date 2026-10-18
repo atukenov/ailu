@@ -448,6 +448,38 @@ export const ru = {
   planManage: 'Управлять подпиской',
   planCancelAnytime: 'Вы можете отменить подписку в любое время',
 
+  planEnterCode: 'Ввести код',
+  planGiftEnds: (date: string) => `Подарок действует до ${date}`,
+  planPromoEnds: (date: string) => `По промокоду до ${date}`,
+  paywallHaveCode: 'У меня есть код',
+
+  // Gift subscriptions and promo codes
+  redeemHint: 'Введите код из подарка или промокод. Тариф включится для вас обоих.',
+  redeemCodeLabel: 'Код',
+  redeemButton: 'Активировать',
+  redeemStoreNote:
+    'Если вы уже платите за подписку в App Store или Google Play, списания там продолжатся. Отменить их можно в настройках магазина.',
+  redeemGiftDone: 'Подарок принят!',
+  redeemPromoDone: 'Промокод применён!',
+  redeemDoneBody: (plan: string, date: string) => `${plan} для вас обоих до ${date}.`,
+  redeemDone: 'Готово',
+  giftsTitle: 'Подарить Ailu',
+  giftsHint: 'Подарите близкой паре несколько месяцев Ailu. После оплаты вы получите код, его можно отправить в любом мессенджере.',
+  giftsSoon: 'Подарочные подписки скоро появятся.',
+  giftsLength: 'Срок',
+  giftsPay: (price: string) => `Оплатить ${price}`,
+  giftsMine: 'Ваши подарки',
+  giftName: (plan: string, months: number) => `${plan} · ${months} ${plural(months, 'месяц', 'месяца', 'месяцев')}`,
+  giftPending: 'Ждёт оплаты',
+  giftPayNow: 'Оплатить',
+  giftCodeHint: 'Код подарка. Отправьте его тем, кому дарите.',
+  giftSend: 'Отправить код',
+  giftRedeemed: 'Подарок активирован',
+  giftCancelled: 'Оплата не прошла',
+  giftRefunded: 'Деньги вернули, код больше не действует',
+  giftShare: (plan: string, months: number, code: string) =>
+    `Дарю вам Ailu ${plan} на ${months} ${plural(months, 'месяц', 'месяца', 'месяцев')}! Откройте Ailu, в профиле нажмите «Ввести код» и введите ${code}.`,
+
   retry: 'Попробовать ещё раз',
   somethingWrong: 'Что-то пошло не так',
 
@@ -518,6 +550,12 @@ export const ru = {
     achievement_earned: 'Это достижение уже ваше, его не отменить.',
     achievement_marked: 'Партнёр только что отметил это достижение. Подтвердите его.',
     invalid_memoryId: 'Этого воспоминания больше нет.',
+    plan_code_not_found: 'Такого кода нет. Проверьте, нет ли в нём опечатки.',
+    plan_code_used: 'Этот код уже использован.',
+    plan_code_ended: 'Срок этого промокода закончился.',
+    gifts_unavailable: 'Подарочные подписки пока недоступны. Попробуйте чуть позже.',
+    gift_not_found: 'Такого подарка нет.',
+    invalid_productId: 'Такого подарка нет.',
   } as Record<string, string>,
 };
 

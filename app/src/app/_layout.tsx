@@ -65,6 +65,8 @@ function Routes() {
           <Stack.Screen name="achievements/[slug]" />
           <Stack.Screen name="achievements/celebrate" options={{ presentation: 'modal' }} />
           <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="redeem" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="gifts" />
         </Stack.Protected>
       </Stack>
       {signedIn && named && paired && <PurchaseSync />}
