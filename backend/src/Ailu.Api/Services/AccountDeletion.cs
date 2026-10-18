@@ -8,7 +8,7 @@ namespace Ailu.Api.Services;
 // their own records go; what the couple built together stays with the partner, without pointing to them.
 //
 // Gone: phone, name, sign-in sessions, devices, push history, moods, invitations, their memories with
-// the photo files, their reactions, their answers to daily questions, goals they proposed that the
+// the photo files, their reactions, their answers to daily questions and to the love-languages quiz, goals they proposed that the
 // partner never joined.
 // Kept, anonymous: the couple's нұр ledger, phase and streak, the days of tasks done together, goals
 // both had joined, the partner's own memories and answers. The user row stays as a bare id (no phone,
@@ -54,6 +54,7 @@ public sealed class AccountDeletion(AiluDb db, IPhotoStore store, TimeProvider c
 
             await db.MemoryReactions.Where(r => r.UserId == userId).ExecuteDeleteAsync(ct);
             await db.Moods.Where(x => x.UserId == userId).ExecuteDeleteAsync(ct);
+            await db.LoveQuizAnswers.Where(x => x.UserId == userId).ExecuteDeleteAsync(ct);
             await db.MoodMonths.Where(x => x.UserId == userId).ExecuteDeleteAsync(ct);
             await db.Devices.Where(x => x.UserId == userId).ExecuteDeleteAsync(ct);
             await db.RefreshTokens.Where(x => x.UserId == userId).ExecuteDeleteAsync(ct);

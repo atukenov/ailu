@@ -925,6 +925,57 @@ namespace Ailu.Api.Data.Migrations
                     b.ToTable("Invitations");
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.LoveQuizAnswer", b =>
+                {
+                    b.Property<Guid>("RoundId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<string[]>("Picks")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("RoundId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("LoveQuizAnswers");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.LoveQuizRound", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("NurAwarded")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoupleId")
+                        .IsUnique()
+                        .HasFilter("\"CompletedAt\" IS NULL");
+
+                    b.HasIndex("CoupleId", "StartedAt");
+
+                    b.ToTable("LoveQuizRounds");
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.Memory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1581,6 +1632,30 @@ namespace Ailu.Api.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.LoveQuizAnswer", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.LoveQuizRound", null)
+                        .WithMany("Answers")
+                        .HasForeignKey("RoundId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.LoveQuizRound", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.Memory", b =>
                 {
                     b.HasOne("Ailu.Api.Data.User", "Author")
@@ -1694,6 +1769,11 @@ namespace Ailu.Api.Data.Migrations
             modelBuilder.Entity("Ailu.Api.Data.Goal", b =>
                 {
                     b.Navigation("Steps");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.LoveQuizRound", b =>
+                {
+                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.Memory", b =>

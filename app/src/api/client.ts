@@ -10,6 +10,8 @@ import type {
   GoalInput,
   GoalList,
   Invitation,
+  LoveLanguage,
+  LoveQuiz,
   Memory,
   MemoryInput,
   MemoryPage,
@@ -160,6 +162,9 @@ export const api = {
   markStep: (id: string, stepId: string, on: boolean) =>
     request<Goal>(on ? 'POST' : 'DELETE', `/v1/couple/goals/${id}/steps/${stepId}/done`),
 
+  loveQuiz: () => request<LoveQuiz>('GET', '/v1/couple/love-quiz'),
+  // One language per question, in question order.
+  answerLoveQuiz: (answers: LoveLanguage[]) => request<LoveQuiz>('POST', '/v1/couple/love-quiz/answers', { answers }),
   achievements: () => request<AchievementList>('GET', '/v1/couple/achievements'),
   achievement: (slug: string) => request<Achievement>('GET', `/v1/couple/achievements/${slug}`),
   // The first partner's mark asks the other to confirm; the other's mark earns it. HappenedOn is yyyy-MM-dd.

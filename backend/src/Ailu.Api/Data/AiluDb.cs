@@ -26,6 +26,8 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<Goal> Goals => Set<Goal>();
     public DbSet<GoalStep> GoalSteps => Set<GoalStep>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<LoveQuizRound> LoveQuizRounds => Set<LoveQuizRound>();
+    public DbSet<LoveQuizAnswer> LoveQuizAnswers => Set<LoveQuizAnswer>();
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<CoupleAchievement> CoupleAchievements => Set<CoupleAchievement>();
 
@@ -189,6 +191,21 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.HasIndex(x => new { x.GoalId, x.Position });
             e.Property(x => x.Title).HasMaxLength(120);
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+        });
+
+        b.Entity<LoveQuizRound>(e =>
+        {
+            e.HasIndex(x => new { x.CoupleId, x.StartedAt });
+            // At most one round waiting for answers per couple.
+            e.HasIndex(x => x.CoupleId).IsUnique().HasFilter("\"CompletedAt\" IS NULL");
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasMany(x => x.Answers).WithOne().HasForeignKey(a => a.RoundId);
+        });
+
+        b.Entity<LoveQuizAnswer>(e =>
+        {
+            e.HasKey(x => new { x.RoundId, x.UserId });
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
         });
 
         b.Entity<Subscription>(e =>

@@ -190,6 +190,24 @@ export type GoalInput = {
   steps: string[];
 };
 
+export type LoveLanguage = 'words' | 'time' | 'gifts' | 'service' | 'touch';
+
+// Options are languages in the order to show them; the texts are in the app's strings.
+export type LoveQuizQuestion = { id: number; options: LoveLanguage[] };
+// 0–100 per language; top holds every language on a tie.
+export type LoveQuizScores = { scores: Record<LoveLanguage, number>; top: LoveLanguage[] };
+
+export type LoveQuiz = {
+  // Whether the plan lets the couple take it (Plus and up). A result taken earlier stays visible.
+  available: boolean;
+  nur: number;
+  questions: LoveQuizQuestion[];
+  // The round waiting for answers; the partner's picks stay on the server until both have answered.
+  round: { myAnswered: boolean; partnerAnswered: boolean } | null;
+  // The latest round both finished. partner is null if their side is gone (a deleted account).
+  result: { completedAt: string; me: LoveQuizScores | null; partner: LoveQuizScores | null; nurAwarded: number } | null;
+};
+
 export type TimelineKind =
   | 'start'
   | 'days_together'
