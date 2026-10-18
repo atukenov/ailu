@@ -16,14 +16,16 @@ public static class TimelineKind
     public const string FirstAnswers = "first_answers";
     public const string Memory = "memory";
     public const string GoalDone = "goal_done";
+    public const string Achievement = "achievement";
 }
 
 // One moment in the couple's history. The app writes the words from Kind and the fields that kind uses,
-// so the history reads in the person's own language; titles are the couple's own text.
+// so the history reads in the person's own language; titles are the couple's own text, except an
+// achievement's, which is the library's in the caller's language.
 public sealed record TimelineEvent(string Id, string Kind, DateOnly Date, DateTimeOffset At,
     int? Days = null, int? Years = null, int? Cycle = null, int? Phase = null,
     Guid? MemoryId = null, Guid? GoalId = null, string? Title = null, string? Place = null,
-    string? Thumb = null, int? Photos = null);
+    string? Thumb = null, int? Photos = null, string? Slug = null, string? Icon = null);
 
 public sealed record TimelineSummary(int DaysTogether, int Memories, int GoalsDone, int NurEarned);
 
@@ -65,7 +67,7 @@ public static class TimelineEndpoints
             after = parsed;
         }
 
-        var events = await BuildAsync(couple, today, db, urls, ct);
+        var events = await BuildAsync(couple, today, scope.Me.User?.Locale, db, urls, ct);
         var ordered = events.OrderByDescending(e => e.Date).ThenByDescending(e => e.At)
             .ThenByDescending(e => e.Id, StringComparer.Ordinal).ToList();
 
@@ -93,8 +95,8 @@ public static class TimelineEndpoints
         return Results.Ok(new TimelinePage(summary, page, next, hidden, hidden is null ? null : FreeDays));
     }
 
-    private static async Task<List<TimelineEvent>> BuildAsync(Couple couple, DateOnly today, AiluDb db, PhotoUrls urls,
-        CancellationToken ct)
+    private static async Task<List<TimelineEvent>> BuildAsync(Couple couple, DateOnly today, string? locale, AiluDb db,
+        PhotoUrls urls, CancellationToken ct)
     {
         var events = new List<TimelineEvent>();
         var startDay = CoupleCalendar.DayOf(couple, couple.StartedAt);
@@ -155,6 +157,14 @@ public static class TimelineEndpoints
             .Select(g => new { g.Id, g.Title, CompletedAt = g.CompletedAt!.Value }).ToListAsync(ct);
         events.AddRange(goals.Select(g => new TimelineEvent($"goal:{g.Id:N}", TimelineKind.GoalDone,
             CoupleCalendar.DayOf(couple, g.CompletedAt), g.CompletedAt, GoalId: g.Id, Title: g.Title)));
+
+        // An achievement sits on the day the couple earned it. The day it happened (on its card) can be long
+        // before they started using Ailu, and the history begins with the couple.
+        var achievements = await db.CoupleAchievements.Include(x => x.Achievement)
+            .Where(x => x.CoupleId == couple.Id && x.EarnedAt != null).ToListAsync(ct);
+        events.AddRange(achievements.Select(x => new TimelineEvent($"achievement:{x.Achievement!.Slug}",
+            TimelineKind.Achievement, CoupleCalendar.DayOf(couple, x.EarnedAt!.Value), x.EarnedAt!.Value, MemoryId: x.MemoryId,
+            Title: x.Achievement.TitleIn(locale), Slug: x.Achievement.Slug, Icon: x.Achievement.Icon)));
 
         return events;
     }

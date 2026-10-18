@@ -28,6 +28,8 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<LoveQuizRound> LoveQuizRounds => Set<LoveQuizRound>();
     public DbSet<LoveQuizAnswer> LoveQuizAnswers => Set<LoveQuizAnswer>();
+    public DbSet<Achievement> Achievements => Set<Achievement>();
+    public DbSet<CoupleAchievement> CoupleAchievements => Set<CoupleAchievement>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -220,6 +222,29 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.Property(x => x.ProductId).HasMaxLength(100);
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.PayerUserId);
+        });
+
+        b.Entity<Achievement>(e =>
+        {
+            e.HasIndex(x => x.Slug).IsUnique();
+            e.Property(x => x.Slug).HasMaxLength(40);
+            e.Property(x => x.Category).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Tier).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Icon).HasMaxLength(16);
+            e.Property(x => x.Title).HasMaxLength(60);
+            e.Property(x => x.TitleKk).HasMaxLength(60);
+            e.Property(x => x.Body).HasMaxLength(200);
+            e.Property(x => x.BodyKk).HasMaxLength(200);
+            e.HasData(Seed.Achievements);
+        });
+
+        b.Entity<CoupleAchievement>(e =>
+        {
+            e.HasKey(x => new { x.CoupleId, x.AchievementId });
+            e.HasOne(x => x.Achievement).WithMany().HasForeignKey(x => x.AchievementId);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.MarkedById);
+            e.HasOne<Memory>().WithMany().HasForeignKey(x => x.MemoryId).OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

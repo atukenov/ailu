@@ -51,6 +51,8 @@ function heading(s: Strings, reason: PaywallReason | undefined, storage: Storage
       return { title: s.paywallQuizTitle, body: s.paywallQuizBody };
     case 'history':
       return { title: s.paywallHistoryTitle, body: s.paywallHistoryBody };
+    case 'achievements':
+      return { title: s.paywallAchievementsTitle, body: s.paywallAchievementsBody };
   }
   return { title: s.paywallTitle, body: s.paywallBody };
 }
@@ -77,6 +79,7 @@ export default function Paywall() {
       void queryClient.invalidateQueries({ queryKey: ['today'] });
       void queryClient.invalidateQueries({ queryKey: ['goals'] });
       void queryClient.invalidateQueries({ queryKey: ['love-quiz'] });
+      void queryClient.invalidateQueries({ queryKey: ['achievements'] });
       router.back();
     },
   });

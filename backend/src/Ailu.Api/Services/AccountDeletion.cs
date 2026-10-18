@@ -75,6 +75,8 @@ public sealed class AccountDeletion(AiluDb db, IPhotoStore store, TimeProvider c
 
             await db.Goals.Where(g => g.CreatedById == userId && g.JoinedAt == null && g.RemovedAt == null)
                 .ExecuteUpdateAsync(s => s.SetProperty(g => g.RemovedAt, now), ct);
+            // A mark the partner never confirmed goes with them; earned achievements stay the couple's.
+            await db.CoupleAchievements.Where(a => a.MarkedById == userId && a.EarnedAt == null).ExecuteDeleteAsync(ct);
 
             user.Phone = null;
             user.Name = null;
