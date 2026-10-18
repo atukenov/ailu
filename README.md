@@ -98,6 +98,28 @@ Files go to a folder on disk (`Photos:Root`, default `App_Data/photos`). The pri
 Kazakhstan, so an S3-compatible store replaces the folder once hosting is chosen; `IPhotoStore` is the seam.
 `MemoryPurgeScheduler` removes deleted memories' files after 30 days; `Photos:PurgeEnabled` turns it off.
 
+### Gift subscriptions and promo codes
+
+Both are a code a couple enters (`POST /v1/billing/redeem`); entering it adds a `Subscription` row with provider
+`Gift` or `Promo`, so the plan reaches both partners and expires like any other. Each person and each couple
+enters a code once (unique indexes on `CodeRedemption`). A second code of the same plan starts where the first
+ends; a store subscription keeps running alongside. Codes never touch the 7-day trial.
+
+- **Gifts** (`/v1/gifts`) are paid outside the stores, as the monetization doc plans for Kaspi on the website.
+  `IGiftCheckout` is the seam: until a provider is set up, `UnconfiguredGiftCheckout` keeps gifts off sale (the
+  app hides the buy form); in Development `FakeGiftCheckout` pays every order at once. A paid order gets a
+  12-character code (`7KQ2-M9XD-4HPA`, no I/L/O/U); a refund withdraws the code and ends the plan it gave. The
+  provider's notification goes to `/v1/gifts/webhooks/checkout?secret=` (`Billing:GiftWebhookSecret`) and only
+  makes the server ask the provider. Products and prices: `Billing:Gifts`, defaulting to 1, 3 and 12 months of
+  each plan at the subscription prices.
+- **Promo codes** are made by the team with `Billing:AdminKey` set:
+
+  ```sh
+  curl -X POST $API/v1/admin/promo-codes -H "X-Admin-Key: $KEY" -H 'Content-Type: application/json' \
+    -d '{"code":"LOVE2026","tier":"plus","days":30,"maxRedemptions":500,"validUntil":"2026-12-31T19:00:00Z","note":"Instagram"}'
+  curl $API/v1/admin/promo-codes -H "X-Admin-Key: $KEY"   # how many couples used each
+  ```
+
 ### API (Stage 1)
 
 | Method | Path | |
