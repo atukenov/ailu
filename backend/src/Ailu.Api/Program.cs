@@ -39,10 +39,13 @@ if (builder.Configuration.GetValue("Push:SchedulerEnabled", true)) builder.Servi
 
 var photoRoot = builder.Configuration["Photos:Root"];
 if (string.IsNullOrEmpty(photoRoot)) photoRoot = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "photos");
-builder.Services.AddSingleton<IPhotoStore>(new DiskPhotoStore(photoRoot));
+var archiveRoot = builder.Configuration["Photos:ArchiveRoot"];
+builder.Services.AddSingleton<IPhotoStore>(string.IsNullOrEmpty(archiveRoot)
+    ? new DiskPhotoStore(photoRoot) : new DiskPhotoStore(photoRoot, archiveRoot));
 builder.Services.AddSingleton<PhotoProcessor>();
 builder.Services.AddSingleton<PhotoUrls>();
 builder.Services.AddScoped<MemoryPurgeJob>();
+builder.Services.AddScoped<PhotoArchiveJob>();
 if (builder.Configuration.GetValue("Photos:PurgeEnabled", true)) builder.Services.AddHostedService<MemoryPurgeScheduler>();
 builder.Services.AddScoped<MoodRetentionJob>();
 if (builder.Configuration.GetValue("Mood:RetentionEnabled", true)) builder.Services.AddHostedService<MoodRetentionScheduler>();
@@ -130,6 +133,7 @@ DeviceEndpoints.Map(app);
 PairingEndpoints.Map(app);
 DailyEndpoints.Map(app);
 MemoryEndpoints.Map(app);
+ArchiveEndpoints.Map(app);
 MoodEndpoints.Map(app);
 GoalEndpoints.Map(app);
 LoveQuizEndpoints.Map(app);

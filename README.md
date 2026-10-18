@@ -96,7 +96,14 @@ Photo URLs are signed and stay valid one to two hours, so image views can load t
 
 Files go to a folder on disk (`Photos:Root`, default `App_Data/photos`). The privacy doc requires storage inside
 Kazakhstan, so an S3-compatible store replaces the folder once hosting is chosen; `IPhotoStore` is the seam.
-`MemoryPurgeScheduler` removes deleted memories' files after 30 days; `Photos:PurgeEnabled` turns it off.
+`MemoryPurgeScheduler` removes deleted memories' files after 30 days, from every storage class, and once a day
+sweeps photo folders no row points to (older than a day); `Photos:PurgeEnabled` turns it off.
+
+Cold storage: a year after upload, `PhotoArchiveJob` (run by the same scheduler) moves a photo's 1080 and 2560 sizes
+to the archive storage class, about half the price; thumbnails stay standard so lists scroll fast. Reads find a
+file in either class. On disk the archive class is a second folder (`Photos:ArchiveRoot`, default
+`<Photos:Root>-archive`). On S3 it must be an instant-retrieval class; one that needs a restore before reading
+won't do.
 
 ### API (Stage 1)
 
@@ -125,5 +132,8 @@ Kazakhstan, so an S3-compatible store replaces the folder once hosting is chosen
 | PUT/DELETE | `/v1/couple/memories/{id}/favorite` | shared star |
 | GET | `/v1/couple/storage` | plan, photos stored and the limit (200 on Free), bytes used and quota |
 | GET | `/v1/photos/{id}/{320\|1080\|2560}` | the photo, by the signed URL the API hands out |
+| GET | `/v1/archive` | couples the caller was in that ended, with their memory counts |
+| GET | `/v1/archive/{coupleId}/memories` | an ended couple's memories, read-only; the partner's photos for 30 days after the end |
+| GET/DELETE | `/v1/archive/{coupleId}/memories/{id}` | one archived memory / delete it (author only) |
 
 The product and design documents (in Russian) live in the project's shared files, not in this repo.

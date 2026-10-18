@@ -16,6 +16,7 @@ import type {
   MemoryInput,
   MemoryPage,
   Mood,
+  PastCouple,
   MoodLevel,
   Phase,
   Problem,
@@ -139,6 +140,11 @@ export const api = {
   react: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/reaction`),
   favorite: (id: string, on: boolean) => request<Memory>(on ? 'PUT' : 'DELETE', `/v1/couple/memories/${id}/favorite`),
   storage: () => request<Storage>('GET', '/v1/couple/storage'),
+  archive: () => request<PastCouple[]>('GET', '/v1/archive'),
+  archiveMemories: (coupleId: string, cursor?: string | null) =>
+    request<MemoryPage>('GET', `/v1/archive/${coupleId}/memories${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`),
+  archiveMemory: (coupleId: string, id: string) => request<Memory>('GET', `/v1/archive/${coupleId}/memories/${id}`),
+  deleteArchiveMemory: (coupleId: string, id: string) => request<void>('DELETE', `/v1/archive/${coupleId}/memories/${id}`),
   timeline: (cursor?: string | null) =>
     request<TimelinePage>('GET', `/v1/couple/timeline${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`),
 

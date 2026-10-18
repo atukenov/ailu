@@ -259,6 +259,9 @@ public sealed class MemoryPhoto
     public int Width { get; set; }
     public int Height { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+
+    // When the full and screen sizes moved to the archive storage class (a year after upload).
+    public DateTimeOffset? ArchivedAt { get; set; }
 }
 
 // A partner's heart on a memory. The first one from the partner who didn't write it earns the couple нұр.
