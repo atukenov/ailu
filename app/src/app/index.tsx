@@ -96,6 +96,11 @@ function Header({ me, partner, couple }: { me: string; partner: string; couple: 
           <T variant="heading">✦</T>
         </Pressable>
       </Link>
+      <Link href="/achievements" asChild>
+        <Pressable accessibilityRole="button" accessibilityLabel={s.achievements} style={styles.profileButton}>
+          <T variant="heading">☆</T>
+        </Pressable>
+      </Link>
       <Link href="/goals" asChild>
         <Pressable accessibilityRole="button" accessibilityLabel={s.goals} style={styles.profileButton}>
           <T variant="heading">◎</T>

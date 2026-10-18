@@ -198,9 +198,11 @@ export type TimelineKind =
   | 'first_task'
   | 'first_answers'
   | 'memory'
-  | 'goal_done';
+  | 'goal_done'
+  | 'achievement';
 
-// One moment in the couple's history. The app writes the words from `kind`; only titles are the couple's own.
+// One moment in the couple's history. The app writes the words from `kind`; titles are the couple's own,
+// except an achievement's, which comes from the library in the person's language.
 export type TimelineEvent = {
   id: string;
   kind: TimelineKind;
@@ -216,6 +218,8 @@ export type TimelineEvent = {
   place: string | null;
   thumb: string | null;
   photos: number | null;
+  slug: string | null;
+  icon: string | null;
 };
 
 // Newest first. On the free plan `hidden` counts the older moments and `freeDays` is how far back a free
@@ -229,6 +233,26 @@ export type TimelinePage = {
 };
 
 export type Plan = 'free' | 'plus' | 'premium';
+
+export type AchievementCategory = 'firsts' | 'events' | 'travel';
+export type AchievementState = 'locked' | 'open' | 'waiting_for_partner' | 'confirm_needed' | 'earned';
+
+// Title and body come from the server in the caller's language.
+export type Achievement = {
+  slug: string;
+  category: AchievementCategory;
+  tier: Plan;
+  icon: string;
+  title: string;
+  body: string;
+  state: AchievementState;
+  happenedOn: string | null;
+  memoryId: string | null;
+  earnedAt: string | null;
+  nur: number;
+};
+
+export type AchievementList = { items: Achievement[]; earned: number; total: number; plan: Plan };
 
 export type BillingProduct = {
   id: string;

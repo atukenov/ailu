@@ -64,9 +64,14 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
   an author. The same number can sign up again as a new person.
 - **The relationship history is built, not stored.** `GET /v1/couple/timeline` assembles it from the couple's own
   records on each request (start, days together and anniversaries, phases replayed from `NurLedger`, the first task
-  and the first revealed answers, memories, finished goals), so it needs no table and can't drift from them. The
+  and the first revealed answers, memories, finished goals, earned achievements), so it needs no table and can't drift from them. The
   server sends kinds and numbers and the app writes the words. Free couples see their last 90 days plus the day they
   began; Plus and Premium see everything. Nothing is locked: memories stay open in their own tab.
+
+- **Achievements are for real-life moments, confirmed by both.** The library (`Achievement`, seeded in `Seed.cs`,
+  Russian and Kazakh) is server content: firsts are free, events and travel open with Plus. One partner marks one
+  with the day it happened, the other confirms, and the couple gets +80 нұр once. An earned achievement is never
+  undone, not even when the plan lapses; only a new mark checks the plan.
 
 ### Push notifications
 

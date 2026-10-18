@@ -115,6 +115,25 @@ public sealed class DemoCouple(AiluDb db, DailyContentService content, ActivityS
             ]
         });
 
+        // One achievement already theirs, and one the partner marked for the reviewer to confirm.
+        var achievements = await db.Achievements.Where(a => a.Slug == "first-coffee" || a.Slug == "sunrise")
+            .ToDictionaryAsync(a => a.Slug, ct);
+        if (achievements.TryGetValue("first-coffee", out var coffee))
+        {
+            db.CoupleAchievements.Add(new CoupleAchievement
+            {
+                CoupleId = couple.Id, AchievementId = coffee.Id, MarkedById = reviewer.Id, MarkedAt = now.AddDays(-10),
+                HappenedOn = today.AddDays(-10), EarnedAt = now.AddDays(-10)
+            });
+            await nur.AwardAsync(couple, NurSource.Achievement, coffee.Slug, Nur.AchievementEarned, today.AddDays(-10), ct);
+        }
+        if (achievements.TryGetValue("sunrise", out var sunrise))
+            db.CoupleAchievements.Add(new CoupleAchievement
+            {
+                CoupleId = couple.Id, AchievementId = sunrise.Id, MarkedById = partner.Id, MarkedAt = now.AddDays(-2),
+                HappenedOn = today.AddDays(-2)
+            });
+
         await db.SaveChangesAsync(ct);
     }
 
@@ -154,6 +173,15 @@ public sealed class DemoCouple(AiluDb db, DailyContentService content, ActivityS
             {
                 CoupleId = couple.Id, Date = today, UserId = partnerId, Mood = MoodLevel.Good, CreatedAt = now, UpdatedAt = now
             });
+
+        // Achievements the reviewer marked since: she remembers them too.
+        var marked = await db.CoupleAchievements.Include(x => x.Achievement)
+            .Where(x => x.CoupleId == couple.Id && x.MarkedById != partnerId && x.EarnedAt == null).ToListAsync(ct);
+        foreach (var mark in marked)
+        {
+            mark.EarnedAt = now;
+            await nur.AwardAsync(couple, NurSource.Achievement, mark.Achievement!.Slug, Nur.AchievementEarned, today, ct);
+        }
 
         await activity.RecordAsync(couple, partnerId, today, ct);
         try

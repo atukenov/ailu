@@ -1,4 +1,5 @@
 using Ailu.Api.Data;
+using Ailu.Api.Features.Achievements;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Billing;
 using Ailu.Api.Features.Daily;
@@ -131,6 +132,7 @@ MemoryEndpoints.Map(app);
 MoodEndpoints.Map(app);
 GoalEndpoints.Map(app);
 TimelineEndpoints.Map(app);
+AchievementEndpoints.Map(app);
 BillingEndpoints.Map(app);
 
 app.Run();

@@ -141,6 +141,12 @@ function describe(s: Strings, e: TimelineEvent): { title: string; body: string |
       };
     case 'goal_done':
       return { title: e.title ?? s.goalDone, body: s.goalDone, href: `/goals/${e.goalId}` };
+    case 'achievement':
+      return {
+        title: [e.icon, e.title ?? s.achievements].filter(Boolean).join(' '),
+        body: s.timelineAchievementBody,
+        href: `/achievements/${e.slug}`,
+      };
   }
 }
 

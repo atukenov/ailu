@@ -342,6 +342,47 @@ public sealed class GoalStep
     public DateTimeOffset? ClosedAt { get; set; }
 }
 
+public enum AchievementCategory { Firsts, Events, Travel }
+
+// The achievement library. Like tasks and questions it is server content, not part of the app build, so
+// a new set (say, for Наурыз) ships without a release. Texts come in Russian and Kazakh, like the tasks.
+public sealed class Achievement
+{
+    public int Id { get; set; }
+    public required string Slug { get; set; }
+    public AchievementCategory Category { get; set; }
+
+    // The plan that opens it: Free has the basic set, Plus and Premium all of them (monetization doc).
+    public CouplePlan Tier { get; set; }
+    public int Position { get; set; }
+    public required string Icon { get; set; }
+    public required string Title { get; set; }
+    public required string Body { get; set; }
+    public required string TitleKk { get; set; }
+    public required string BodyKk { get; set; }
+
+    public string TitleIn(string? locale) => Locales.Pick(locale, Title, TitleKk);
+    public string BodyIn(string? locale) => Locales.Pick(locale, Body, BodyKk);
+}
+
+// A couple's achievement. Achievements are for things that happened in real life (gamification doc), so
+// one partner says "we did it" and the other confirms, like the task of the day. Until then the mark can
+// be taken back; once earned it is permanent: achievements, like the phase, are never lost.
+public sealed class CoupleAchievement
+{
+    public Guid CoupleId { get; set; }
+    public int AchievementId { get; set; }
+    public Guid MarkedById { get; set; }
+    public DateTimeOffset MarkedAt { get; set; }
+
+    // The couple's day it happened, which the card shows. Defaults to the day it was marked.
+    public DateOnly HappenedOn { get; set; }
+    public Guid? MemoryId { get; set; }
+    public DateTimeOffset? EarnedAt { get; set; }
+
+    public Achievement? Achievement { get; set; }
+}
+
 public enum StoreProvider { Apple, Google, Trial }
 
 public enum SubscriptionStatus { Active, Grace, Pending, Expired, Revoked, Replaced }

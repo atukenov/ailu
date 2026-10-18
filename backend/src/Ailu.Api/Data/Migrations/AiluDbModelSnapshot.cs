@@ -22,6 +22,340 @@ namespace Ailu.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Ailu.Api.Data.Achievement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("BodyKk")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("TitleKk")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Achievements");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Body = "Вы сходили в кофейню вдвоём.",
+                            BodyKk = "Екеуіңіз кофеханаға бардыңыздар.",
+                            Category = "Firsts",
+                            Icon = "☕",
+                            Position = 1,
+                            Slug = "first-coffee",
+                            Tier = "Free",
+                            Title = "Первое кофе",
+                            TitleKk = "Алғашқы кофе"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Body = "Посмотрели фильм в кинотеатре вместе.",
+                            BodyKk = "Кинотеатрда бірге фильм көрдіңіздер.",
+                            Category = "Firsts",
+                            Icon = "🎬",
+                            Position = 2,
+                            Slug = "first-movie",
+                            Tier = "Free",
+                            Title = "Первый фильм",
+                            TitleKk = "Алғашқы фильм"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Body = "Приготовили ужин вдвоём, от начала до конца.",
+                            BodyKk = "Кешкі асты басынан аяғына дейін екеуіңіз әзірледіңіздер.",
+                            Category = "Firsts",
+                            Icon = "🍲",
+                            Position = 3,
+                            Slug = "first-dinner",
+                            Tier = "Free",
+                            Title = "Первый ужин",
+                            TitleKk = "Алғашқы кешкі ас"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Body = "Встретили рассвет вместе.",
+                            BodyKk = "Таңды бірге қарсы алдыңыздар.",
+                            Category = "Firsts",
+                            Icon = "🌅",
+                            Position = 4,
+                            Slug = "sunrise",
+                            Tier = "Free",
+                            Title = "Встреча рассвета",
+                            TitleKk = "Таңды қарсы алу"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Body = "Устроили пикник на природе.",
+                            BodyKk = "Табиғат аясында пикник жасадыңыздар.",
+                            Category = "Firsts",
+                            Icon = "🧺",
+                            Position = 5,
+                            Slug = "first-picnic",
+                            Tier = "Free",
+                            Title = "Первый пикник",
+                            TitleKk = "Алғашқы пикник"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Body = "Сделали фото вдвоём и распечатали его.",
+                            BodyKk = "Екеуіңіз суретке түсіп, оны қағазға басып шығардыңыздар.",
+                            Category = "Firsts",
+                            Icon = "📸",
+                            Position = 6,
+                            Slug = "printed-photo",
+                            Tier = "Free",
+                            Title = "Общее фото",
+                            TitleKk = "Ортақ сурет"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Body = "Сделали друг другу подарок своими руками.",
+                            BodyKk = "Бір-біріңізге өз қолыңызбен сыйлық жасадыңыздар.",
+                            Category = "Firsts",
+                            Icon = "🎁",
+                            Position = 7,
+                            Slug = "handmade-gift",
+                            Tier = "Free",
+                            Title = "Подарок своими руками",
+                            TitleKk = "Қолдан жасалған сыйлық"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Body = "Сходили на концерт вместе.",
+                            BodyKk = "Концертке бірге бардыңыздар.",
+                            Category = "Events",
+                            Icon = "🎵",
+                            Position = 8,
+                            Slug = "first-concert",
+                            Tier = "Plus",
+                            Title = "Первый концерт",
+                            TitleKk = "Алғашқы концерт"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Body = "Сходили вместе на спектакль.",
+                            BodyKk = "Спектакльге бірге бардыңыздар.",
+                            Category = "Events",
+                            Icon = "🎭",
+                            Position = 9,
+                            Slug = "theatre",
+                            Tier = "Plus",
+                            Title = "Вечер в театре",
+                            TitleKk = "Театр кеші"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Body = "Болели вместе на матче на стадионе.",
+                            BodyKk = "Стадионда матчқа бірге жанкүйер болдыңыздар.",
+                            Category = "Events",
+                            Icon = "🏟️",
+                            Position = 10,
+                            Slug = "match",
+                            Tier = "Plus",
+                            Title = "На трибуне",
+                            TitleKk = "Трибунада"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Body = "Встретили Наурыз вдвоём: с наурыз-көже, на празднике или в гостях.",
+                            BodyKk = "Наурызды бірге қарсы алдыңыздар: наурыз көжемен, мерекеде немесе қонақта.",
+                            Category = "Events",
+                            Icon = "🌷",
+                            Position = 11,
+                            Slug = "nauryz",
+                            Tier = "Plus",
+                            Title = "Наурыз вместе",
+                            TitleKk = "Наурыз бірге"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Body = "Встретили Новый год вместе.",
+                            BodyKk = "Жаңа жылды бірге қарсы алдыңыздар.",
+                            Category = "Events",
+                            Icon = "🎄",
+                            Position = 12,
+                            Slug = "new-year",
+                            Tier = "Plus",
+                            Title = "Новый год вдвоём",
+                            TitleKk = "Жаңа жыл бірге"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Body = "Были вместе на тое и танцевали.",
+                            BodyKk = "Тойға бірге барып, би биледіңіздер.",
+                            Category = "Events",
+                            Icon = "💃",
+                            Position = 13,
+                            Slug = "toi",
+                            Tier = "Plus",
+                            Title = "Той",
+                            TitleKk = "Той"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Body = "Вместе помогли кому-то: волонтёрство, сбор вещей, помощь соседям.",
+                            BodyKk = "Біреуге бірге көмектестіңіздер: еріктілік, зат жинау, көршілерге көмек.",
+                            Category = "Events",
+                            Icon = "🤝",
+                            Position = 14,
+                            Slug = "good-deed",
+                            Tier = "Plus",
+                            Title = "Доброе дело",
+                            TitleKk = "Игі іс"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Body = "Уехали вдвоём хотя бы с одной ночёвкой.",
+                            BodyKk = "Екеуіңіз кем дегенде бір түнге сапарға шықтыңыздар.",
+                            Category = "Travel",
+                            Icon = "🧳",
+                            Position = 15,
+                            Slug = "first-trip",
+                            Tier = "Plus",
+                            Title = "Первая поездка",
+                            TitleKk = "Алғашқы сапар"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            Body = "Поднялись в горы пешком.",
+                            BodyKk = "Тауға жаяу көтерілдіңіздер.",
+                            Category = "Travel",
+                            Icon = "⛰️",
+                            Position = 16,
+                            Slug = "mountains",
+                            Tier = "Plus",
+                            Title = "В горах",
+                            TitleKk = "Тауда"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            Body = "Искупались вместе в море, озере или реке.",
+                            BodyKk = "Теңізге, көлге немесе өзенге бірге шомылдыңыздар.",
+                            Category = "Travel",
+                            Icon = "🌊",
+                            Position = 17,
+                            Slug = "by-the-water",
+                            Tier = "Plus",
+                            Title = "У воды",
+                            TitleKk = "Су жағасында"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            Body = "Проехали вместе больше 300 км по трассе.",
+                            BodyKk = "Тас жолмен бірге 300 км-ден астам жол жүрдіңіздер.",
+                            Category = "Travel",
+                            Icon = "🚗",
+                            Position = 18,
+                            Slug = "road-trip",
+                            Tier = "Plus",
+                            Title = "Дорога вдвоём",
+                            TitleKk = "Екеуара жол"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            Body = "Побывали в городе, где оба раньше не были.",
+                            BodyKk = "Екеуіңіз бұрын болмаған қалада болдыңыздар.",
+                            Category = "Travel",
+                            Icon = "🏙️",
+                            Position = 19,
+                            Slug = "new-city",
+                            Tier = "Plus",
+                            Title = "Новый город",
+                            TitleKk = "Жаңа қала"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            Body = "Съездили вместе в другую страну.",
+                            BodyKk = "Басқа елге бірге бардыңыздар.",
+                            Category = "Travel",
+                            Icon = "✈️",
+                            Position = 20,
+                            Slug = "abroad",
+                            Tier = "Plus",
+                            Title = "За границей",
+                            TitleKk = "Шетелде"
+                        },
+                        new
+                        {
+                            Id = 21,
+                            Body = "Переночевали в палатке или в юрте.",
+                            BodyKk = "Шатырда немесе киіз үйде түнедіңіздер.",
+                            Category = "Travel",
+                            Icon = "⛺",
+                            Position = 21,
+                            Slug = "under-the-stars",
+                            Tier = "Plus",
+                            Title = "Ночь под звёздами",
+                            TitleKk = "Жұлдыздар астында"
+                        });
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.Couple", b =>
                 {
                     b.Property<Guid>("Id")
@@ -85,6 +419,40 @@ namespace Ailu.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Couples");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.CoupleAchievement", b =>
+                {
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AchievementId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("EarnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("HappenedOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("MarkedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MarkedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("MemoryId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("CoupleId", "AchievementId");
+
+                    b.HasIndex("AchievementId");
+
+                    b.HasIndex("MarkedById");
+
+                    b.HasIndex("MemoryId");
+
+                    b.ToTable("CoupleAchievements");
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.CoupleActivity", b =>
@@ -1082,6 +1450,34 @@ namespace Ailu.Api.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.CoupleAchievement", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.Achievement", "Achievement")
+                        .WithMany()
+                        .HasForeignKey("AchievementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("MarkedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.Memory", null)
+                        .WithMany()
+                        .HasForeignKey("MemoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Achievement");
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.CoupleActivity", b =>
