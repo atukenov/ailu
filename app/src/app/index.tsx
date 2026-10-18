@@ -74,6 +74,7 @@ export default function TodayScreen() {
       <QuestionCard question={today.data.question} partnerName={partnerName} />
       <MoodCard partnerName={partnerName} pollMs={POLL_MS} />
       <LoveQuizNudge partnerName={partnerName} />
+      <YearStoryNudge />
     </Screen>
   );
 }
@@ -215,6 +216,23 @@ function LoveQuizNudge({ partnerName }: { partnerName: string }) {
       <T variant="label">{s.loveQuiz}</T>
       <T variant="secondary">{s.loveQuizPartnerDone(partnerName)}</T>
       <Button title={s.loveQuizStart} onPress={() => router.push('/love-quiz')} />
+    </Card>
+  );
+}
+
+// In December, when the year's film can be ordered and has enough memories, Today invites the couple to
+// watch its preview. It goes away once the film is ordered.
+function YearStoryNudge() {
+  const s = useStrings();
+  const december = new Date().getMonth() === 11;
+  const story = useQuery({ queryKey: ['year-story', 'default'], queryFn: () => api.yearStory(), enabled: december });
+  const data = story.data;
+  if (!december || !data?.open || data.order || data.memories < data.minMemories) return null;
+  return (
+    <Card>
+      <T variant="label">{s.yearStoryKicker}</T>
+      <T variant="secondary">{s.yearStoryNudge(data.year)}</T>
+      <Button title={s.yearStoryOpen} onPress={() => router.push('/year-story')} />
     </Card>
   );
 }

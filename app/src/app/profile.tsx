@@ -114,6 +114,12 @@ export default function Profile() {
         <Button title={s.loveQuiz} variant="ghost" onPress={() => router.push('/love-quiz')} />
       </Card>
 
+      <Card>
+        <T variant="label">{s.yearStory}</T>
+        <T variant="secondary">{s.yearStoryIntro}</T>
+        <Button title={s.yearStoryOpen} variant="ghost" onPress={() => router.push('/year-story')} />
+      </Card>
+
       {billing.data && (
         <Card>
           <T variant="label">{s.planTitle}</T>

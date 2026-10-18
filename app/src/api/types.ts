@@ -297,3 +297,52 @@ export type Billing = {
   trialDays: number;
   products: BillingProduct[];
 };
+
+export type StorySlideKind =
+  | 'intro'
+  | 'memory'
+  | 'start'
+  | 'days_together'
+  | 'anniversary'
+  | 'goal_done'
+  | 'achievement'
+  | 'outro';
+
+// One slide of the year's film. Like the timeline, the server sends kinds and numbers and the app writes
+// the words; titles and places are the couple's own.
+export type StorySlide = {
+  kind: StorySlideKind;
+  durationMs: number;
+  date: string | null;
+  memoryId: string | null;
+  photo: string | null;
+  title: string | null;
+  place: string | null;
+  days: number | null;
+  years: number | null;
+  icon: string | null;
+  slug: string | null;
+  stats: { daysTogether: number; memories: number; tasks: number; nur: number } | null;
+};
+
+export type YearStory = {
+  year: number;
+  years: number[];
+  // Ordering opens on 1 December of the year; the preview can be watched all year.
+  open: boolean;
+  opensOn: string;
+  priceKzt: number;
+  appleProductId: string;
+  googleProductId: string;
+  memories: number;
+  minMemories: number;
+  durationMs: number;
+  slides: StorySlide[];
+  order: {
+    status: 'making' | 'ready' | 'failed';
+    orderedAt: string;
+    paidByMe: boolean;
+    readyAt: string | null;
+    video: string | null;
+  } | null;
+};

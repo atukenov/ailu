@@ -25,6 +25,7 @@ import type {
   Today,
   TokenPair,
   User,
+  YearStory,
 } from './types';
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5210';
@@ -176,6 +177,12 @@ export const api = {
   claimApple: (transactionId: string) => request<Billing>('POST', '/v1/billing/apple', { transactionId }),
   claimGoogle: (purchaseToken: string) => request<Billing>('POST', '/v1/billing/google', { purchaseToken }),
   startTrial: () => request<Billing>('POST', '/v1/billing/trial'),
+
+  yearStory: (year?: number) => request<YearStory>('GET', `/v1/couple/year-story${year ? `?year=${year}` : ''}`),
+  orderStoryApple: (year: number, transactionId: string) =>
+    request<YearStory>('POST', `/v1/couple/year-story/${year}/apple`, { transactionId }),
+  orderStoryGoogle: (year: number, purchaseToken: string) =>
+    request<YearStory>('POST', `/v1/couple/year-story/${year}/google`, { purchaseToken }),
 };
 
 // Photo URLs from the API are signed paths; they work without the token, so any image view can load them.
