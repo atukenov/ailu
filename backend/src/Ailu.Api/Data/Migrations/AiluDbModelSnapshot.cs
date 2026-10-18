@@ -1503,6 +1503,87 @@ namespace Ailu.Api.Data.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.YearStory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("OrderedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PayerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTimeOffset?>("ReadyAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Sandbox")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("StoreId")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Storyboard")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<long>("VideoBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PayerUserId");
+
+                    b.HasIndex("CoupleId", "Year")
+                        .IsUnique();
+
+                    b.HasIndex("Provider", "StoreId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "NextAttemptAt");
+
+                    b.ToTable("YearStories");
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.CoupleAchievement", b =>
                 {
                     b.HasOne("Ailu.Api.Data.Achievement", "Achievement")
@@ -1747,6 +1828,21 @@ namespace Ailu.Api.Data.Migrations
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.Subscription", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("PayerUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.YearStory", b =>
                 {
                     b.HasOne("Ailu.Api.Data.Couple", null)
                         .WithMany()

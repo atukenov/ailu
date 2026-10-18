@@ -46,6 +46,38 @@ public sealed class TestStore(StoreProvider provider) : IStoreClient
         Acknowledged.Enqueue(purchase.StoreId);
         return Task.CompletedTask;
     }
+
+    // One-time purchases, keyed by store id; the product id must match, as Google's lookup requires.
+    public ConcurrentDictionary<string, StoreProductPurchase> Products { get; } = new();
+
+    public Task<StoreProductPurchase?> FetchProductAsync(string productId, string storeId, CancellationToken ct = default)
+    {
+        if (Down) throw new StoreUnavailableException("down");
+        var found = Products.GetValueOrDefault(storeId);
+        return Task.FromResult(found?.ProductId == productId ? found : null);
+    }
+
+    public Task AcknowledgeProductAsync(StoreProductPurchase purchase, CancellationToken ct = default)
+    {
+        Acknowledged.Enqueue(purchase.StoreId);
+        return Task.CompletedTask;
+    }
+}
+
+// Renders a film as a few bytes naming its slides, or fails or waits when the test says so.
+public sealed class TestRenderer : IStoryRenderer
+{
+    public ConcurrentQueue<StoryRenderRequest> Requests { get; } = new();
+    public bool Unavailable { get; set; }
+    public bool Broken { get; set; }
+
+    public Task<byte[]> RenderAsync(StoryRenderRequest request, CancellationToken ct = default)
+    {
+        if (Unavailable) throw new RendererUnavailableException("none");
+        if (Broken) throw new InvalidOperationException("render failed");
+        Requests.Enqueue(request);
+        return Task.FromResult(System.Text.Encoding.UTF8.GetBytes($"mp4:{string.Join(",", request.Slides.Select(s => s.Kind))}"));
+    }
 }
 
 public sealed class FakeSms : ISmsSender
@@ -70,6 +102,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public FakePush Push { get; } = new();
     public TestStore Apple { get; } = new(StoreProvider.Apple);
     public TestStore Google { get; } = new(StoreProvider.Google);
+    public TestRenderer Renderer { get; } = new();
     public const string GoogleWebhookSecret = "test-webhook-secret";
 
     public string PhotoRoot { get; } = Path.Combine(Path.GetTempPath(), $"ailu_photos_{Guid.NewGuid():N}");
@@ -96,6 +129,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Mood:RetentionEnabled", "false");
         builder.UseSetting("Photos:Root", PhotoRoot);
         builder.UseSetting("Billing:ExpiryEnabled", "false");
+        builder.UseSetting("YearStory:RenderEnabled", "false");
         builder.UseSetting("Billing:Google:WebhookSecret", GoogleWebhookSecret);
         foreach (var (key, value) in settings) builder.UseSetting(key, value);
         builder.ConfigureServices(s =>
@@ -109,6 +143,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             s.RemoveAll<IStoreClient>();
             s.AddSingleton<IStoreClient>(Apple);
             s.AddSingleton<IStoreClient>(Google);
+            s.RemoveAll<IStoryRenderer>();
+            s.AddSingleton<IStoryRenderer>(Renderer);
         });
     }
 

@@ -44,7 +44,7 @@ public static class TimelineEndpoints
     private const int PageSize = 30;
 
     // Days-together milestones before the yearly anniversaries take over.
-    private static readonly int[] DayMilestones = [100, 500, 1000];
+    public static readonly int[] DayMilestones = [100, 500, 1000];
 
     public static void Map(IEndpointRouteBuilder app)
     {

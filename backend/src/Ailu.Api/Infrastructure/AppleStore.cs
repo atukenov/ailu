@@ -29,9 +29,24 @@ public sealed class AppleStoreClient(HttpClient http, AppleStoreOptions options,
     // Apple subscriptions need no acknowledgement; finishing the transaction in the app is enough.
     public Task AcknowledgeAsync(StorePurchase purchase, CancellationToken ct = default) => Task.CompletedTask;
 
-    private async Task<StorePurchase?> FetchAsync(string baseUrl, string transactionId, CancellationToken ct)
+    public async Task<StoreProductPurchase?> FetchProductAsync(string productId, string storeId, CancellationToken ct = default)
     {
-        using var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/inApps/v1/subscriptions/{Uri.EscapeDataString(transactionId)}");
+        if (!options.Configured) throw new StoreUnavailableException("Apple purchases are not configured on this server.");
+        var path = $"/inApps/v1/transactions/{Uri.EscapeDataString(storeId)}";
+        var purchase = await GetAsync(Production, path, root => ParseTransaction(root, options.BundleId), ct)
+                       ?? await GetAsync(Sandbox, path, root => ParseTransaction(root, options.BundleId), ct);
+        return purchase?.ProductId == productId ? purchase : null;
+    }
+
+    // A consumable is done once the app finishes the transaction.
+    public Task AcknowledgeProductAsync(StoreProductPurchase purchase, CancellationToken ct = default) => Task.CompletedTask;
+
+    private Task<StorePurchase?> FetchAsync(string baseUrl, string transactionId, CancellationToken ct) =>
+        GetAsync(baseUrl, $"/inApps/v1/subscriptions/{Uri.EscapeDataString(transactionId)}", root => Parse(root, options.BundleId), ct);
+
+    private async Task<T?> GetAsync<T>(string baseUrl, string path, Func<JsonElement, T?> parse, CancellationToken ct) where T : class
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, baseUrl + path);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token());
         HttpResponseMessage res;
         try
@@ -51,8 +66,23 @@ public sealed class AppleStoreClient(HttpClient http, AppleStoreOptions options,
                 throw new StoreUnavailableException("The App Store did not answer.");
             }
             using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync(ct));
-            return Parse(doc.RootElement, options.BundleId);
+            return parse(doc.RootElement);
         }
+    }
+
+    // The response of GET /inApps/v1/transactions/{transactionId}: one signed transaction.
+    public static StoreProductPurchase? ParseTransaction(JsonElement root, string bundleId)
+    {
+        if (!root.TryGetProperty("signedTransactionInfo", out var signed)) return null;
+        var txn = Jws.Payload(signed.GetString()!);
+        if (txn.TryGetProperty("bundleId", out var bid) && bid.GetString() != bundleId) return null;
+        return new StoreProductPurchase(
+            StoreProvider.Apple,
+            txn.GetProperty("transactionId").GetString()!,
+            txn.GetProperty("productId").GetString()!,
+            Paid: !txn.TryGetProperty("revocationDate", out _),
+            Sandbox: txn.TryGetProperty("environment", out var env) && env.GetString() == "Sandbox",
+            AccountId: txn.TryGetProperty("appAccountToken", out var token) ? token.GetString() : null);
     }
 
     // The response of GET /inApps/v1/subscriptions/{transactionId}. The signed parts come to us straight from

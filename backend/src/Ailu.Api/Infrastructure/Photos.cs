@@ -47,6 +47,9 @@ public static class PhotoKeys
 {
     public static string Folder(Guid coupleId, Guid photoId) => $"couples/{coupleId:N}/{photoId:N}";
     public static string File(Guid coupleId, Guid photoId, int size) => $"{Folder(coupleId, photoId)}/{size}.jpg";
+
+    // A finished video story of the year sits with the couple's photos.
+    public static string Story(Guid coupleId, Guid storyId) => $"couples/{coupleId:N}/stories/{storyId:N}.mp4";
 }
 
 public sealed record ProcessedPhoto(byte[] Jpeg, int Width, int Height);
@@ -169,6 +172,21 @@ public sealed class PhotoUrls(AuthOptions auth, TimeProvider clock)
     public bool IsValid(Guid photoId, int size, long expires, string? sig) =>
         sig is not null && expires >= clock.GetUtcNow().ToUnixTimeSeconds() &&
         CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(Sign(photoId, size, expires)), Encoding.ASCII.GetBytes(sig));
+
+    // The year's video story, for downloading. Signed the same way, under its own prefix.
+    public string ForVideo(Guid storyId)
+    {
+        var now = clock.GetUtcNow().ToUnixTimeSeconds();
+        var expires = (now / 3600 + 2) * 3600;
+        return $"/v1/stories/{storyId:N}/video?exp={expires}&sig={SignVideo(storyId, expires)}";
+    }
+
+    public bool IsValidVideo(Guid storyId, long expires, string? sig) =>
+        sig is not null && expires >= clock.GetUtcNow().ToUnixTimeSeconds() &&
+        CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(SignVideo(storyId, expires)), Encoding.ASCII.GetBytes(sig));
+
+    private string SignVideo(Guid storyId, long expires) =>
+        Base64Url.EncodeToString(HMACSHA256.HashData(key, Encoding.ASCII.GetBytes($"video:{storyId:N}:{expires}")))[..32];
 
     private string Sign(Guid photoId, int size, long expires) =>
         Base64Url.EncodeToString(HMACSHA256.HashData(key, Encoding.ASCII.GetBytes($"{photoId:N}:{size}:{expires}")))[..32];
