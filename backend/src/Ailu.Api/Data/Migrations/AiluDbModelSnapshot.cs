@@ -1232,6 +1232,185 @@ namespace Ailu.Api.Data.Migrations
                     b.ToTable("PhoneCodes");
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.PhotoBook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CoverPhotoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Subtitle")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoupleId", "Year")
+                        .IsUnique();
+
+                    b.ToTable("PhotoBooks");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.PhotoBookOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<Guid>("BookId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("CoupleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("PaymentId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("PriceKzt")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PrintJobId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RecipientName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("ShippedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TrackingNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'AwaitingPayment'");
+
+                    b.HasIndex("CoupleId");
+
+                    b.HasIndex("OrderedById");
+
+                    b.HasIndex("PaymentId")
+                        .IsUnique();
+
+                    b.HasIndex("PrintJobId")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("PhotoBookOrders");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.PhotoBookSpread", b =>
+                {
+                    b.Property<Guid>("BookId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Layout")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<Guid?>("MemoryId")
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<Guid[]>("PhotoIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.HasKey("BookId", "Position");
+
+                    b.ToTable("PhotoBookSpreads");
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.PushLog", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -1746,6 +1925,45 @@ namespace Ailu.Api.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.PhotoBook", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.PhotoBookOrder", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.PhotoBook", null)
+                        .WithMany()
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.Couple", null)
+                        .WithMany()
+                        .HasForeignKey("CoupleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("OrderedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.PhotoBookSpread", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.PhotoBook", null)
+                        .WithMany("Spreads")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.Subscription", b =>
                 {
                     b.HasOne("Ailu.Api.Data.Couple", null)
@@ -1781,6 +1999,11 @@ namespace Ailu.Api.Data.Migrations
                     b.Navigation("Photos");
 
                     b.Navigation("Reactions");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.PhotoBook", b =>
+                {
+                    b.Navigation("Spreads");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,11 +1,14 @@
 using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Ailu.Api.Data;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +51,28 @@ public sealed class TestStore(StoreProvider provider) : IStoreClient
     }
 }
 
+// The print shop as the tests see it: every job handed over, and notices read from a JSON body.
+public sealed class TestPrintVendor : IPrintVendor
+{
+    public ConcurrentQueue<PrintJob> Jobs { get; } = new();
+    public bool Down { get; set; }
+
+    public Task<string> SubmitAsync(PrintJob job, CancellationToken ct = default)
+    {
+        if (Down) throw new HttpRequestException("down");
+        Jobs.Enqueue(job);
+        return Task.FromResult($"job-{job.OrderId:N}");
+    }
+
+    public async Task<PrintNotice?> ReadNoticeAsync(HttpRequest request, CancellationToken ct = default) =>
+        request.Headers["X-Print-Secret"] == "print-secret"
+            ? await request.ReadFromJsonAsync<PrintNotice>(new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                Converters = { new JsonStringEnumConverter() }
+            }, ct)
+            : null;
+}
+
 public sealed class FakeSms : ISmsSender
 {
     private readonly ConcurrentDictionary<string, string> last = new();
@@ -70,6 +95,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public FakePush Push { get; } = new();
     public TestStore Apple { get; } = new(StoreProvider.Apple);
     public TestStore Google { get; } = new(StoreProvider.Google);
+    public TestPrintVendor Printer { get; } = new();
     public const string GoogleWebhookSecret = "test-webhook-secret";
 
     public string PhotoRoot { get; } = Path.Combine(Path.GetTempPath(), $"ailu_photos_{Guid.NewGuid():N}");
@@ -97,6 +123,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Photos:Root", PhotoRoot);
         builder.UseSetting("Billing:ExpiryEnabled", "false");
         builder.UseSetting("Billing:Google:WebhookSecret", GoogleWebhookSecret);
+        builder.UseSetting("PhotoBook:PrintEnabled", "false");
+        builder.UseSetting("PhotoBook:UseFakeKaspi", "true");
         foreach (var (key, value) in settings) builder.UseSetting(key, value);
         builder.ConfigureServices(s =>
         {
@@ -109,6 +137,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             s.RemoveAll<IStoreClient>();
             s.AddSingleton<IStoreClient>(Apple);
             s.AddSingleton<IStoreClient>(Google);
+            s.RemoveAll<IPrintVendor>();
+            s.AddSingleton<IPrintVendor>(Printer);
         });
     }
 

@@ -297,3 +297,72 @@ export type Billing = {
   trialDays: number;
   products: BillingProduct[];
 };
+
+// ---- Photo book of the year ----
+
+// A box as fractions of a spread (two facing pages, twice as wide as tall) or of the cover page. The server
+// prints from the same boxes, so the preview here is what gets printed.
+export type Box = { x: number; y: number; w: number; h: number };
+export type SpreadLayout = 'full' | 'photo_text' | 'pair' | 'trio' | 'quad';
+export type BookPhoto = { id: string; width: number; height: number; thumb: string; screen: string };
+
+export type BookYear = { year: number; memories: number; photos: number; hasBook: boolean };
+export type BookYears = { years: BookYear[]; priceKzt: number; spreads: number };
+
+// story is where the memory's words go (the photo-and-words layout); caption the one line the others carry.
+export type Spread = {
+  position: number;
+  layout: SpreadLayout;
+  slots: { box: Box; photo: BookPhoto | null }[];
+  story: Box | null;
+  caption: Box | null;
+  memoryId: string | null;
+  title: string | null;
+  text: string | null;
+  date: string | null;
+  empty: number;
+};
+
+export type BookOrderStatus = 'awaiting_payment' | 'paid' | 'printing' | 'shipped' | 'delivered' | 'cancelled';
+
+export type BookOrder = {
+  id: string;
+  year: number;
+  status: BookOrderStatus;
+  priceKzt: number;
+  mine: boolean;
+  recipientName: string | null;
+  phone: string | null;
+  city: string | null;
+  address: string | null;
+  comment: string | null;
+  // Kaspi's payment page while the order waits for payment; null if Kaspi can't be reached yet.
+  payUrl: string | null;
+  trackingNumber: string | null;
+  createdAt: string;
+  paidAt: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+};
+
+// empty counts boxes still without a photo (the cover's too); the book can be ordered at 0. locked: an
+// order waits for payment, so nothing changes until it is paid or cancelled.
+export type PhotoBook = {
+  id: string;
+  year: number;
+  cover: { title: string; subtitle: string | null; photo: BookPhoto | null; photoBox: Box; titleBox: Box; subtitleBox: Box };
+  spreads: Spread[];
+  empty: number;
+  locked: boolean;
+  previewUrl: string;
+  priceKzt: number;
+  orders: BookOrder[];
+  layouts: { layout: SpreadLayout; slots: Box[]; story: Box | null }[];
+};
+
+export type YearPhotos = {
+  memories: { memoryId: string; title: string; happenedOn: string; photos: BookPhoto[] }[];
+  used: string[];
+};
+
+export type BookOrderInput = { recipientName: string; phone: string; city: string; address: string; comment?: string };

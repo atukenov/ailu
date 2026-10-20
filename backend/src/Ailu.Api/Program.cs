@@ -8,6 +8,7 @@ using Ailu.Api.Features.LoveQuiz;
 using Ailu.Api.Features.Memories;
 using Ailu.Api.Features.Mood;
 using Ailu.Api.Features.Pairing;
+using Ailu.Api.Features.PhotoBook;
 using Ailu.Api.Features.Timeline;
 using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
@@ -70,6 +71,21 @@ else
 }
 builder.Services.AddScoped<BillingService>();
 if (builder.Configuration.GetValue("Billing:ExpiryEnabled", true)) builder.Services.AddHostedService<BillingScheduler>();
+
+var photoBook = builder.Configuration.GetSection("PhotoBook").Get<PhotoBookOptions>() ?? new PhotoBookOptions();
+builder.Services.AddSingleton(photoBook);
+if (photoBook.UseFakeKaspi)
+{
+    if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
+        throw new InvalidOperationException("PhotoBook:UseFakeKaspi is for development only.");
+    builder.Services.AddSingleton<IKaspiPayments, FakeKaspi>();
+}
+else builder.Services.AddSingleton<IKaspiPayments, UnconfiguredKaspi>();
+builder.Services.AddSingleton<IPrintVendor, ManualPrintVendor>();
+builder.Services.AddSingleton<BookPdf>();
+builder.Services.AddSingleton<BookUrls>();
+builder.Services.AddScoped<PhotoBookPrinting>();
+if (builder.Configuration.GetValue("PhotoBook:PrintEnabled", true)) builder.Services.AddHostedService<PhotoBookPrintScheduler>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {
@@ -135,6 +151,7 @@ GoalEndpoints.Map(app);
 LoveQuizEndpoints.Map(app);
 TimelineEndpoints.Map(app);
 AchievementEndpoints.Map(app);
+PhotoBookEndpoints.Map(app);
 BillingEndpoints.Map(app);
 
 app.Run();

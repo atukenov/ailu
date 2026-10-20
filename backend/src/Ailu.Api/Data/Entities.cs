@@ -437,3 +437,68 @@ public sealed class Subscription
     public bool Entitles(DateTimeOffset now) =>
         Status is SubscriptionStatus.Active or SubscriptionStatus.Grace && PeriodEnd > now;
 }
+
+// The couple's photo book of a calendar year (roadmap, phase 4: "Фотокнига года"). The app lays it out from
+// the year's memories and either partner can change it; it is the couple's, like a memory's photos.
+public sealed class PhotoBook
+{
+    public Guid Id { get; set; }
+    public Guid CoupleId { get; set; }
+    public int Year { get; set; }
+    public required string Title { get; set; }
+    public string? Subtitle { get; set; }
+    public Guid? CoverPhotoId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+
+    public List<PhotoBookSpread> Spreads { get; set; } = [];
+}
+
+// One of the book's twenty spreads. Photos are listed by box (see BookLayouts); Guid.Empty is an empty
+// box. There is no foreign key to the photos: a photo deleted with its memory leaves its box empty.
+public sealed class PhotoBookSpread
+{
+    public Guid BookId { get; set; }
+    public int Position { get; set; }
+    public Domain.SpreadLayout Layout { get; set; }
+    public Guid[] PhotoIds { get; set; } = [];
+    public Guid? MemoryId { get; set; }
+    public string? Title { get; set; }
+    public string? Text { get; set; }
+    public DateOnly? Date { get; set; }
+}
+
+public enum PhotoBookOrderStatus { AwaitingPayment, Paid, Printing, Shipped, Delivered, Cancelled }
+
+// A printed copy of a book. The book as it was when ordered is kept in Content (JSON), so later edits
+// don't change what was paid for. Paid through Kaspi (IKaspiPayments), printed by IPrintVendor.
+public sealed class PhotoBookOrder
+{
+    public Guid Id { get; set; }
+    public Guid BookId { get; set; }
+    public Guid CoupleId { get; set; }
+    public Guid OrderedById { get; set; }
+    public int Year { get; set; }
+    public PhotoBookOrderStatus Status { get; set; }
+    public int PriceKzt { get; set; }
+
+    // Where it goes. Cleared when the person who ordered deletes their account, unless it is on its way.
+    public string? RecipientName { get; set; }
+    public string? Phone { get; set; }
+    public string? City { get; set; }
+    public string? Address { get; set; }
+    public string? Comment { get; set; }
+
+    public required string Content { get; set; }
+    // Kaspi's payment and its page, kept so opening "pay" again reuses the same payment.
+    public string? PaymentId { get; set; }
+    public string? PayUrl { get; set; }
+    public string? PrintJobId { get; set; }
+    public string? TrackingNumber { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? PaidAt { get; set; }
+    public DateTimeOffset? SubmittedAt { get; set; }
+    public DateTimeOffset? ShippedAt { get; set; }
+    public DateTimeOffset? DeliveredAt { get; set; }
+    public DateTimeOffset? CancelledAt { get; set; }
+}

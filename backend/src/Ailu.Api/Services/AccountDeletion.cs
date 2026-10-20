@@ -14,6 +14,8 @@ namespace Ailu.Api.Services;
 // both had joined, the partner's own memories and answers. The user row stays as a bare id (no phone,
 // no name) so those records keep a valid author, and the partner sees them unsigned.
 // A current couple ends, as if the person had ended it: the partner can pair again.
+// Photo book orders: an unpaid one is cancelled and the delivery details (name, phone, address) go, except
+// on an order being printed or on its way, which still has to reach the door. The book stays the couple's.
 // Subscription rows stay: they hold no personal data (a store transaction id, product, dates), the tax
 // records need them, and the store keeps billing until the person cancels there, which deleting the
 // account can't do. The app's confirmation says so.
@@ -77,6 +79,19 @@ public sealed class AccountDeletion(AiluDb db, IPhotoStore store, TimeProvider c
                 .ExecuteUpdateAsync(s => s.SetProperty(g => g.RemovedAt, now), ct);
             // A mark the partner never confirmed goes with them; earned achievements stay the couple's.
             await db.CoupleAchievements.Where(a => a.MarkedById == userId && a.EarnedAt == null).ExecuteDeleteAsync(ct);
+
+            await db.PhotoBookOrders.Where(o => o.OrderedById == userId && o.Status == PhotoBookOrderStatus.AwaitingPayment)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(o => o.Status, PhotoBookOrderStatus.Cancelled)
+                    .SetProperty(o => o.CancelledAt, now), ct);
+            await db.PhotoBookOrders.Where(o => o.OrderedById == userId &&
+                                                o.Status != PhotoBookOrderStatus.Paid && o.Status != PhotoBookOrderStatus.Printing &&
+                                                o.Status != PhotoBookOrderStatus.Shipped)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(o => o.RecipientName, (string?)null)
+                    .SetProperty(o => o.Phone, (string?)null)
+                    .SetProperty(o => o.Address, (string?)null)
+                    .SetProperty(o => o.Comment, (string?)null), ct);
 
             user.Phone = null;
             user.Name = null;
