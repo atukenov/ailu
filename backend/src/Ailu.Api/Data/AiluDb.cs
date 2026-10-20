@@ -26,6 +26,9 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<Goal> Goals => Set<Goal>();
     public DbSet<GoalStep> GoalSteps => Set<GoalStep>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<PlanCode> PlanCodes => Set<PlanCode>();
+    public DbSet<CodeRedemption> CodeRedemptions => Set<CodeRedemption>();
+    public DbSet<GiftOrder> GiftOrders => Set<GiftOrder>();
     public DbSet<LoveQuizRound> LoveQuizRounds => Set<LoveQuizRound>();
     public DbSet<LoveQuizAnswer> LoveQuizAnswers => Set<LoveQuizAnswer>();
     public DbSet<Achievement> Achievements => Set<Achievement>();
@@ -151,6 +154,8 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         b.Entity<MemoryPhoto>(e =>
         {
             e.HasIndex(x => new { x.MemoryId, x.Position }).IsUnique();
+            // The archive job looks for old photos still in the standard class.
+            e.HasIndex(x => x.CreatedAt).HasFilter("\"ArchivedAt\" IS NULL");
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
         });
 
@@ -223,6 +228,42 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.Property(x => x.ProductId).HasMaxLength(100);
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.PayerUserId);
+        });
+
+        b.Entity<PlanCode>(e =>
+        {
+            e.HasIndex(x => x.Code).IsUnique();
+            e.HasIndex(x => x.GiftOrderId).IsUnique();
+            e.Property(x => x.Code).HasMaxLength(32);
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Tier).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Note).HasMaxLength(200);
+        });
+
+        b.Entity<CodeRedemption>(e =>
+        {
+            // Each person and each couple enters a code once. The same couple asking twice at once, or the
+            // partner after the other, is turned away by the database, not only by the check before.
+            e.HasIndex(x => new { x.CodeId, x.UserId }).IsUnique();
+            e.HasIndex(x => new { x.CodeId, x.CoupleId }).IsUnique();
+            e.HasIndex(x => x.UserId);
+            e.HasOne<PlanCode>().WithMany().HasForeignKey(x => x.CodeId);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne<Subscription>().WithMany().HasForeignKey(x => x.SubscriptionId);
+        });
+
+        b.Entity<GiftOrder>(e =>
+        {
+            e.HasIndex(x => x.BuyerUserId);
+            e.HasIndex(x => new { x.Provider, x.CheckoutId }).IsUnique();
+            e.Property(x => x.ProductId).HasMaxLength(40);
+            e.Property(x => x.Tier).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Provider).HasMaxLength(20);
+            e.Property(x => x.CheckoutId).HasMaxLength(200);
+            e.Property(x => x.PaymentUrl).HasMaxLength(1000);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.BuyerUserId);
         });
 
         b.Entity<Achievement>(e =>

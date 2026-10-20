@@ -70,7 +70,7 @@ public sealed class YearStoryJob(AiluDb db, IStoryRenderer renderer, IPhotoStore
             return false;
         }
 
-        await store.PutAsync(PhotoKeys.Story(story.CoupleId, story.Id), video, ct);
+        await store.PutAsync(PhotoKeys.Story(story.CoupleId, story.Id), video, StorageTier.Standard, ct);
         await db.YearStories.Where(s => s.Id == story.Id).ExecuteUpdateAsync(u => u
             .SetProperty(s => s.Status, YearStoryStatus.Ready)
             .SetProperty(s => s.VideoBytes, video.LongLength)

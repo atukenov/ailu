@@ -6,6 +6,7 @@ import { api } from '@/api/client';
 import type { User } from '@/api/types';
 import { DeleteAccountButton } from '@/components/delete-account';
 import { LegalLinks } from '@/components/legal-links';
+import { PastCouples } from '@/components/past-couples';
 import { Button, Card, ErrorText, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
@@ -63,13 +64,21 @@ export default function Profile() {
   const manage = useMutation({ mutationFn: manageSubscription });
   const native = Platform.OS === 'ios' || Platform.OS === 'android';
   const sub = billing.data?.subscription;
+  // Gift orders decide whether "Подарить Ailu" shows: gifts on sale, or codes already bought.
+  const gifts = useQuery({ queryKey: ['gifts'], queryFn: api.gifts });
+  const store = sub?.provider === 'apple' || sub?.provider === 'google';
+  const subEnd = sub && s.date(sub.periodEnd.slice(0, 10));
   const subLine = !sub
     ? null
     : sub.provider === 'trial'
-      ? s.planTrialEnds(s.date(sub.periodEnd.slice(0, 10)))
-      : sub.autoRenew && sub.paidByMe
-        ? s.planRenews(s.date(sub.periodEnd.slice(0, 10)))
-        : s.planEnds(s.date(sub.periodEnd.slice(0, 10)));
+      ? s.planTrialEnds(subEnd!)
+      : sub.provider === 'gift'
+        ? s.planGiftEnds(subEnd!)
+        : sub.provider === 'promo'
+          ? s.planPromoEnds(subEnd!)
+          : sub.autoRenew && sub.paidByMe
+            ? s.planRenews(subEnd!)
+            : s.planEnds(subEnd!);
 
   const confirmEnd = () => {
     if (Platform.OS === 'web') {
@@ -120,12 +129,14 @@ export default function Profile() {
         <Button title={s.yearStoryOpen} variant="ghost" onPress={() => router.push('/year-story')} />
       </Card>
 
+      <PastCouples />
+
       {billing.data && (
         <Card>
           <T variant="label">{s.planTitle}</T>
           <T variant="heading">{s.planName(billing.data.plan)}</T>
           {subLine && <T variant="secondary">{subLine}</T>}
-          {sub && sub.provider !== 'trial' && (
+          {sub && store && (
             <T variant="secondary">
               {sub.paidByMe ? s.planPaidByMe : s.planPaidByPartner(couple.data?.partner?.name ?? s.someone)}
             </T>
@@ -139,7 +150,7 @@ export default function Profile() {
               loading={trial.isPending}
             />
           )}
-          {native && sub?.paidByMe && sub.provider !== 'trial' && (
+          {native && sub?.paidByMe && store && (
             <Button
               title={s.planManage}
               variant="ghost"
@@ -147,13 +158,17 @@ export default function Profile() {
               loading={manage.isPending}
             />
           )}
+          <Button title={s.planEnterCode} variant="ghost" onPress={() => router.push('/redeem')} />
+          {(gifts.data?.available || !!gifts.data?.orders.length) && (
+            <Button title={s.giftsTitle} variant="ghost" onPress={() => router.push('/gifts')} />
+          )}
           {native && (
             <Button title={s.planRestore} variant="ghost" onPress={() => restore.mutate()} loading={restore.isPending} />
           )}
           {restore.isSuccess && (
             <T variant="small">{restore.data ? s.planRestored : s.planNothingToRestore}</T>
           )}
-          <T variant="small">{s.planCancelAnytime}</T>
+          {sub?.provider !== 'gift' && sub?.provider !== 'promo' && <T variant="small">{s.planCancelAnytime}</T>}
           <ErrorText error={trial.error ?? restore.error ?? manage.error} />
         </Card>
       )}
