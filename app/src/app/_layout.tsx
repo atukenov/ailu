@@ -50,6 +50,11 @@ function Routes() {
         <Stack.Protected guard={signedIn && named && !paired}>
           <Stack.Screen name="pair" />
         </Stack.Protected>
+        {/* An ended couple's archive stays open whether or not the person has paired again. */}
+        <Stack.Protected guard={signedIn && named}>
+          <Stack.Screen name="archive/[coupleId]/index" />
+          <Stack.Screen name="archive/[coupleId]/[id]" />
+        </Stack.Protected>
         <Stack.Protected guard={signedIn && named && paired}>
           <Stack.Screen name="index" />
           <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
@@ -68,6 +73,8 @@ function Routes() {
           <Stack.Screen name="photo-book/[position]" />
           <Stack.Screen name="photo-book/order" />
           <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="redeem" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="gifts" />
         </Stack.Protected>
       </Stack>
       {signedIn && named && paired && <PurchaseSync />}

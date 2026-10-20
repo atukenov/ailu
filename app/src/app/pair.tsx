@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { api } from '@/api/client';
 import { DeleteAccountButton } from '@/components/delete-account';
+import { PastCouples } from '@/components/past-couples';
 import { Button, Card, ErrorText, Field, Screen, T } from '@/components/ui';
 import { useStrings } from '@/i18n';
 import { useSession } from '@/session';
@@ -54,6 +55,8 @@ export default function Pair() {
         <ErrorText error={accept.error} />
         <Button title={s.joinCouple} onPress={() => accept.mutate()} loading={accept.isPending} disabled={code.length !== 6} />
       </Card>
+
+      <PastCouples />
 
       <Button title={s.signOut} variant="ghost" onPress={signOut} />
       <DeleteAccountButton />

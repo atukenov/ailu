@@ -167,7 +167,7 @@ public static class MemoryEndpoints
         };
 
         // The file goes in first: a crash after this leaves an orphan file, never a row without a file.
-        await store.PutAsync(PhotoKeys.File(row.CoupleId, row.Id, PhotoProcessor.Full), photo.Jpeg, ct);
+        await store.PutAsync(PhotoKeys.File(row.CoupleId, row.Id, PhotoProcessor.Full), photo.Jpeg, StorageTier.Standard, ct);
         try
         {
             await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -283,7 +283,10 @@ public static class MemoryEndpoints
             await using var full = await store.OpenAsync(PhotoKeys.File(photo.CoupleId, photo.Id, PhotoProcessor.Full), ct);
             if (full is null) return Results.NotFound();
             var resized = await processor.ResizeAsync(full, size, ct);
-            await store.PutAsync(PhotoKeys.File(photo.CoupleId, photo.Id, size), resized, ct);
+            // An archived photo's screen size is made in the archive too; thumbnails always stay standard,
+            // because the memory list shows them and they are a few kilobytes each.
+            var tier = photo.ArchivedAt is not null && size != PhotoProcessor.Thumb ? StorageTier.Archive : StorageTier.Standard;
+            await store.PutAsync(PhotoKeys.File(photo.CoupleId, photo.Id, size), resized, tier, ct);
             stream = new MemoryStream(resized);
         }
 
@@ -313,19 +316,23 @@ public static class MemoryEndpoints
         return null;
     }
 
-    private static MemoryDto ToDto(Memory m, CoupleScope scope, PhotoUrls urls) => new(
-        m.Id, m.Title, m.Text, m.Place, m.HappenedOn, new AuthorDto(m.AuthorId, m.Author?.Name), m.AuthorId == scope.UserId,
-        m.Favorite, m.Reactions.Any(r => r.UserId == scope.UserId), m.Reactions.Any(r => r.UserId != scope.UserId),
+    private static MemoryDto ToDto(Memory m, CoupleScope scope, PhotoUrls urls) => ToDto(m, scope.UserId, urls, withPhotos: true);
+
+    internal static MemoryDto ToDto(Memory m, Guid me, PhotoUrls urls, bool withPhotos) => new(
+        m.Id, m.Title, m.Text, m.Place, m.HappenedOn, new AuthorDto(m.AuthorId, m.Author?.Name), m.AuthorId == me,
+        m.Favorite, m.Reactions.Any(r => r.UserId == me), m.Reactions.Any(r => r.UserId != me),
         m.CoupleTaskId, m.CreatedAt,
-        m.Photos.OrderBy(p => p.Position).Select(p => new PhotoDto(p.Id, p.Width, p.Height,
-            urls.For(p.Id, PhotoProcessor.Thumb), urls.For(p.Id, PhotoProcessor.Screen), urls.For(p.Id, PhotoProcessor.Full))).ToList());
+        withPhotos
+            ? m.Photos.OrderBy(p => p.Position).Select(p => new PhotoDto(p.Id, p.Width, p.Height,
+                urls.For(p.Id, PhotoProcessor.Thumb), urls.For(p.Id, PhotoProcessor.Screen), urls.For(p.Id, PhotoProcessor.Full))).ToList()
+            : []);
 
     private static IResult NotFound() => Errors.NotFound("memory_not_found", "Этого воспоминания больше нет.");
 
     private static IResult NotAuthor() =>
         Errors.Forbidden("not_author", "Изменить или удалить воспоминание может только тот, кто его добавил.");
 
-    private static class Cursor
+    internal static class Cursor
     {
         public static string Of(Memory m) => $"{m.HappenedOn:yyyy-MM-dd}_{m.CreatedAt.UtcTicks}_{m.Id:N}";
 

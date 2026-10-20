@@ -50,7 +50,7 @@ public sealed class PhotoBookPrinting(AiluDb db, BookPdf pdf, IPhotoStore store,
             {
                 var file = await pdf.RenderAsync(order.CoupleId, BookContent.FromJson(order.Content), print: true, ct);
                 var key = BookKeys.PrintFile(order.CoupleId, order.Id);
-                await store.PutAsync(key, file, ct);
+                await store.PutAsync(key, file, ct: ct);
                 order.PrintJobId = await vendor.SubmitAsync(new PrintJob(order.Id, order.Year, key, file, order.RecipientName ?? "",
                     order.Phone ?? "", order.City ?? "", order.Address ?? "", order.Comment), ct);
                 order.Status = PhotoBookOrderStatus.Printing;

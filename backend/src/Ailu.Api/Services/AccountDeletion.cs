@@ -19,6 +19,8 @@ namespace Ailu.Api.Services;
 // Subscription rows stay: they hold no personal data (a store transaction id, product, dates), the tax
 // records need them, and the store keeps billing until the person cancels there, which deleting the
 // account can't do. The app's confirmation says so.
+// Gift orders and code redemptions stay for the same reason (payments, and a code entered once per
+// person). A gift they bought and nobody has entered yet keeps working: it belongs to whoever got it.
 public sealed class AccountDeletion(AiluDb db, IPhotoStore store, TimeProvider clock, ILogger<AccountDeletion> log)
 {
     public async Task DeleteAsync(Guid userId, CancellationToken ct = default)
