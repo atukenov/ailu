@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ailu.Api.Data.Migrations
 {
     [DbContext(typeof(AiluDb))]
-    [Migration("20261018043559_AiPicks")]
-    partial class AiPicks
+    [Migration("20261018043239_GiftsAndPromoCodes")]
+    partial class GiftsAndPromoCodes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -359,115 +359,42 @@ namespace Ailu.Api.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Ailu.Api.Data.AiPick", b =>
+            modelBuilder.Entity("Ailu.Api.Data.CodeRedemption", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Budget")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<Guid>("CodeId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("CoupleId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
+                    b.Property<DateTimeOffset>("RedeemedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<DateOnly>("Month")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(140)
-                        .HasColumnType("character varying(140)");
-
-                    b.Property<Guid>("RequestedById")
+                    b.Property<Guid>("SubscriptionId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RequestedById");
+                    b.HasIndex("CoupleId");
 
-                    b.HasIndex("CoupleId", "CreatedAt");
+                    b.HasIndex("SubscriptionId");
 
-                    b.HasIndex("CoupleId", "Month");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("AiPicks");
-                });
-
-            modelBuilder.Entity("Ailu.Api.Data.AiPickItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasMaxLength(600)
-                        .HasColumnType("character varying(600)");
-
-                    b.Property<string>("BodyKk")
-                        .IsRequired()
-                        .HasMaxLength(600)
-                        .HasColumnType("character varying(600)");
-
-                    b.Property<int>("CostKzt")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("CoupleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("DurationMin")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("PickId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Position")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("SavedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("SavedById")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<string>("TitleKk")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SavedById");
-
-                    b.HasIndex("CoupleId", "SavedAt")
-                        .HasFilter("\"SavedAt\" IS NOT NULL");
-
-                    b.HasIndex("PickId", "Position")
+                    b.HasIndex("CodeId", "CoupleId")
                         .IsUnique();
 
-                    b.ToTable("AiPickItems");
+                    b.HasIndex("CodeId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("CodeRedemptions");
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.Couple", b =>
@@ -719,22 +646,17 @@ namespace Ailu.Api.Data.Migrations
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<int>("CostKzt")
                         .HasColumnType("integer");
-
-                    b.Property<Guid?>("CoupleId")
-                        .HasColumnType("uuid");
 
                     b.Property<int>("DurationMin")
                         .HasColumnType("integer");
 
                     b.Property<string>("Slug")
                         .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -745,8 +667,6 @@ namespace Ailu.Api.Data.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CoupleId");
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -909,6 +829,71 @@ namespace Ailu.Api.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Devices");
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.GiftOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BuyerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CheckoutId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("CodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Months")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("PriceKzt")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuyerUserId");
+
+                    b.HasIndex("Provider", "CheckoutId")
+                        .IsUnique();
+
+                    b.ToTable("GiftOrders");
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.Goal", b =>
@@ -1353,6 +1338,66 @@ namespace Ailu.Api.Data.Migrations
                     b.ToTable("PhoneCodes");
                 });
 
+            modelBuilder.Entity("Ailu.Api.Data.PlanCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Days")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("DisabledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("GiftOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int?>("MaxRedemptions")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Months")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Redemptions")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTimeOffset?>("ValidUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("GiftOrderId")
+                        .IsUnique();
+
+                    b.ToTable("PlanCodes");
+                });
+
             modelBuilder.Entity("Ailu.Api.Data.PushLog", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -1624,38 +1669,31 @@ namespace Ailu.Api.Data.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Ailu.Api.Data.AiPick", b =>
+            modelBuilder.Entity("Ailu.Api.Data.CodeRedemption", b =>
                 {
+                    b.HasOne("Ailu.Api.Data.PlanCode", null)
+                        .WithMany()
+                        .HasForeignKey("CodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Ailu.Api.Data.Couple", null)
                         .WithMany()
                         .HasForeignKey("CoupleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Ailu.Api.Data.User", null)
+                    b.HasOne("Ailu.Api.Data.Subscription", null)
                         .WithMany()
-                        .HasForeignKey("RequestedById")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Ailu.Api.Data.AiPickItem", b =>
-                {
-                    b.HasOne("Ailu.Api.Data.Couple", null)
-                        .WithMany()
-                        .HasForeignKey("CoupleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Ailu.Api.Data.AiPick", null)
-                        .WithMany("Items")
-                        .HasForeignKey("PickId")
+                        .HasForeignKey("SubscriptionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Ailu.Api.Data.User", null)
                         .WithMany()
-                        .HasForeignKey("SavedById");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.CoupleAchievement", b =>
@@ -1748,18 +1786,20 @@ namespace Ailu.Api.Data.Migrations
                     b.Navigation("Question");
                 });
 
-            modelBuilder.Entity("Ailu.Api.Data.DailyTask", b =>
-                {
-                    b.HasOne("Ailu.Api.Data.Couple", null)
-                        .WithMany()
-                        .HasForeignKey("CoupleId");
-                });
-
             modelBuilder.Entity("Ailu.Api.Data.Device", b =>
                 {
                     b.HasOne("Ailu.Api.Data.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ailu.Api.Data.GiftOrder", b =>
+                {
+                    b.HasOne("Ailu.Api.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("BuyerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -1921,11 +1961,6 @@ namespace Ailu.Api.Data.Migrations
                         .HasForeignKey("PayerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Ailu.Api.Data.AiPick", b =>
-                {
-                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Ailu.Api.Data.Couple", b =>

@@ -263,6 +263,9 @@ public sealed class MemoryPhoto
     public int Width { get; set; }
     public int Height { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+
+    // When the full and screen sizes moved to the archive storage class (a year after upload).
+    public DateTimeOffset? ArchivedAt { get; set; }
 }
 
 // A partner's heart on a memory. The first one from the partner who didn't write it earns the couple нұр.
@@ -412,14 +415,15 @@ public sealed class CoupleAchievement
     public Achievement? Achievement { get; set; }
 }
 
-public enum StoreProvider { Apple, Google, Trial }
+// Gift and Promo are plans given by a code (PlanCode), not bought in a store.
+public enum StoreProvider { Apple, Google, Trial, Gift, Promo }
 
 public enum SubscriptionStatus { Active, Grace, Pending, Expired, Revoked, Replaced }
 
-// A store subscription (or the free trial) that pays for a couple. One partner pays, both get the plan.
-// The store is the source of truth: rows are only ever written from what Apple or Google return to the
-// server, never from what the app says. StoreId is Apple's original transaction id or Google's purchase
-// token, so renewals update the same row.
+// A store subscription (or the free trial, or a redeemed code) that pays for a couple. One partner pays,
+// both get the plan. The store is the source of truth: rows are only ever written from what Apple or
+// Google return to the server, never from what the app says. StoreId is Apple's original transaction id
+// or Google's purchase token, so renewals update the same row; for a code it is the redemption's id.
 public sealed class Subscription
 {
     public Guid Id { get; set; }
@@ -490,4 +494,75 @@ public sealed class AiPickItem
 
     public string TitleIn(string? locale) => Locales.Pick(locale, Title, TitleKk);
     public string BodyIn(string? locale) => Locales.Pick(locale, Body, BodyKk);
+}
+
+public enum PlanCodeKind { Promo, Gift }
+
+// A code that gives the couple who enters it a plan for a while. A promo code is made by the team for many
+// couples (each couple once); a gift code is bought by someone for one couple and works once.
+public sealed class PlanCode
+{
+    public Guid Id { get; set; }
+
+    // Stored normalized: upper case, no spaces or dashes.
+    public required string Code { get; set; }
+    public PlanCodeKind Kind { get; set; }
+    public CouplePlan Tier { get; set; }
+
+    // How long the plan lasts from the day it is entered.
+    public int Months { get; set; }
+    public int Days { get; set; }
+
+    // Null: as many couples as like. A gift is always 1.
+    public int? MaxRedemptions { get; set; }
+    public int Redemptions { get; set; }
+
+    // A code can't be entered after this. Null: no end.
+    public DateTimeOffset? ValidUntil { get; set; }
+
+    // Set when a code is withdrawn (a refunded gift, a promo stopped early). Plans already given stay.
+    public DateTimeOffset? DisabledAt { get; set; }
+
+    // What the team made it for ("Instagram, ноябрь"), never shown to couples.
+    public string? Note { get; set; }
+    public Guid? GiftOrderId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+
+    public DateTimeOffset PeriodEnd(DateTimeOffset from) => from.AddMonths(Months).AddDays(Days);
+}
+
+// One couple entering one code. Its Subscription row carries the plan.
+public sealed class CodeRedemption
+{
+    public Guid Id { get; set; }
+    public Guid CodeId { get; set; }
+    public Guid UserId { get; set; }
+    public Guid CoupleId { get; set; }
+    public Guid SubscriptionId { get; set; }
+    public DateTimeOffset RedeemedAt { get; set; }
+}
+
+public enum GiftOrderStatus { Pending, Paid, Cancelled, Refunded }
+
+// Someone buying a gift subscription. Paid outside the stores (Kaspi on the website, monetization doc);
+// the payment provider is the source of truth, as the stores are for subscriptions. A paid order gets
+// its gift code.
+public sealed class GiftOrder
+{
+    public Guid Id { get; set; }
+    public Guid BuyerUserId { get; set; }
+    public required string ProductId { get; set; }
+    public CouplePlan Tier { get; set; }
+    public int Months { get; set; }
+    public int PriceKzt { get; set; }
+    public GiftOrderStatus Status { get; set; }
+
+    // The payment provider ("kaspi", "fake") and its id for this payment.
+    public required string Provider { get; set; }
+    public string? CheckoutId { get; set; }
+    public string? PaymentUrl { get; set; }
+    public Guid? CodeId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? PaidAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 }

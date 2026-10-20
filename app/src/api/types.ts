@@ -129,6 +129,16 @@ export type MemoryInput = {
 
 export type MemoryPage = { items: Memory[]; nextCursor: string | null };
 
+// A couple that ended; its memories stay readable for both (privacy doc).
+export type PastCouple = {
+  id: string;
+  partner: Partner | null;
+  startedAt: string;
+  endedAt: string;
+  memories: number;
+  partnerPhotosUntil: string;
+};
+
 export type Storage = {
   plan: 'free' | 'plus' | 'premium';
   photos: number;
@@ -289,7 +299,7 @@ export type Billing = {
   plan: Plan;
   subscription: {
     tier: Exclude<Plan, 'free'>;
-    provider: 'apple' | 'google' | 'trial';
+    provider: 'apple' | 'google' | 'trial' | 'gift' | 'promo';
     status: 'active' | 'grace';
     periodEnd: string;
     autoRenew: boolean;
@@ -329,3 +339,30 @@ export type AiPick = {
 // `available`: the plan lets the couple ask for new selections. `used` of `limit` this month; `resetsOn`
 // is the first day of the next month.
 export type Ai = { available: boolean; used: number; limit: number; resetsOn: string; picks: AiPick[]; saved: AiItem[] };
+
+export type GiftProduct = {
+  id: string;
+  tier: Exclude<Plan, 'free'>;
+  months: number;
+  priceKzt: number;
+};
+
+export type GiftOrder = {
+  id: string;
+  productId: string;
+  tier: Exclude<Plan, 'free'>;
+  months: number;
+  priceKzt: number;
+  status: 'pending' | 'paid' | 'cancelled' | 'refunded';
+  // Shown once paid, until a refund withdraws it.
+  code: string | null;
+  // The page to pay on, while the payment is open.
+  paymentUrl: string | null;
+  redeemed: boolean;
+  createdAt: string;
+};
+
+// Gifts aren't for sale (available false, no products) until the server has a payment provider.
+export type Gifts = { available: boolean; products: GiftProduct[]; orders: GiftOrder[] };
+
+export type Redeemed = { kind: 'gift' | 'promo'; tier: Exclude<Plan, 'free'>; periodEnd: string };

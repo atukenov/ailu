@@ -163,6 +163,7 @@ export default function Paywall() {
 
       <ErrorText error={buy.error} />
       <Button title={s.continueFree} variant="ghost" onPress={() => router.back()} />
+      <Button title={s.paywallHaveCode} variant="ghost" onPress={() => router.replace('/redeem')} />
       <T variant="small" style={styles.center}>
         {s.cancelAnytime}
       </T>

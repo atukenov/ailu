@@ -79,6 +79,15 @@ public sealed class BillingOptions
 
     public List<BillingProduct> Products { get; set; } = [];
 
+    // Gift subscriptions for sale; config binding appends here too, so defaults apply only when it names none.
+    public List<GiftProduct> Gifts { get; set; } = [];
+
+    // The payment provider calls /v1/gifts/webhooks/checkout with this in the URL.
+    public string GiftWebhookSecret { get; set; } = "";
+
+    // Lets the team make and list promo codes (/v1/admin/promo-codes, header X-Admin-Key). Empty: nobody can.
+    public string AdminKey { get; set; } = "";
+
     public AppleStoreOptions Apple { get; set; } = new();
     public GoogleStoreOptions Google { get; set; } = new();
 
