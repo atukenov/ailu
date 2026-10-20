@@ -519,7 +519,7 @@ export const ru = {
   bookCoverPhoto: 'Фото на обложку',
   bookUsePhoto: 'Поставить это фото',
   bookOrderTitle: 'Заказ книги',
-  bookPrintSpec: (spreads: number) => `Твёрдая обложка, 20 × 20 см, ${spreads} разворотов`,
+  bookPrintSpec: (spreads: number) => `20 × 20 см, ${spreads} разворотов и обложка`,
   bookRecipient: 'Кто получит',
   bookCity: 'Город',
   bookCityPlaceholder: 'Атырау',

@@ -514,7 +514,7 @@ export const kk: Strings = {
   bookCoverPhoto: 'Мұқабадағы сурет',
   bookUsePhoto: 'Осы суретті қою',
   bookOrderTitle: 'Кітапқа тапсырыс',
-  bookPrintSpec: (spreads: number) => `Қатты мұқаба, 20 × 20 см, ${spreads} бет-жайма`,
+  bookPrintSpec: (spreads: number) => `20 × 20 см, ${spreads} бет-жайма және мұқаба`,
   bookRecipient: 'Кім алады',
   bookCity: 'Қала',
   bookCityPlaceholder: 'Атырау',

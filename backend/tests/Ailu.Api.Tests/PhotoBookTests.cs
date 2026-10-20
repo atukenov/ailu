@@ -82,6 +82,15 @@ public class BookBuilderTests
     }
 
     [Fact]
+    public void A_place_already_in_the_title_is_not_printed_twice()
+    {
+        BookMemory At(string title, string place) => new(Guid.NewGuid(), new DateOnly(2026, 6, 1), DateTimeOffset.UnixEpoch, title,
+            null, place, false, 0, [new(Guid.NewGuid(), 4, 3)]);
+        Assert.Equal("Бурабай", BookBuilder.Build([At("Бурабай", "бурабай")]).Spreads[0].Title);
+        Assert.Equal("Костёр · Бурабай", BookBuilder.Build([At("Костёр", "Бурабай")]).Spreads[0].Title);
+    }
+
+    [Fact]
     public void Every_layout_keeps_its_boxes_on_the_paper_and_off_the_fold_but_full()
     {
         foreach (var layout in Enum.GetValues<SpreadLayout>())

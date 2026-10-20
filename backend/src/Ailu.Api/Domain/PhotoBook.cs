@@ -157,7 +157,9 @@ public static class BookBuilder
         // A trio's big box is a whole page: put a portrait photo there if the memory has one.
         if (layout == SpreadLayout.Trio && photos.FindIndex(p => !p.Landscape) is > 0 and var portrait)
             photos = [photos[portrait], .. photos.Where((_, i) => i != portrait)];
-        var title = memory.Place is null ? memory.Title : $"{memory.Title} · {memory.Place}";
+        // "Бурабай" at "Бурабай" reads once.
+        var title = memory.Place is null || memory.Title.Contains(memory.Place, StringComparison.OrdinalIgnoreCase)
+            ? memory.Title : $"{memory.Title} · {memory.Place}";
         return new BuiltSpread(layout, photos.Select(p => p.Id).ToList(), memory.Id, title, text, memory.HappenedOn);
     }
 }
