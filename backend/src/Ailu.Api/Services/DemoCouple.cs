@@ -53,7 +53,7 @@ public sealed class DemoCouple(AiluDb db, DailyContentService content, ActivityS
 
         // The last days done together: task and question each day, so the moon and streak have grown.
         var today = CoupleCalendar.Today(couple, clock);
-        var tasks = await db.DailyTasks.Select(t => t.Id).ToListAsync(ct);
+        var tasks = await db.TaskLibrary.Select(t => t.Id).ToListAsync(ct);
         var questions = await db.Questions.Select(q => q.Id).ToListAsync(ct);
         var usedTasks = new List<int>();
         var usedQuestions = new List<int>();

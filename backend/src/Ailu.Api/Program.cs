@@ -1,5 +1,6 @@
 using Ailu.Api.Data;
 using Ailu.Api.Features.Achievements;
+using Ailu.Api.Features.Ai;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Billing;
 using Ailu.Api.Features.Daily;
@@ -77,6 +78,13 @@ else
     builder.Services.AddSingleton<IGiftCheckout, UnconfiguredGiftCheckout>();
 }
 builder.Services.AddScoped<BillingService>();
+
+// AI selections and personal tasks. Without an API key the built-in stub writes them.
+var ai = builder.Configuration.GetSection("Ai").Get<AiOptions>() ?? new AiOptions();
+builder.Services.AddSingleton(ai);
+if (ai.Configured) builder.Services.AddSingleton<IAiWriter, ClaudeAiWriter>();
+else builder.Services.AddSingleton<IAiWriter, StubAiWriter>();
+builder.Services.AddScoped<AiService>();
 builder.Services.AddScoped<GiftService>();
 if (builder.Configuration.GetValue("Billing:ExpiryEnabled", true)) builder.Services.AddHostedService<BillingScheduler>();
 
@@ -145,6 +153,7 @@ GoalEndpoints.Map(app);
 LoveQuizEndpoints.Map(app);
 TimelineEndpoints.Map(app);
 AchievementEndpoints.Map(app);
+AiEndpoints.Map(app);
 BillingEndpoints.Map(app);
 GiftEndpoints.Map(app);
 
