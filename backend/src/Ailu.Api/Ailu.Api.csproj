@@ -20,4 +20,9 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Fonts for the photo book PDF; the server has no system fonts it can count on. -->
+    <EmbeddedResource Include="Assets/Fonts/*.otf" LogicalName="Fonts.%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

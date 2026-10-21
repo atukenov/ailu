@@ -42,6 +42,21 @@ export default function Memories() {
       />
       <ErrorText error={list.error} />
 
+      {items.some((m) => m.photos.length > 0) && (
+        <Link href="/photo-book" asChild>
+          <Pressable accessibilityRole="button" accessibilityLabel={s.photoBook}>
+            <Card style={styles.bookCard}>
+              <T style={styles.bookIcon}>📖</T>
+              <View style={styles.flex}>
+                <T variant="heading">{s.photoBook}</T>
+                <T variant="small">{s.bookEntryHint}</T>
+              </View>
+              <T variant="heading">›</T>
+            </Card>
+          </Pressable>
+        </Link>
+      )}
+
       {items.length === 0 && !list.isError ? (
         <Card>
           <T variant="heading">{s.memoriesEmpty}</T>
@@ -154,4 +169,6 @@ const styles = StyleSheet.create({
   star: { position: 'absolute', top: Spacing.three, right: Spacing.three, fontSize: 26, color: Colors.moonLit },
   starInline: { fontSize: 22, color: Colors.moonLit },
   storage: { textAlign: 'center' },
+  bookCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  bookIcon: { fontSize: 30, lineHeight: 38 },
 });

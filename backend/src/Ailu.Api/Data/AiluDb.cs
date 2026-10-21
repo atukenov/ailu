@@ -33,6 +33,9 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<LoveQuizAnswer> LoveQuizAnswers => Set<LoveQuizAnswer>();
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<CoupleAchievement> CoupleAchievements => Set<CoupleAchievement>();
+    public DbSet<PhotoBook> PhotoBooks => Set<PhotoBook>();
+    public DbSet<PhotoBookSpread> PhotoBookSpreads => Set<PhotoBookSpread>();
+    public DbSet<PhotoBookOrder> PhotoBookOrders => Set<PhotoBookOrder>();
     public DbSet<YearStory> YearStories => Set<YearStory>();
     public DbSet<AiPick> AiPicks => Set<AiPick>();
     public DbSet<AiPickItem> AiPickItems => Set<AiPickItem>();
@@ -321,6 +324,47 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.MarkedById);
             e.HasOne<Memory>().WithMany().HasForeignKey(x => x.MemoryId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<PhotoBook>(e =>
+        {
+            e.HasIndex(x => new { x.CoupleId, x.Year }).IsUnique();
+            e.Property(x => x.Title).HasMaxLength(80);
+            e.Property(x => x.Subtitle).HasMaxLength(80);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasMany(x => x.Spreads).WithOne().HasForeignKey(s => s.BookId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<PhotoBookSpread>(e =>
+        {
+            e.HasKey(x => new { x.BookId, x.Position });
+            e.Property(x => x.Layout).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Title).HasMaxLength(250);
+            e.Property(x => x.Text).HasMaxLength(1000);
+        });
+
+        b.Entity<PhotoBookOrder>(e =>
+        {
+            e.HasIndex(x => x.CoupleId);
+            e.HasIndex(x => x.PaymentId).IsUnique();
+            e.HasIndex(x => x.PrintJobId).IsUnique();
+            e.HasIndex(x => x.Status);
+            // At most one order of a book waiting for payment: the book is locked to it until it is paid or cancelled.
+            e.HasIndex(x => x.BookId).IsUnique().HasFilter("\"Status\" = 'AwaitingPayment'");
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.RecipientName).HasMaxLength(100);
+            e.Property(x => x.Phone).HasMaxLength(16);
+            e.Property(x => x.City).HasMaxLength(60);
+            e.Property(x => x.Address).HasMaxLength(250);
+            e.Property(x => x.Comment).HasMaxLength(250);
+            e.Property(x => x.Content).HasColumnType("jsonb");
+            e.Property(x => x.PaymentId).HasMaxLength(100);
+            e.Property(x => x.PayUrl).HasMaxLength(500);
+            e.Property(x => x.PrintJobId).HasMaxLength(100);
+            e.Property(x => x.TrackingNumber).HasMaxLength(100);
+            e.HasOne<PhotoBook>().WithMany().HasForeignKey(x => x.BookId);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.OrderedById);
         });
 
         b.Entity<YearStory>(e =>

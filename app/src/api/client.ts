@@ -8,6 +8,9 @@ import type {
   AiKind,
   AiPick,
   Billing,
+  BookOrder,
+  BookOrderInput,
+  BookYears,
   Couple,
   DailyQuestion,
   DailyTask,
@@ -26,6 +29,7 @@ import type {
   PastCouple,
   MoodLevel,
   Phase,
+  PhotoBook,
   Problem,
   Redeemed,
   Storage,
@@ -34,6 +38,7 @@ import type {
   Today,
   TokenPair,
   User,
+  YearPhotos,
   YearStory,
 } from './types';
 
@@ -187,6 +192,28 @@ export const api = {
     request<Achievement>('POST', `/v1/couple/achievements/${slug}/done`, input),
   unmarkAchievement: (slug: string) => request<Achievement>('DELETE', `/v1/couple/achievements/${slug}/done`),
 
+  photoBookYears: () => request<BookYears>('GET', '/v1/couple/photo-books'),
+  photoBook: async (year: number): Promise<PhotoBook | null> => {
+    try {
+      return await request<PhotoBook>('GET', `/v1/couple/photo-books/${year}`);
+    } catch (e) {
+      if (e instanceof ApiError && e.code === 'photo_book_not_found') return null;
+      throw e;
+    }
+  },
+  // Lays the book out from the year's memories; on an existing book this replaces every spread.
+  buildPhotoBook: (year: number) => request<PhotoBook>('POST', `/v1/couple/photo-books/${year}`),
+  updateBookCover: (year: number, input: { title?: string; subtitle?: string; coverPhotoId?: string }) =>
+    request<PhotoBook>('PATCH', `/v1/couple/photo-books/${year}`, input),
+  bookPhotos: (year: number) => request<YearPhotos>('GET', `/v1/couple/photo-books/${year}/photos`),
+  // One photo id (or null for an empty box) per box of the layout.
+  updateSpread: (year: number, position: number, input: { layout: string; photoIds: (string | null)[]; title: string; text: string }) =>
+    request<PhotoBook>('PUT', `/v1/couple/photo-books/${year}/spreads/${position}`, input),
+  moveSpread: (year: number, position: number, to: number) =>
+    request<PhotoBook>('POST', `/v1/couple/photo-books/${year}/spreads/${position}/move`, { to }),
+  orderBook: (year: number, input: BookOrderInput) => request<BookOrder>('POST', `/v1/couple/photo-books/${year}/orders`, input),
+  payOrder: (id: string) => request<BookOrder>('POST', `/v1/couple/photo-books/orders/${id}/pay`),
+  cancelOrder: (id: string) => request<BookOrder>('DELETE', `/v1/couple/photo-books/orders/${id}`),
   ai: () => request<Ai>('GET', '/v1/couple/ai'),
   // Budget applies to dates and evenings at home; the wish goes to the model as is.
   aiPick: (kind: AiKind, budget?: AiBudget, wish?: string) => request<AiPick>('POST', '/v1/couple/ai/picks', { kind, budget, wish }),
@@ -211,3 +238,6 @@ export const api = {
 
 // Photo URLs from the API are signed paths; they work without the token, so any image view can load them.
 export const photoUrl = (path: string) => `${API_URL}${path}`;
+
+// Links the API hands out (the book's PDF preview, a payment page) are either full URLs or paths on the API.
+export const apiLink = (link: string) => (link.startsWith('/') ? `${API_URL}${link}` : link);

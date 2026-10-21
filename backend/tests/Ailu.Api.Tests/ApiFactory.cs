@@ -1,11 +1,14 @@
 using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Ailu.Api.Data;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -102,6 +105,28 @@ public sealed class TestAiWriter : IAiWriter
     }
 }
 
+// The print shop as the tests see it: every job handed over, and notices read from a JSON body.
+public sealed class TestPrintVendor : IPrintVendor
+{
+    public ConcurrentQueue<PrintJob> Jobs { get; } = new();
+    public bool Down { get; set; }
+
+    public Task<string> SubmitAsync(PrintJob job, CancellationToken ct = default)
+    {
+        if (Down) throw new HttpRequestException("down");
+        Jobs.Enqueue(job);
+        return Task.FromResult($"job-{job.OrderId:N}");
+    }
+
+    public async Task<PrintNotice?> ReadNoticeAsync(HttpRequest request, CancellationToken ct = default) =>
+        request.Headers["X-Print-Secret"] == "print-secret"
+            ? await request.ReadFromJsonAsync<PrintNotice>(new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                Converters = { new JsonStringEnumConverter() }
+            }, ct)
+            : null;
+}
+
 // A gift payment provider the test drives: every order gets a page to pay on, and pays when the test says so.
 public sealed class TestCheckout : IGiftCheckout
 {
@@ -153,6 +178,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public FakePush Push { get; } = new();
     public TestStore Apple { get; } = new(StoreProvider.Apple);
     public TestStore Google { get; } = new(StoreProvider.Google);
+    public TestPrintVendor Printer { get; } = new();
     public TestRenderer Renderer { get; } = new();
     public TestAiWriter Ai { get; } = new();
     public TestCheckout Checkout { get; } = new();
@@ -187,6 +213,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Billing:ExpiryEnabled", "false");
         builder.UseSetting("YearStory:RenderEnabled", "false");
         builder.UseSetting("Billing:Google:WebhookSecret", GoogleWebhookSecret);
+        builder.UseSetting("PhotoBook:PrintEnabled", "false");
+        builder.UseSetting("PhotoBook:UseFakeKaspi", "true");
         builder.UseSetting("Billing:GiftWebhookSecret", GiftWebhookSecret);
         builder.UseSetting("Billing:AdminKey", AdminKey);
         foreach (var (key, value) in settings) builder.UseSetting(key, value);
@@ -201,6 +229,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             s.RemoveAll<IStoreClient>();
             s.AddSingleton<IStoreClient>(Apple);
             s.AddSingleton<IStoreClient>(Google);
+            s.RemoveAll<IPrintVendor>();
+            s.AddSingleton<IPrintVendor>(Printer);
             s.RemoveAll<IStoryRenderer>();
             s.AddSingleton<IStoryRenderer>(Renderer);
             s.RemoveAll<IAiWriter>();
