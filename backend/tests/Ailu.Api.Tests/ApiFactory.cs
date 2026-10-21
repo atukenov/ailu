@@ -49,6 +49,60 @@ public sealed class TestStore(StoreProvider provider) : IStoreClient
         Acknowledged.Enqueue(purchase.StoreId);
         return Task.CompletedTask;
     }
+
+    // One-time purchases, keyed by store id; the product id must match, as Google's lookup requires.
+    public ConcurrentDictionary<string, StoreProductPurchase> Products { get; } = new();
+
+    public Task<StoreProductPurchase?> FetchProductAsync(string productId, string storeId, CancellationToken ct = default)
+    {
+        if (Down) throw new StoreUnavailableException("down");
+        var found = Products.GetValueOrDefault(storeId);
+        return Task.FromResult(found?.ProductId == productId ? found : null);
+    }
+
+    public Task AcknowledgeProductAsync(StoreProductPurchase purchase, CancellationToken ct = default)
+    {
+        Acknowledged.Enqueue(purchase.StoreId);
+        return Task.CompletedTask;
+    }
+}
+
+// Renders a film as a few bytes naming its slides, or fails or waits when the test says so.
+public sealed class TestRenderer : IStoryRenderer
+{
+    public ConcurrentQueue<StoryRenderRequest> Requests { get; } = new();
+    public bool Unavailable { get; set; }
+    public bool Broken { get; set; }
+
+    public Task<byte[]> RenderAsync(StoryRenderRequest request, CancellationToken ct = default)
+    {
+        if (Unavailable) throw new RendererUnavailableException("none");
+        if (Broken) throw new InvalidOperationException("render failed");
+        Requests.Enqueue(request);
+        return Task.FromResult(System.Text.Encoding.UTF8.GetBytes($"mp4:{string.Join(",", request.Slides.Select(s => s.Kind))}"));
+    }
+}
+
+// The built-in stub writer, which a test can take down and whose requests it can read.
+public sealed class TestAiWriter : IAiWriter
+{
+    private readonly StubAiWriter stub = new();
+    public ConcurrentQueue<object> Requests { get; } = new();
+    public bool Down { get; set; }
+
+    public Task<IReadOnlyList<AiIdea>> IdeasAsync(IdeaRequest request, CancellationToken ct = default)
+    {
+        Requests.Enqueue(request);
+        if (Down) throw new AiUnavailableException("down");
+        return stub.IdeasAsync(request, ct);
+    }
+
+    public Task<AiTask> TaskAsync(TaskRequest request, CancellationToken ct = default)
+    {
+        Requests.Enqueue(request);
+        if (Down) throw new AiUnavailableException("down");
+        return stub.TaskAsync(request, ct);
+    }
 }
 
 // The print shop as the tests see it: every job handed over, and notices read from a JSON body.
@@ -125,6 +179,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public TestStore Apple { get; } = new(StoreProvider.Apple);
     public TestStore Google { get; } = new(StoreProvider.Google);
     public TestPrintVendor Printer { get; } = new();
+    public TestRenderer Renderer { get; } = new();
+    public TestAiWriter Ai { get; } = new();
     public TestCheckout Checkout { get; } = new();
     public const string GoogleWebhookSecret = "test-webhook-secret";
     public const string GiftWebhookSecret = "test-gift-secret";
@@ -155,6 +211,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Mood:RetentionEnabled", "false");
         builder.UseSetting("Photos:Root", PhotoRoot);
         builder.UseSetting("Billing:ExpiryEnabled", "false");
+        builder.UseSetting("YearStory:RenderEnabled", "false");
         builder.UseSetting("Billing:Google:WebhookSecret", GoogleWebhookSecret);
         builder.UseSetting("PhotoBook:PrintEnabled", "false");
         builder.UseSetting("PhotoBook:UseFakeKaspi", "true");
@@ -174,6 +231,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             s.AddSingleton<IStoreClient>(Google);
             s.RemoveAll<IPrintVendor>();
             s.AddSingleton<IPrintVendor>(Printer);
+            s.RemoveAll<IStoryRenderer>();
+            s.AddSingleton<IStoryRenderer>(Renderer);
+            s.RemoveAll<IAiWriter>();
+            s.AddSingleton<IAiWriter>(Ai);
             s.RemoveAll<IGiftCheckout>();
             s.AddSingleton<IGiftCheckout>(Checkout);
         });

@@ -1,4 +1,4 @@
-import type { BookOrderStatus, LoveLanguage, SpreadLayout } from '@/api/types';
+import type { AiBudget, AiKind, BookOrderStatus, LoveLanguage, SpreadLayout } from '@/api/types';
 
 // Brand voice: warm and to the point, "вы" to the couple, never "ты" to one partner.
 export const ru = {
@@ -339,6 +339,36 @@ export const ru = {
   extraTask: (n: number, total: number) => `Задание ${n}/${total}`,
   extraTaskDone: 'Готово',
   allTasksDone: 'На сегодня все задания выполнены. Новые появятся завтра.',
+  personalTask: 'Персональное',
+
+  aiPicks: 'Подборки для вас',
+  aiPicksHint: 'Идеи от AI под вашу пару: куда сходить, чем заняться дома, что посмотреть и послушать.',
+  aiKinds: { date: 'Идеи для свидания', home: 'Вечер дома', film: 'Фильм для вас', music: 'Музыка на вечер' } as Record<
+    AiKind,
+    string
+  >,
+  aiBudgets: { any: 'Любой бюджет', free: 'Бесплатно', low: 'До 5 000 ₸' } as Record<AiBudget, string>,
+  aiNoteLabel: 'Пожелание, если есть',
+  aiNotePlaceholder: 'Например: на воздухе, без кино',
+  aiPrivacy: 'AI получает ваше пожелание и то, что вам нравится, но не ваши имена, ответы и воспоминания. Пожелание увидит и партнёр.',
+  aiAsk: 'Подобрать',
+  aiLeft: (left: number, limit: number) => `Осталось ${left} из ${limit} ${plural(limit, 'подборки', 'подборок', 'подборок')} в этом месяце`,
+  aiQuotaUsed: 'Все подборки этого месяца готовы. Новые появятся 1-го числа.',
+  aiTabPicks: 'Подборки',
+  aiTabSaved: 'Сохранённое',
+  aiEmpty: 'Здесь появятся ваши подборки. Выберите, что подобрать.',
+  aiSavedEmpty: 'Нажмите ♡ у идеи, и она сохранится для вас обоих.',
+  aiAskedBy: (name: string) => `По просьбе: ${name}`,
+  aiSave: 'Сохранить идею',
+  aiUnsave: 'Убрать из сохранённого',
+  aiLocked: 'Новые подборки от AI открыты в Premium. Всё, что вы уже сохранили, остаётся с вами.',
+  aiUnlock: 'Открыть Premium',
+  aiMeta: (kind: AiKind, min: number, kzt: number) =>
+    kind === 'film' || kind === 'music'
+      ? `${min} мин`
+      : `${min} мин · ${kzt === 0 ? 'бесплатно' : `около ${kzt.toLocaleString('ru-RU')} ₸`}`,
+  paywallAiTitle: 'Пусть приложение придумает за вас',
+  paywallAiBody: 'Идеи для свиданий, фильмы, музыка на вечер и персональные задания под вашу пару открыты в Premium.',
   streakUpsellCta: 'Посмотреть Premium',
   notNow: 'Не сейчас',
   storageFullCta: (plan: string) => `Больше места в ${plan}`,
@@ -569,6 +599,45 @@ export const ru = {
   terms: 'Пользовательское соглашение',
   privacyPolicy: 'Политика конфиденциальности',
 
+  yearStory: 'Видео-история года',
+  yearStoryKicker: 'ВИДЕО-ИСТОРИЯ',
+  yearStoryShort: 'История года',
+  yearStoryTitle: (year: number) => `Ваш ${year} год в одной минуте`,
+  yearStoryIntro: 'Фильм из лучших воспоминаний и важных дат года. Он собирается сам, пока вы живёте, а в декабре его можно заказать и сохранить.',
+  yearStoryPreview: 'Превью: так фильм выглядит сейчас. С новыми воспоминаниями он меняется.',
+  yearStoryLength: (seconds: number, memories: number) =>
+    `${seconds} сек · ${memories} ${plural(memories, 'воспоминание', 'воспоминания', 'воспоминаний')} с фото`,
+  yearStoryOpensOn: (date: string) => `Заказать фильм можно будет с ${date}.`,
+  yearStoryNeedMore: (n: number) =>
+    `Добавьте ещё ${n} ${plural(n, 'воспоминание', 'воспоминания', 'воспоминаний')} с фото, и история сложится.`,
+  yearStoryAddMemory: 'Добавить воспоминание',
+  yearStoryBuy: (price: string) => `Заказать фильм · ${price}`,
+  yearStoryBuyNote: 'Один фильм на пару: заказывает один, получают оба. В фильм войдёт то, что вы видите в превью на момент заказа.',
+  yearStoryMaking: 'Фильм готовится. Пришлём уведомление, когда он будет готов.',
+  yearStoryMakingPartner: (name: string) => `${name} уже заказал(а) фильм. Пришлём уведомление, когда он будет готов.`,
+  yearStoryReady: 'Фильм готов',
+  yearStoryReadyBody: 'Минутный фильм о вашем годе. Скачайте его и пересматривайте когда захочется.',
+  yearStoryDownload: 'Скачать фильм',
+  yearStoryFailed: 'Не получилось собрать фильм. Мы уже разбираемся и напишем вам.',
+  yearStoryNudge: (year: number) => `Ваш ${year} год уже сложился в минутный фильм. Посмотрите превью.`,
+  yearStoryOpen: 'Посмотреть',
+  storyPlay: 'Смотреть',
+  storyPause: 'Пауза',
+  storyNext: 'Следующий кадр',
+  storyIntroYear: (year: number) => `${year}`,
+  storyIntroLine: 'Наш год вместе',
+  storyStart: 'Здесь всё началось',
+  storyGoalDone: 'Цель достигнута',
+  storyAchievement: 'Новое достижение',
+  storyOutro: 'Спасибо за этот год',
+  storyStats: (days: number, memories: number, tasks: number, nur: number, nurText: string) =>
+    [
+      `${days} ${plural(days, 'день', 'дня', 'дней')} вместе`,
+      `${memories} ${plural(memories, 'воспоминание', 'воспоминания', 'воспоминаний')}`,
+      `${tasks} ${plural(tasks, 'общее задание', 'общих задания', 'общих заданий')}`,
+      `${nurText} нұр`,
+    ].filter((_, i) => [days, memories, tasks, nur][i] > 0),
+
   errors: {
     offline: 'Нет связи. Проверьте интернет и попробуйте ещё раз.',
     invalid_phone: 'Нужен казахстанский номер в формате +7 7XX XXX XX XX.',
@@ -640,7 +709,6 @@ export const ru = {
     invalid_coverPhotoId: 'Этой фотографии больше нет.',
     invalid_subtitle: 'Подзаголовок до 80 символов.',
     invalid_to: 'Такого места в книге нет.',
-    invalid_year: 'Такого года нет.',
     invalid_recipientName: 'Укажите, кто получит книгу.',
     invalid_city: 'Укажите город.',
     invalid_address: 'Укажите адрес до 250 символов.',
@@ -650,6 +718,16 @@ export const ru = {
     order_not_found: 'Такого заказа нет.',
     order_not_waiting: 'Этот заказ уже оплачен или отменён.',
     order_paid: 'Оплаченный заказ нельзя отменить в приложении. Напишите нам.',
+    story_not_open: 'Фильм этого года можно заказать с 1 декабря.',
+    story_ordered: 'Фильм этого года уже заказан. Напишите нам, и мы вернём деньги за вторую покупку.',
+    invalid_year: 'В этом году вас ещё не было вместе.',
+    ai_plan: 'Подборки от AI открыты в Premium.',
+    ai_quota: 'Все подборки этого месяца готовы. Новые появятся 1-го числа.',
+    ai_unavailable: 'Не получилось составить подборку. Попробуйте чуть позже, попытка не потрачена.',
+    ai_not_found: 'Эта подборка не найдена.',
+    invalid_kind: 'Выберите, что подобрать.',
+    invalid_budget: 'Такого бюджета нет.',
+    invalid_wish: 'Пожелание до 140 символов.',
     plan_code_not_found: 'Такого кода нет. Проверьте, нет ли в нём опечатки.',
     plan_code_used: 'Этот код уже использован.',
     plan_code_ended: 'Срок этого промокода закончился.',

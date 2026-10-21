@@ -1,5 +1,6 @@
 using Ailu.Api.Data;
 using Ailu.Api.Features.Achievements;
+using Ailu.Api.Features.Ai;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Billing;
 using Ailu.Api.Features.Daily;
@@ -11,6 +12,7 @@ using Ailu.Api.Features.Mood;
 using Ailu.Api.Features.Pairing;
 using Ailu.Api.Features.PhotoBook;
 using Ailu.Api.Features.Timeline;
+using Ailu.Api.Features.YearStory;
 using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -78,6 +80,13 @@ else
     builder.Services.AddSingleton<IGiftCheckout, UnconfiguredGiftCheckout>();
 }
 builder.Services.AddScoped<BillingService>();
+
+// AI selections and personal tasks. Without an API key the built-in stub writes them.
+var ai = builder.Configuration.GetSection("Ai").Get<AiOptions>() ?? new AiOptions();
+builder.Services.AddSingleton(ai);
+if (ai.Configured) builder.Services.AddSingleton<IAiWriter, ClaudeAiWriter>();
+else builder.Services.AddSingleton<IAiWriter, StubAiWriter>();
+builder.Services.AddScoped<AiService>();
 builder.Services.AddScoped<GiftService>();
 if (builder.Configuration.GetValue("Billing:ExpiryEnabled", true)) builder.Services.AddHostedService<BillingScheduler>();
 
@@ -95,6 +104,11 @@ builder.Services.AddSingleton<BookPdf>();
 builder.Services.AddSingleton<BookUrls>();
 builder.Services.AddScoped<PhotoBookPrinting>();
 if (builder.Configuration.GetValue("PhotoBook:PrintEnabled", true)) builder.Services.AddHostedService<PhotoBookPrintScheduler>();
+// No rendering host is chosen yet: orders for the video story queue up until a real IStoryRenderer is registered.
+builder.Services.AddSingleton<IStoryRenderer, UnconfiguredStoryRenderer>();
+builder.Services.AddScoped<YearStoryService>();
+builder.Services.AddScoped<YearStoryJob>();
+if (builder.Configuration.GetValue("YearStory:RenderEnabled", true)) builder.Services.AddHostedService<YearStoryScheduler>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {
@@ -162,6 +176,8 @@ LoveQuizEndpoints.Map(app);
 TimelineEndpoints.Map(app);
 AchievementEndpoints.Map(app);
 PhotoBookEndpoints.Map(app);
+YearStoryEndpoints.Map(app);
+AiEndpoints.Map(app);
 BillingEndpoints.Map(app);
 GiftEndpoints.Map(app);
 

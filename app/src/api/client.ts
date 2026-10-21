@@ -2,6 +2,11 @@ import { tokens } from './tokens';
 import type {
   Achievement,
   AchievementList,
+  Ai,
+  AiBudget,
+  AiItem,
+  AiKind,
+  AiPick,
   Billing,
   BookOrder,
   BookOrderInput,
@@ -34,6 +39,7 @@ import type {
   TokenPair,
   User,
   YearPhotos,
+  YearStory,
 } from './types';
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5210';
@@ -208,11 +214,21 @@ export const api = {
   orderBook: (year: number, input: BookOrderInput) => request<BookOrder>('POST', `/v1/couple/photo-books/${year}/orders`, input),
   payOrder: (id: string) => request<BookOrder>('POST', `/v1/couple/photo-books/orders/${id}/pay`),
   cancelOrder: (id: string) => request<BookOrder>('DELETE', `/v1/couple/photo-books/orders/${id}`),
+  ai: () => request<Ai>('GET', '/v1/couple/ai'),
+  // Budget applies to dates and evenings at home; the wish goes to the model as is.
+  aiPick: (kind: AiKind, budget?: AiBudget, wish?: string) => request<AiPick>('POST', '/v1/couple/ai/picks', { kind, budget, wish }),
+  saveIdea: (id: string, on: boolean) => request<AiItem>(on ? 'PUT' : 'DELETE', `/v1/couple/ai/items/${id}/saved`),
 
   billing: () => request<Billing>('GET', '/v1/billing'),
   claimApple: (transactionId: string) => request<Billing>('POST', '/v1/billing/apple', { transactionId }),
   claimGoogle: (purchaseToken: string) => request<Billing>('POST', '/v1/billing/google', { purchaseToken }),
   startTrial: () => request<Billing>('POST', '/v1/billing/trial'),
+
+  yearStory: (year?: number) => request<YearStory>('GET', `/v1/couple/year-story${year ? `?year=${year}` : ''}`),
+  orderStoryApple: (year: number, transactionId: string) =>
+    request<YearStory>('POST', `/v1/couple/year-story/${year}/apple`, { transactionId }),
+  orderStoryGoogle: (year: number, purchaseToken: string) =>
+    request<YearStory>('POST', `/v1/couple/year-story/${year}/google`, { purchaseToken }),
   // A gift code or a promo code; the plan is the couple's, like a subscription.
   redeem: (code: string) => request<Redeemed>('POST', '/v1/billing/redeem', { code }),
   gifts: () => request<Gifts>('GET', '/v1/gifts'),

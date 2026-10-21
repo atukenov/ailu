@@ -125,6 +125,10 @@ public sealed class DailyTask
     public int CostKzt { get; set; }
     public int DurationMin { get; set; }
 
+    // Set on a personal task written by AI for one Premium couple. Such a task belongs to that couple
+    // only and is never handed to anyone else; the library is the rows where this is null.
+    public Guid? CoupleId { get; set; }
+
     public string TitleIn(string? locale) => Locales.Pick(locale, Title, TitleKk);
     public string BodyIn(string? locale) => Locales.Pick(locale, Body, BodyKk);
 }
@@ -505,6 +509,89 @@ public sealed class PhotoBookOrder
     public DateTimeOffset? ShippedAt { get; set; }
     public DateTimeOffset? DeliveredAt { get; set; }
     public DateTimeOffset? CancelledAt { get; set; }
+}
+
+public enum YearStoryStatus { Queued, Ready, Failed }
+
+// A paid "video story of the year" (roadmap phase 4): a one-minute film made from the couple's best memories
+// and dates of one calendar year. One per couple per year. Like a subscription, a row is only written from
+// what the store says about the purchase. The storyboard is fixed when it is ordered, so the film shows what
+// the couple saw in the preview they paid for.
+public sealed class YearStory
+{
+    public Guid Id { get; set; }
+    public Guid CoupleId { get; set; }
+    public int Year { get; set; }
+    public Guid PayerUserId { get; set; }
+    public StoreProvider Provider { get; set; }
+
+    // Apple's transaction id or Google's purchase token.
+    public required string StoreId { get; set; }
+    public required string ProductId { get; set; }
+    public bool Sandbox { get; set; }
+
+    // The payer's language at the time of the order: the film's captions are written in it.
+    public string Locale { get; set; } = "ru";
+
+    // The slides as JSON (YearStoryPlan.Slides), frozen at the order.
+    public required string Storyboard { get; set; }
+    public YearStoryStatus Status { get; set; }
+    public int Attempts { get; set; }
+    public DateTimeOffset NextAttemptAt { get; set; }
+    public string? Error { get; set; }
+    public long VideoBytes { get; set; }
+    public DateTimeOffset OrderedAt { get; set; }
+    public DateTimeOffset? ReadyAt { get; set; }
+}
+
+public enum AiPickKind { Date, Home, Film, Music }
+
+// The budget a couple sets for a date or an evening at home: free, up to about 5 000 ₸, or anything.
+public enum AiBudget { Any, Free, Low }
+
+public enum AiPickStatus { Pending, Ready, Failed }
+
+// One AI selection ("подборка") a Premium partner asked for: five ideas of one kind. Both partners see it.
+// The row is written before the model is asked, so the monthly limit holds when both ask at once; a
+// failed one gives its place back.
+public sealed class AiPick
+{
+    public Guid Id { get; set; }
+    public Guid CoupleId { get; set; }
+    public Guid RequestedById { get; set; }
+    public AiPickKind Kind { get; set; }
+    public AiBudget Budget { get; set; }
+
+    // What the partner typed for this selection ("что-то уютное, без кино"). It goes to the model as is.
+    public string? Note { get; set; }
+    public AiPickStatus Status { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+
+    // The first day of the couple's calendar month it counts against.
+    public DateOnly Month { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
+
+    public List<AiPickItem> Items { get; set; } = [];
+}
+
+// One idea in a selection, in Russian and Kazakh like the task library. Either partner can save it.
+public sealed class AiPickItem
+{
+    public Guid Id { get; set; }
+    public Guid PickId { get; set; }
+    public Guid CoupleId { get; set; }
+    public int Position { get; set; }
+    public required string Title { get; set; }
+    public required string Body { get; set; }
+    public required string TitleKk { get; set; }
+    public required string BodyKk { get; set; }
+    public int CostKzt { get; set; }
+    public int DurationMin { get; set; }
+    public DateTimeOffset? SavedAt { get; set; }
+    public Guid? SavedById { get; set; }
+
+    public string TitleIn(string? locale) => Locales.Pick(locale, Title, TitleKk);
+    public string BodyIn(string? locale) => Locales.Pick(locale, Body, BodyKk);
 }
 
 public enum PlanCodeKind { Promo, Gift }

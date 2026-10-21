@@ -18,12 +18,21 @@ public static class Plans
     public static int? GoalLimit(CouplePlan plan) => plan == CouplePlan.Free ? FreeGoals : null;
 
     // The task of the day, plus two more on request for paid couples (monetization doc: Free 1, Plus 3
-    // a day; Premium has "всё из Plus", its personal tasks come later).
+    // a day; Premium has "всё из Plus", and its two extra tasks are personal ones written by AI).
     public static int TasksPerDay(CouplePlan plan) => plan == CouplePlan.Free ? 1 : 3;
 
     // The love-languages quiz is a Plus feature (gamification doc). A result taken on a paid plan stays
     // visible after the plan ends; taking it again needs the plan.
     public static bool LoveQuiz(CouplePlan plan) => plan != CouplePlan.Free;
+
+    // AI selections and personal tasks are Premium only: they are the one cost that grows with use
+    // (monetization doc: "Premium несёт расходы на AI"). A selection is five ideas; 30 a month is about
+    // one a day. Personal tasks are the paid extra tasks, so the plan's daily task limit caps them.
+    public const int PremiumAiPicksPerMonth = 30;
+
+    public static int AiPicksPerMonth(CouplePlan plan) => plan == CouplePlan.Premium ? PremiumAiPicksPerMonth : 0;
+
+    public static bool PersonalTasks(CouplePlan plan) => plan == CouplePlan.Premium;
 
     public static int PhotoLimit(CouplePlan plan) => plan switch
     {

@@ -15,6 +15,18 @@ public sealed class BillingProduct
     public string GoogleBasePlanId { get; set; } = "";
 }
 
+// Something bought once rather than subscribed to, like the video story of the year. On both stores it is a
+// consumable, so the couple can buy it again for the next year.
+public sealed class OneTimeProduct
+{
+    public string Id { get; set; } = "";
+    public int PriceKzt { get; set; }
+    public string AppleProductId { get; set; } = "";
+    public string GoogleProductId { get; set; } = "";
+
+    public string StoreProductId(StoreProvider provider) => provider == StoreProvider.Apple ? AppleProductId : GoogleProductId;
+}
+
 public sealed class AppleStoreOptions
 {
     public string BundleId { get; set; } = "kz.ailu.app";
@@ -79,6 +91,12 @@ public sealed class BillingOptions
 
     public List<BillingProduct> Products { get; set; } = [];
 
+    // The video story of the year, 1 990 ₸ (roadmap, phase 4). A placeholder price like the plans'.
+    public OneTimeProduct YearStory { get; set; } = new()
+    {
+        Id = "year_story", PriceKzt = 1990, AppleProductId = "kz.ailu.story.year", GoogleProductId = "year_story"
+    };
+
     // Gift subscriptions for sale; config binding appends here too, so defaults apply only when it names none.
     public List<GiftProduct> Gifts { get; set; } = [];
 
@@ -118,6 +136,17 @@ public sealed record StorePurchase(
     string? ReplacesStoreId = null,
     bool NeedsAcknowledge = false);
 
+// What a store says about one purchase of a one-time product. Paid is false for a refunded, cancelled or
+// still pending purchase.
+public sealed record StoreProductPurchase(
+    StoreProvider Provider,
+    string StoreId,
+    string ProductId,
+    bool Paid,
+    bool Sandbox,
+    string? AccountId = null,
+    bool NeedsAcknowledge = false);
+
 public interface IStoreClient
 {
     StoreProvider Provider { get; }
@@ -126,6 +155,11 @@ public interface IStoreClient
     Task<StorePurchase?> FetchAsync(string storeId, CancellationToken ct = default);
 
     Task AcknowledgeAsync(StorePurchase purchase, CancellationToken ct = default);
+
+    // A one-time purchase. Google looks purchases up by product, so the product id comes along.
+    Task<StoreProductPurchase?> FetchProductAsync(string productId, string storeId, CancellationToken ct = default);
+
+    Task AcknowledgeProductAsync(StoreProductPurchase purchase, CancellationToken ct = default);
 }
 
 public sealed class StoreUnavailableException(string message, Exception? inner = null) : Exception(message, inner);
@@ -139,10 +173,16 @@ public sealed class UnconfiguredStore(StoreProvider provider) : IStoreClient
         throw new StoreUnavailableException($"{provider} purchases are not configured on this server.");
 
     public Task AcknowledgeAsync(StorePurchase purchase, CancellationToken ct = default) => Task.CompletedTask;
+
+    public Task<StoreProductPurchase?> FetchProductAsync(string productId, string storeId, CancellationToken ct = default) =>
+        throw new StoreUnavailableException($"{provider} purchases are not configured on this server.");
+
+    public Task AcknowledgeProductAsync(StoreProductPurchase purchase, CancellationToken ct = default) => Task.CompletedTask;
 }
 
 // Development only (Billing:UseFakeStore). "fake:kz.ailu.plus.monthly" is an active monthly purchase from now on
-// ("...yearly" a yearly one); "fake-expired:..." one that has ended.
+// ("...yearly" a yearly one); "fake-expired:..." one that has ended. One-time products work the same way:
+// "fake:kz.ailu.story.year" is paid, "fake-expired:..." refunded.
 public sealed class FakeStore(StoreProvider provider, TimeProvider clock) : IStoreClient
 {
     public StoreProvider Provider => provider;
@@ -159,4 +199,14 @@ public sealed class FakeStore(StoreProvider provider, TimeProvider clock) : ISto
     }
 
     public Task AcknowledgeAsync(StorePurchase purchase, CancellationToken ct = default) => Task.CompletedTask;
+
+    public Task<StoreProductPurchase?> FetchProductAsync(string productId, string storeId, CancellationToken ct = default)
+    {
+        var parts = storeId.Split(':', 3);
+        if (parts.Length < 2 || parts[0] is not ("fake" or "fake-expired") || parts[1] != productId)
+            return Task.FromResult<StoreProductPurchase?>(null);
+        return Task.FromResult<StoreProductPurchase?>(new StoreProductPurchase(provider, storeId, productId, parts[0] == "fake", Sandbox: true));
+    }
+
+    public Task AcknowledgeProductAsync(StoreProductPurchase purchase, CancellationToken ct = default) => Task.CompletedTask;
 }

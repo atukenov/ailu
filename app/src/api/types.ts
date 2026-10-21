@@ -63,6 +63,8 @@ export type DailyTask = {
   acceptedByPartner: boolean;
   completedAt: string | null;
   confirmedAt: string | null;
+  // A task AI wrote for this couple: Premium's extra tasks.
+  personal: boolean;
 };
 
 export type DailyQuestion = {
@@ -376,6 +378,86 @@ export type YearPhotos = {
 };
 
 export type BookOrderInput = { recipientName: string; phone: string; city: string; address: string; comment?: string };
+
+export type StorySlideKind =
+  | 'intro'
+  | 'memory'
+  | 'start'
+  | 'days_together'
+  | 'anniversary'
+  | 'goal_done'
+  | 'achievement'
+  | 'outro';
+
+// One slide of the year's film. Like the timeline, the server sends kinds and numbers and the app writes
+// the words; titles and places are the couple's own.
+export type StorySlide = {
+  kind: StorySlideKind;
+  durationMs: number;
+  date: string | null;
+  memoryId: string | null;
+  photo: string | null;
+  title: string | null;
+  place: string | null;
+  days: number | null;
+  years: number | null;
+  icon: string | null;
+  slug: string | null;
+  stats: { daysTogether: number; memories: number; tasks: number; nur: number } | null;
+};
+
+export type YearStory = {
+  year: number;
+  years: number[];
+  // Ordering opens on 1 December of the year; the preview can be watched all year.
+  open: boolean;
+  opensOn: string;
+  priceKzt: number;
+  appleProductId: string;
+  googleProductId: string;
+  memories: number;
+  minMemories: number;
+  durationMs: number;
+  slides: StorySlide[];
+  order: {
+    status: 'making' | 'ready' | 'failed';
+    orderedAt: string;
+    paidByMe: boolean;
+    readyAt: string | null;
+    video: string | null;
+  } | null;
+};
+
+// AI selections (Premium). Ideas come in the reader's language; `saved` is shared by both partners.
+export type AiKind = 'date' | 'home' | 'film' | 'music';
+export type AiBudget = 'any' | 'free' | 'low';
+
+export type AiItem = {
+  id: string;
+  pickId: string;
+  kind: AiKind;
+  title: string;
+  body: string;
+  costKzt: number;
+  durationMin: number;
+  saved: boolean;
+  savedAt: string | null;
+};
+
+export type AiPick = {
+  id: string;
+  kind: AiKind;
+  budget: AiBudget;
+  wish: string | null;
+  byMe: boolean;
+  createdAt: string;
+  items: AiItem[];
+};
+
+// `available`: the plan lets the couple ask for new selections. `used` of `limit` this month; `resetsOn`
+// is the first day of the next month.
+export type Ai = { available: boolean; used: number; limit: number; resetsOn: string; picks: AiPick[]; saved: AiItem[] };
+
 export type GiftProduct = {
   id: string;
   tier: Exclude<Plan, 'free'>;
