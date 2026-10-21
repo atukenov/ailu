@@ -42,6 +42,46 @@ public sealed class GoogleStoreClient(HttpClient http, GoogleStoreOptions option
         await EnsureOk(res, ct);
     }
 
+    public async Task<StoreProductPurchase?> FetchProductAsync(string productId, string storeId, CancellationToken ct = default)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get,
+            $"{Api}/{options.PackageName}/purchases/products/{Uri.EscapeDataString(productId)}/tokens/{Uri.EscapeDataString(storeId)}");
+        using var res = await SendAsync(req, ct);
+        if (res.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone or HttpStatusCode.BadRequest) return null;
+        await EnsureOk(res, ct);
+        using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync(ct));
+        return ParseProduct(doc.RootElement, productId, storeId);
+    }
+
+    // The app consumes the purchase once the server has it, so it can be bought again next year. Acknowledging
+    // it here as well means Google keeps the money even if the app never gets that far.
+    public async Task AcknowledgeProductAsync(StoreProductPurchase purchase, CancellationToken ct = default)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Post,
+            $"{Api}/{options.PackageName}/purchases/products/{Uri.EscapeDataString(purchase.ProductId)}/tokens/{Uri.EscapeDataString(purchase.StoreId)}:acknowledge")
+        {
+            Content = JsonContent.Create(new { })
+        };
+        using var res = await SendAsync(req, ct);
+        await EnsureOk(res, ct);
+    }
+
+    // A ProductPurchase resource. purchaseState 0 is paid, 1 cancelled (or refunded), 2 pending.
+    public static StoreProductPurchase ParseProduct(JsonElement root, string productId, string token)
+    {
+        var paid = root.TryGetProperty("purchaseState", out var state) && state.GetInt32() == 0;
+        return new StoreProductPurchase(
+            StoreProvider.Google,
+            token,
+            productId,
+            paid,
+            // purchaseType 0 is a test purchase from a licence tester.
+            Sandbox: root.TryGetProperty("purchaseType", out var type) && type.GetInt32() == 0,
+            AccountId: root.TryGetProperty("obfuscatedExternalAccountId", out var a) ? a.GetString() : null,
+            NeedsAcknowledge: paid && root.TryGetProperty("acknowledgementState", out var ack) && ack.GetInt32() == 0
+                && !(root.TryGetProperty("consumptionState", out var used) && used.GetInt32() == 1));
+    }
+
     // A SubscriptionPurchaseV2 resource.
     public static StorePurchase? Parse(JsonElement root, string token)
     {

@@ -33,6 +33,7 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<LoveQuizAnswer> LoveQuizAnswers => Set<LoveQuizAnswer>();
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<CoupleAchievement> CoupleAchievements => Set<CoupleAchievement>();
+    public DbSet<YearStory> YearStories => Set<YearStory>();
     public DbSet<AiPick> AiPicks => Set<AiPick>();
     public DbSet<AiPickItem> AiPickItems => Set<AiPickItem>();
 
@@ -320,6 +321,23 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.MarkedById);
             e.HasOne<Memory>().WithMany().HasForeignKey(x => x.MemoryId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<YearStory>(e =>
+        {
+            // One film per couple per year, and one purchase can pay for only one film.
+            e.HasIndex(x => new { x.CoupleId, x.Year }).IsUnique();
+            e.HasIndex(x => new { x.Provider, x.StoreId }).IsUnique();
+            e.HasIndex(x => new { x.Status, x.NextAttemptAt });
+            e.Property(x => x.Provider).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.StoreId).HasMaxLength(500);
+            e.Property(x => x.ProductId).HasMaxLength(100);
+            e.Property(x => x.Locale).HasMaxLength(5);
+            e.Property(x => x.Storyboard).HasColumnType("jsonb");
+            e.Property(x => x.Error).HasMaxLength(500);
+            e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.PayerUserId);
         });
     }
 }

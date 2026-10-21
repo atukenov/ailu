@@ -11,6 +11,7 @@ using Ailu.Api.Features.Memories;
 using Ailu.Api.Features.Mood;
 using Ailu.Api.Features.Pairing;
 using Ailu.Api.Features.Timeline;
+using Ailu.Api.Features.YearStory;
 using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -88,6 +89,12 @@ builder.Services.AddScoped<AiService>();
 builder.Services.AddScoped<GiftService>();
 if (builder.Configuration.GetValue("Billing:ExpiryEnabled", true)) builder.Services.AddHostedService<BillingScheduler>();
 
+// No rendering host is chosen yet: orders for the video story queue up until a real IStoryRenderer is registered.
+builder.Services.AddSingleton<IStoryRenderer, UnconfiguredStoryRenderer>();
+builder.Services.AddScoped<YearStoryService>();
+builder.Services.AddScoped<YearStoryJob>();
+if (builder.Configuration.GetValue("YearStory:RenderEnabled", true)) builder.Services.AddHostedService<YearStoryScheduler>();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {
     o.TokenValidationParameters = new TokenValidationParameters
@@ -153,6 +160,7 @@ GoalEndpoints.Map(app);
 LoveQuizEndpoints.Map(app);
 TimelineEndpoints.Map(app);
 AchievementEndpoints.Map(app);
+YearStoryEndpoints.Map(app);
 AiEndpoints.Map(app);
 BillingEndpoints.Map(app);
 GiftEndpoints.Map(app);

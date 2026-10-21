@@ -15,7 +15,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
-import type { Billing, BillingProduct } from '@/api/types';
+import type { Billing, BillingProduct, YearStory } from '@/api/types';
 
 // Subscriptions go through Apple and Google in-app purchase. The app never decides what the couple
 // has: it hands the store's transaction to the server, which checks it with the store and sets the
@@ -42,7 +42,10 @@ export function usePurchaseSync() {
     planChanged = () => {
       for (const key of ['billing', 'storage', 'goals', 'today']) queryClient.invalidateQueries({ queryKey: [key] });
     };
-    if (native) restorePurchases().catch(() => {});
+    if (native) {
+      restorePurchases().catch(() => {});
+      restoreStoryPurchases().catch(() => {});
+    }
     return () => {
       planChanged = () => {};
     };
@@ -176,5 +179,79 @@ export async function storePrices(billing: Billing): Promise<Partial<Record<Tier
     return out;
   } catch {
     return {};
+  }
+}
+
+// The video story of the year is bought once per year, by either partner, as a consumable (the same
+// product again next year). Like a subscription, the server checks the purchase with the store.
+
+function storySku(story: YearStory) {
+  return Platform.OS === 'ios' ? story.appleProductId : story.googleProductId;
+}
+
+// Hand a story purchase to the server, then consume it. A refusal because the year was already bought
+// (both partners paid at once) still consumes it: the server has logged it for a refund.
+async function claimStory(year: number, purchase: Purchase): Promise<YearStory> {
+  try {
+    const story =
+      Platform.OS === 'ios'
+        ? await api.orderStoryApple(year, purchase.id)
+        : await api.orderStoryGoogle(year, purchase.purchaseToken ?? '');
+    await finishTransaction({ purchase, isConsumable: true });
+    return story;
+  } catch (e) {
+    if (e instanceof ApiError && e.code === 'story_ordered') await finishTransaction({ purchase, isConsumable: true });
+    throw e;
+  }
+}
+
+// Buy this year's film. Resolves with the ordered story, or null when the person backed out.
+export async function buyYearStory(story: YearStory): Promise<YearStory | null> {
+  const [me] = await Promise.all([api.me(), connect()]);
+  const sku = storySku(story);
+  return new Promise<YearStory | null>((resolve, reject) => {
+    const done = (fn: () => void) => {
+      updated.remove();
+      failed.remove();
+      fn();
+    };
+    const updated = purchaseUpdatedListener((p) => {
+      if (p.productId !== sku) return;
+      claimStory(story.year, p).then(
+        (after) => done(() => resolve(after)),
+        (e) => done(() => reject(e)),
+      );
+    });
+    const failed = purchaseErrorListener((e) => {
+      done(() => (isUserCancelledError(e) ? resolve(null) : reject(new Error(e.message))));
+    });
+    requestPurchase({
+      type: 'in-app',
+      request: {
+        apple: { sku, appAccountToken: me.id },
+        google: { skus: [sku], obfuscatedAccountId: me.id },
+      },
+    }).catch((e) => done(() => (isUserCancelledError(e) ? resolve(null) : reject(e))));
+  });
+}
+
+// A story paid for while the app closed mid-purchase is handed over on the next launch, for the year
+// the app offers now.
+async function restoreStoryPurchases() {
+  await connect();
+  const [story, purchases] = await Promise.all([api.yearStory(), getAvailablePurchases()]);
+  for (const p of purchases.filter((p) => p.productId === storySku(story))) {
+    await claimStory(story.year, p).catch(() => {});
+  }
+}
+
+// The store's own price for the film, or null where the store can't be asked.
+export async function storyPrice(story: YearStory): Promise<string | null> {
+  try {
+    await connect();
+    const found = await fetchProducts({ skus: [storySku(story)], type: 'in-app' });
+    return (found ?? []).find((f) => f.id === storySku(story))?.displayPrice ?? null;
+  } catch {
+    return null;
   }
 }
