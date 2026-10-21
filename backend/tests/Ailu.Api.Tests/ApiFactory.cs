@@ -80,6 +80,28 @@ public sealed class TestRenderer : IStoryRenderer
     }
 }
 
+// The built-in stub writer, which a test can take down and whose requests it can read.
+public sealed class TestAiWriter : IAiWriter
+{
+    private readonly StubAiWriter stub = new();
+    public ConcurrentQueue<object> Requests { get; } = new();
+    public bool Down { get; set; }
+
+    public Task<IReadOnlyList<AiIdea>> IdeasAsync(IdeaRequest request, CancellationToken ct = default)
+    {
+        Requests.Enqueue(request);
+        if (Down) throw new AiUnavailableException("down");
+        return stub.IdeasAsync(request, ct);
+    }
+
+    public Task<AiTask> TaskAsync(TaskRequest request, CancellationToken ct = default)
+    {
+        Requests.Enqueue(request);
+        if (Down) throw new AiUnavailableException("down");
+        return stub.TaskAsync(request, ct);
+    }
+}
+
 // A gift payment provider the test drives: every order gets a page to pay on, and pays when the test says so.
 public sealed class TestCheckout : IGiftCheckout
 {
@@ -132,6 +154,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public TestStore Apple { get; } = new(StoreProvider.Apple);
     public TestStore Google { get; } = new(StoreProvider.Google);
     public TestRenderer Renderer { get; } = new();
+    public TestAiWriter Ai { get; } = new();
     public TestCheckout Checkout { get; } = new();
     public const string GoogleWebhookSecret = "test-webhook-secret";
     public const string GiftWebhookSecret = "test-gift-secret";
@@ -180,6 +203,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             s.AddSingleton<IStoreClient>(Google);
             s.RemoveAll<IStoryRenderer>();
             s.AddSingleton<IStoryRenderer>(Renderer);
+            s.RemoveAll<IAiWriter>();
+            s.AddSingleton<IAiWriter>(Ai);
             s.RemoveAll<IGiftCheckout>();
             s.AddSingleton<IGiftCheckout>(Checkout);
         });

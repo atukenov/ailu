@@ -65,6 +65,7 @@ function Routes() {
           <Stack.Screen name="goals/new" />
           <Stack.Screen name="goals/[id]" />
           <Stack.Screen name="love-quiz" />
+          <Stack.Screen name="ai-picks" />
           <Stack.Screen name="timeline" />
           <Stack.Screen name="year-story" />
           <Stack.Screen name="achievements/index" />

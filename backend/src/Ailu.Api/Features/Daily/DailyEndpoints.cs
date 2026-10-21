@@ -17,8 +17,10 @@ public static class TaskState
     public const string Done = "done";
 }
 
+// `Personal` marks a task AI wrote for this couple (Premium's extra tasks).
 public sealed record TaskDto(Guid Id, DateOnly Date, string Slug, string Category, string Title, string Body, int CostKzt,
-    int DurationMin, string State, bool AcceptedByMe, bool AcceptedByPartner, DateTimeOffset? CompletedAt, DateTimeOffset? ConfirmedAt);
+    int DurationMin, string State, bool AcceptedByMe, bool AcceptedByPartner, DateTimeOffset? CompletedAt, DateTimeOffset? ConfirmedAt,
+    bool Personal);
 
 // The partner's answer is only present once both have answered. Hiding it in the UI would not be
 // enough: what reaches the device is what the partner could read.
@@ -63,14 +65,26 @@ public static class DailyEndpoints
     }
 
     // The next task for today, once the previous one is done and the plan has room for it. When both
-    // partners ask at once, the second gets the task the first one opened.
+    // partners ask at once, the second gets the task the first one opened. Premium's extra tasks are
+    // personal ones AI writes for the couple; if the model can't be reached, a library task stands in.
     private static async Task<IResult> MoreTask(HttpContext http, AiluDb db, DailyContentService content,
-        ActivityService activity, TimeProvider clock, CancellationToken ct)
+        ActivityService activity, AiService ai, TimeProvider clock, CancellationToken ct)
     {
         var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
         if (scope is null) return Errors.NoCouple();
         var today = CoupleCalendar.Today(scope.Couple, clock);
         await content.EnsureAsync(scope.Couple, today, ct);
+
+        // The model is slow, so it writes the task before the couple row is locked. If the partner's
+        // request opens a task in the meantime, this one is simply not used.
+        AiTask? personal = null;
+        if (Plans.PersonalTasks(scope.Couple.Plan))
+        {
+            var latest = await db.CoupleTasks.Where(t => t.CoupleId == scope.Couple.Id && t.Date == today)
+                .OrderByDescending(t => t.Ordinal).FirstAsync(ct);
+            if (latest.ConfirmedAt is not null && latest.Ordinal + 1 < Plans.TasksPerDay(scope.Couple.Plan))
+                personal = await ai.PersonalTaskAsync(scope.Couple, today, ct);
+        }
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Couples\" WHERE \"Id\" = {scope.Couple.Id} FOR UPDATE", ct);
@@ -89,7 +103,9 @@ public static class DailyEndpoints
                 ? Errors.Conflict("task_limit", "В бесплатной версии одно задание в день. В Plus их три.")
                 : Errors.Conflict("task_limit", $"На сегодня все {limit} задания выполнены. Новое появится завтра.");
 
-        var task = await content.AddExtraAsync(scope.Couple, today, last.Ordinal + 1, ct);
+        var task = personal is not null
+            ? await content.AddPersonalAsync(scope.Couple, today, last.Ordinal + 1, personal, ct)
+            : await content.AddExtraAsync(scope.Couple, today, last.Ordinal + 1, ct);
         await activity.RecordAsync(scope.Couple, scope.UserId, today, ct);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
@@ -209,7 +225,7 @@ public static class DailyEndpoints
         var d = t.DailyTask!;
         var locale = scope.Me.User?.Locale;
         return new TaskDto(t.Id, t.Date, d.Slug, d.Category, d.TitleIn(locale), d.BodyIn(locale), d.CostKzt, d.DurationMin, state,
-            mine is not null, theirs is not null, t.CompletedAt, t.ConfirmedAt);
+            mine is not null, theirs is not null, t.CompletedAt, t.ConfirmedAt, d.CoupleId is not null);
     }
 
     private static QuestionDto ToDto(DailyQuestion q, CoupleScope scope)

@@ -2,6 +2,11 @@ import { tokens } from './tokens';
 import type {
   Achievement,
   AchievementList,
+  Ai,
+  AiBudget,
+  AiItem,
+  AiKind,
+  AiPick,
   Billing,
   Couple,
   DailyQuestion,
@@ -181,6 +186,11 @@ export const api = {
   markAchievement: (slug: string, input: { happenedOn?: string; memoryId?: string } = {}) =>
     request<Achievement>('POST', `/v1/couple/achievements/${slug}/done`, input),
   unmarkAchievement: (slug: string) => request<Achievement>('DELETE', `/v1/couple/achievements/${slug}/done`),
+
+  ai: () => request<Ai>('GET', '/v1/couple/ai'),
+  // Budget applies to dates and evenings at home; the wish goes to the model as is.
+  aiPick: (kind: AiKind, budget?: AiBudget, wish?: string) => request<AiPick>('POST', '/v1/couple/ai/picks', { kind, budget, wish }),
+  saveIdea: (id: string, on: boolean) => request<AiItem>(on ? 'PUT' : 'DELETE', `/v1/couple/ai/items/${id}/saved`),
 
   billing: () => request<Billing>('GET', '/v1/billing'),
   claimApple: (transactionId: string) => request<Billing>('POST', '/v1/billing/apple', { transactionId }),

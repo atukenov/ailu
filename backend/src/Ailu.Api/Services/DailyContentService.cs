@@ -1,5 +1,6 @@
 using Ailu.Api.Data;
 using Ailu.Api.Domain;
+using Ailu.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -19,7 +20,7 @@ public sealed class DailyContentService(AiluDb db)
         if (task is null)
         {
             var used = await db.CoupleTasks.Where(t => t.CoupleId == couple.Id).Select(t => t.DailyTaskId).ToListAsync(ct);
-            var library = await db.DailyTasks.Select(t => t.Id).ToListAsync(ct);
+            var library = await db.TaskLibrary.Select(t => t.Id).ToListAsync(ct);
             db.CoupleTasks.Add(new CoupleTask
             {
                 Id = Guid.NewGuid(), CoupleId = couple.Id, Date = day,
@@ -60,7 +61,7 @@ public sealed class DailyContentService(AiluDb db)
         var used = await db.CoupleTasks.Where(t => t.CoupleId == couple.Id)
             .Select(t => new { t.DailyTaskId, t.Date }).ToListAsync(ct);
         var todays = used.Where(t => t.Date == day).Select(t => t.DailyTaskId).ToHashSet();
-        var library = await db.DailyTasks.Select(t => t.Id).ToListAsync(ct);
+        var library = await db.TaskLibrary.Select(t => t.Id).ToListAsync(ct);
         var fresh = library.Where(id => !todays.Contains(id)).ToList();
 
         var task = new CoupleTask
@@ -72,6 +73,23 @@ public sealed class DailyContentService(AiluDb db)
         db.CoupleTasks.Add(task);
         await db.SaveChangesAsync(ct);
         await db.Entry(task).Reference(t => t.DailyTask).LoadAsync(ct);
+        return task;
+    }
+
+    // A personal task AI wrote for this couple, as one more task for today. Like AddExtraAsync, the caller
+    // holds the couple row lock.
+    public async Task<CoupleTask> AddPersonalAsync(Couple couple, DateOnly day, int ordinal, AiTask written,
+        CancellationToken ct = default)
+    {
+        var personal = new DailyTask
+        {
+            Slug = $"ai-{Guid.NewGuid():N}", CoupleId = couple.Id, Category = written.Category,
+            Title = written.Title, Body = written.Body, TitleKk = written.TitleKk, BodyKk = written.BodyKk,
+            CostKzt = written.CostKzt, DurationMin = written.DurationMin
+        };
+        var task = new CoupleTask { Id = Guid.NewGuid(), CoupleId = couple.Id, Date = day, Ordinal = ordinal, DailyTask = personal };
+        db.CoupleTasks.Add(task);
+        await db.SaveChangesAsync(ct);
         return task;
     }
 
@@ -106,7 +124,7 @@ public sealed class DailyContentService(AiluDb db)
         if (picks.Count == 0) return new HashSet<int>();
         var categories = picks.SelectMany(p => LoveQuiz.Top(LoveQuiz.Scores(p))).SelectMany(LoveQuiz.TaskCategories)
             .Distinct().ToList();
-        return (await db.DailyTasks.Where(t => categories.Contains(t.Category)).Select(t => t.Id).ToListAsync(ct)).ToHashSet();
+        return (await db.TaskLibrary.Where(t => categories.Contains(t.Category)).Select(t => t.Id).ToListAsync(ct)).ToHashSet();
     }
 
     private Task<CoupleTask?> FindTaskAsync(Guid coupleId, DateOnly day, CancellationToken ct) =>

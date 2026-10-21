@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
-import type { Couple, DailyQuestion, DailyTask, Phase, StreakRestore, Today } from '@/api/types';
+import type { AiKind, Couple, DailyQuestion, DailyTask, Phase, StreakRestore, Today } from '@/api/types';
 import { MoodCard } from '@/components/mood';
 import { Moon } from '@/components/moon';
-import { Button, Card, Centered, ErrorText, Field, Screen, T } from '@/components/ui';
+import { Button, Card, Centered, Chip, ErrorText, Field, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { registerForPush } from '@/notifications';
@@ -72,6 +72,7 @@ export default function TodayScreen() {
         />
       ))}
       <QuestionCard question={today.data.question} partnerName={partnerName} />
+      {storage.data && <PicksCard premium={storage.data.plan === 'premium'} />}
       <MoodCard partnerName={partnerName} pollMs={POLL_MS} />
       <LoveQuizNudge partnerName={partnerName} />
       <YearStoryNudge />
@@ -204,6 +205,29 @@ function StreakUpsell({ coupleId, days }: { coupleId: string; days: number }) {
   );
 }
 
+const AI_KINDS: AiKind[] = ['date', 'home', 'film', 'music'];
+
+// The way into AI selections, as in the mockup's Today ("Музыка на вечер", "Фильм для вас", "Идеи для
+// свидания"). Selections are Premium; other plans see the same row and it opens the Premium paywall.
+function PicksCard({ premium }: { premium: boolean }) {
+  const s = useStrings();
+  const open = (kind: AiKind) =>
+    premium ? router.push({ pathname: '/ai-picks', params: { kind } }) : openPaywall('ai');
+  return (
+    <Card>
+      <View style={styles.picksHead}>
+        <T variant="label">{s.aiPicks}</T>
+        {!premium && <T variant="small" style={styles.premiumTag}>Premium</T>}
+      </View>
+      <View style={styles.picks}>
+        {AI_KINDS.map((kind) => (
+          <Chip key={kind} label={s.aiKinds[kind]} onPress={() => open(kind)} />
+        ))}
+      </View>
+    </Card>
+  );
+}
+
 // Once a partner has taken the love-languages quiz, the other is invited from the Today screen, since the
 // result opens only when both have answered.
 function LoveQuizNudge({ partnerName }: { partnerName: string }) {
@@ -287,7 +311,10 @@ function TaskCard({ task, index, last, tasksPerDay, free }: TaskCardProps) {
 
   return (
     <Card>
-      <T variant="label">{index === 0 ? s.taskOfDay : s.extraTask(index + 1, tasksPerDay)}</T>
+      <T variant="label">
+        {index === 0 ? s.taskOfDay : s.extraTask(index + 1, tasksPerDay)}
+        {task.personal && ` · ${s.personalTask}`}
+      </T>
       <T variant="heading">{task.title}</T>
       <T variant="secondary">{task.body}</T>
       <T variant="small">{s.taskMeta(task.durationMin, task.costKzt)}</T>
@@ -402,4 +429,7 @@ const styles = StyleSheet.create({
   answer: { gap: Spacing.one, padding: Spacing.three, borderRadius: Radius.md, backgroundColor: Colors.surfaceStrong },
   answerInput: { minHeight: 96, paddingTop: Spacing.three, textAlignVertical: 'top', fontSize: 16 },
   status: { paddingVertical: Spacing.two },
+  picksHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  premiumTag: { color: Colors.accent },
+  picks: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
 });
