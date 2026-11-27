@@ -10,7 +10,7 @@
    ▼
 api.ailu.kz ── Railway: сервер .NET в Docker (backend/Dockerfile)
    │            том Railway /data: фото пар
-   ├── Supabase: PostgreSQL
+   ├── Railway: PostgreSQL (тот же проект, внутренняя сеть)
    ├── Firebase Cloud Messaging: push
    ├── App Store Server API и Google Play API: проверка покупок
    └── Anthropic API: AI-идеи для Premium (когда будет ключ)
@@ -18,41 +18,48 @@ api.ailu.kz ── Railway: сервер .NET в Docker (backend/Dockerfile)
 ailu.kz ── Vercel: сайт (лендинг, юридические документы, страница удаления аккаунта)
 ```
 
-Порядок: **1** Supabase → **2** Railway → **3** домен → **4** App Store Connect → **5** Google Play → **6** Firebase → **7** сборки EAS → **8** проверка. Vercel (раздел 9) можно делать в любой момент.
+Порядок: **1** Railway: проект и база → **2** Railway: сервер → **3** домен → **4** App Store Connect → **5** Google Play → **6** Firebase → **7** сборки EAS → **8** проверка. Vercel (раздел 9) можно делать в любой момент.
 
 Секреты (ключи, пароли, JSON-файлы) не кладите в git. Они живут только в переменных Railway и в EAS.
 
 ---
 
-## 1. Supabase: база данных
+## 1. Railway: проект и база данных
 
-1. https://supabase.com → New project. Регион: **Central EU (Frankfurt)**, ближайший к Казахстану. Придумайте пароль базы и сохраните его.
-2. Тариф: для настоящих пользователей нужен Pro: бесплатный проект засыпает после недели без запросов и не делает ежедневных бэкапов.
-3. Project → **Connect** → **Session pooler** (работает по IPv4, прямое подключение Supabase только IPv6). Возьмите оттуда host, порт и пользователя и соберите строку для .NET:
+База PostgreSQL живёт в том же проекте Railway, что и сервер, и сервер ходит к ней по внутренней сети Railway (без выхода в интернет).
 
-   ```
-   Host=<host из Session pooler>;Port=5432;Database=postgres;Username=postgres.<ref проекта>;Password=<пароль>;SSL Mode=Require
-   ```
+1. https://railway.com → New Project → **Deploy PostgreSQL** (или в существующем проекте: **+ Create** → **Database** → **PostgreSQL**). Сервис появится под именем `Postgres`.
+2. Тариф: для настоящих пользователей нужен платный (Pro): на нём есть бэкапы по расписанию и нет жёстких лимитов пробного тарифа.
+3. Postgres → **Settings** → **Region**: EU West (Amsterdam), тот же регион, что у сервера (раздел 2).
+4. **Бэкапы:** Postgres → вкладка **Backups** → **Edit schedule** → включите **Daily** и **Weekly** (Railway хранит ежедневные 6 дней, еженедельные 27 дней, ежемесячные 89 дней). Перед рискованными изменениями можно нажать **Create backup** вручную. То же расписание стоит включить и для тома сервера с фото (раздел 2, шаг 3).
+5. Строку подключения отдельно собирать не нужно: в разделе 2 переменная `ConnectionStrings__Ailu` ссылается на переменные сервиса Postgres, и Railway подставит их сам. Готовый `DATABASE_URL` из Postgres не подходит: .NET (Npgsql) не понимает строку вида `postgresql://...`.
+6. Таблицы создаст сам сервер при первом запуске (`Database__MigrateOnStartup=true`, раздел 2). Публичный доступ к базе (TCP Proxy) не включайте: серверу он не нужен.
 
-   Это значение `ConnectionStrings__Ailu` в Railway. Порт 6543 (transaction pooler) не берите: он ломает подготовленные запросы EF Core.
-4. Таблицы создаст сам сервер при первом запуске (`Database__MigrateOnStartup=true`, раздел 2). Supabase Auth, Storage и API от Supabase приложению не нужны; можно выключить Data API в Settings → API.
+**Как восстановить базу из бэкапа**
 
-> Фото пока хранятся на диске сервера (том Railway). Чтобы перенести их в Supabase Storage, в сервер нужно добавить S3-хранилище; это отдельная задача.
+1. Postgres → **Backups** → нужный бэкап → **Restore**. Railway создаст новый том из бэкапа, а старый оставит в проекте неподключённым (на случай, если понадобится).
+2. Нажмите **Deploy** на появившихся изменениях (staged changes), дождитесь, пока Postgres перезапустится.
+3. Перезапустите сервер (сервис `ailu` → Restart) и проверьте `/health` и вход ревьюера (раздел 8). Данные после момента бэкапа пропадут, поэтому перед восстановлением предупредите пользователей или сделайте ручной бэкап текущего состояния.
+4. Если нужно вернуть данные на минуту раньше, а не на момент бэкапа: в Railway есть Point-in-Time Recovery для Postgres (восстановление в новый сервис, окно около 4 недель). Его нужно включить заранее, см. https://docs.railway.com/volumes/point-in-time-recovery.
+
+Своя копия вне Railway (по желанию, раз в месяц): на время включите TCP Proxy у Postgres, возьмите `DATABASE_PUBLIC_URL` и выполните `pg_dump "<DATABASE_PUBLIC_URL>" -Fc -f ailu-$(date +%F).dump`, затем выключите прокси.
+
+> Фото пар по-прежнему хранятся на томе сервера `/data` (раздел 2), а не в базе. Бэкап Postgres их не включает: включите бэкапы и для этого тома.
 
 ## 2. Railway: сервер
 
-1. https://railway.com → New Project → **Deploy from GitHub repo** → `atukenov/ailu`.
+1. В том же проекте Railway, где Postgres: **+ Create** → **GitHub Repo** → `atukenov/ailu`.
 2. Сервис → **Settings**:
    - **Root Directory:** `backend`
    - **Config as code:** путь `/backend/railway.json` (сборка по Dockerfile, проверка `/health`, одна копия).
-   - **Region:** EU West (Amsterdam), рядом с Supabase во Франкфурте.
+   - **Region:** EU West (Amsterdam), тот же, что у Postgres.
    - **Replicas: 1.** Фото лежат на томе, а планировщик push и очисток рассчитан на одну копию.
-3. Сервис → правый клик → **Attach Volume**, путь монтирования **`/data`**, размер от 5 GB (растёт по мере фото). Сервер пишет фото в `/data/photos` и `/data/photos-archive`.
+3. Сервис → правый клик → **Attach Volume**, путь монтирования **`/data`**, размер от 5 GB (растёт по мере фото). Сервер пишет фото в `/data/photos` и `/data/photos-archive`. Во вкладке **Backups** этого тома включите **Daily** и **Weekly**, как у Postgres.
 4. Сервис → **Variables** (Raw Editor). Секреты сгенерируйте командой `openssl rand -base64 48`.
 
    ```env
    ASPNETCORE_ENVIRONMENT=Production
-   ConnectionStrings__Ailu=<строка из Supabase, раздел 1>
+   ConnectionStrings__Ailu=Host=${{Postgres.PGHOST}};Port=${{Postgres.PGPORT}};Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}}
    Database__MigrateOnStartup=true
 
    # Вход
@@ -81,6 +88,8 @@ ailu.kz ── Vercel: сайт (лендинг, юридические доку
    # Push через Firebase (раздел 6): JSON сервисного аккаунта целиком
    Push__Firebase__ServiceAccountJson=
    ```
+
+   `${{Postgres.…}}` это ссылки на переменные сервиса Postgres; Railway подставит внутренний адрес `postgres.railway.internal`. Если сервис базы назван иначе, замените `Postgres` на его имя. SSL внутри сети Railway не нужен.
 
    SMS-провайдер добавит свои переменные, когда его построят.
 5. **Networking** → **Custom Domain** → `api.ailu.kz` (Railway покажет CNAME для DNS, раздел 3). Пока домена нет, можно нажать **Generate Domain** и получить адрес `*.up.railway.app`.
@@ -193,4 +202,4 @@ Push идут через Firebase Cloud Messaging (PR #29) на iOS и Android.
 
 ## Что сколько стоит (ориентиры, проверьте на сайтах)
 
-Apple Developer 99 $ в год, Google Play 25 $ один раз, Expo EAS: бесплатный тариф с ограниченным числом сборок в месяц. Railway, Supabase Pro, Vercel и Firebase берут помесячно по использованию; на старте это обычно десятки долларов в месяц на всё вместе.
+Apple Developer 99 $ в год, Google Play 25 $ один раз, Expo EAS: бесплатный тариф с ограниченным числом сборок в месяц. Railway (сервер, Postgres и тома в одном счёте, тариф Pro от 20 $ в месяц с включённым использованием), Vercel и Firebase берут помесячно по использованию; на старте это обычно 20–40 $ в месяц на всё вместе. Отдельной подписки на базу больше нет.

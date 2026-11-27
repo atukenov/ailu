@@ -13,7 +13,7 @@ levels are **moon phases**.
 
 ## Backend
 
-Production setup (Railway, Supabase, App Store, Google Play, Firebase) is in [`DEPLOY.md`](DEPLOY.md); `backend/Dockerfile` builds the image.
+Production setup (Railway with PostgreSQL, App Store, Google Play, Firebase) is in [`DEPLOY.md`](DEPLOY.md); `backend/Dockerfile` builds the image.
 
 ```sh
 docker compose up -d postgres         # or any local PostgreSQL with postgres/postgres
