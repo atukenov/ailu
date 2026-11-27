@@ -4,8 +4,11 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~58.0.20",
+    "@react-native-firebase/app": "^27.2.0",
+    "@react-native-firebase/messaging": "^27.2.0",
     "@tanstack/react-query": "^5.104.3",
     "expo": "~58.0.14",
+    "expo-build-properties": "~58.0.11",
     "expo-blur": "~58.0.4",
     "expo-constants": "~58.0.12",
     "expo-dev-client": "~58.0.14",

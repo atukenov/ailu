@@ -1,10 +1,16 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using Ailu.Api.Data;
 using Ailu.Api.Features.Daily;
+using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
+using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace Ailu.Api.Tests;
 
@@ -132,36 +138,145 @@ public class PushTests
     }
 }
 
-public class ExpoPushSenderTests
+public class FcmPushSenderTests
 {
-    private sealed class Capture : HttpMessageHandler
+    private sealed class FakeFcm : HttpMessageHandler
     {
-        public List<string> Bodies { get; } = [];
+        public int TokenRequests;
+        public ConcurrentQueue<(string Url, string? Auth, string Body)> Sends { get; } = new();
+        public HashSet<string> Gone { get; } = [];
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
-            Assert.Equal(Ailu.Api.Infrastructure.ExpoPushSender.Endpoint, request.RequestUri!.ToString());
-            Bodies.Add(await request.Content!.ReadAsStringAsync(ct));
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            var url = request.RequestUri!.ToString();
+            var body = await request.Content!.ReadAsStringAsync(ct);
+            if (url == "https://oauth2.googleapis.com/token")
+            {
+                Interlocked.Increment(ref TokenRequests);
+                Assert.Contains("jwt-bearer", body);
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = JsonContent.Create(new { access_token = "at-1", expires_in = 3600, token_type = "Bearer" })
+                };
+            }
+
+            Sends.Enqueue((url, request.Headers.Authorization?.ToString(), body));
+            using var doc = JsonDocument.Parse(body);
+            var token = doc.RootElement.GetProperty("message").GetProperty("token").GetString()!;
+            if (Gone.Contains(token))
+                return new HttpResponseMessage(HttpStatusCode.NotFound)
+                {
+                    Content = new StringContent("""{"error":{"code":404,"status":"NOT_FOUND","details":[{"errorCode":"UNREGISTERED"}]}}""")
+                };
+            if (token.StartsWith("ExponentPushToken"))
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("""{"error":{"code":400,"message":"The registration token is not a valid FCM registration token","status":"INVALID_ARGUMENT"}}""")
+                };
+            if (token == "flaky") return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("""{"name":"projects/ailu-test/messages/1"}""") };
         }
     }
 
-    [Fact]
-    public async Task Sends_expo_messages_in_chunks_of_100()
+    private sealed class Cleanup : IPushTokenCleanup
     {
-        var capture = new Capture();
-        var sender = new Ailu.Api.Infrastructure.ExpoPushSender(new HttpClient(capture),
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<Ailu.Api.Infrastructure.ExpoPushSender>.Instance);
-        var messages = Enumerable.Range(0, 101).Select(i => new Ailu.Api.Infrastructure.PushMessage($"ExponentPushToken[{i}]", "T", "B")).ToList();
+        public List<string> Removed { get; } = [];
+        public Task RemoveAsync(IReadOnlyCollection<string> tokens, CancellationToken ct = default)
+        {
+            Removed.AddRange(tokens);
+            return Task.CompletedTask;
+        }
+    }
 
-        await sender.SendAsync(messages);
+    private static string ServiceAccountJson()
+    {
+        using var rsa = RSA.Create(2048);
+        return JsonSerializer.Serialize(new
+        {
+            type = "service_account",
+            project_id = "ailu-test",
+            client_email = "push@ailu-test.iam.gserviceaccount.com",
+            private_key = rsa.ExportPkcs8PrivateKeyPem(),
+            token_uri = "https://oauth2.googleapis.com/token"
+        });
+    }
 
-        Assert.Equal(2, capture.Bodies.Count);
-        using var first = System.Text.Json.JsonDocument.Parse(capture.Bodies[0]);
-        Assert.Equal(100, first.RootElement.GetArrayLength());
-        var m = first.RootElement[0];
-        Assert.Equal("ExponentPushToken[0]", m.GetProperty("to").GetString());
-        Assert.Equal("T", m.GetProperty("title").GetString());
-        Assert.Equal("B", m.GetProperty("body").GetString());
-        Assert.Equal("default", m.GetProperty("sound").GetString());
+    private static (FcmPushSender Sender, FakeFcm Fcm, Cleanup Cleanup, FakeTimeProvider Clock) Create()
+    {
+        var fcm = new FakeFcm();
+        var cleanup = new Cleanup();
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 11, 27, 9, 0, 0, TimeSpan.Zero));
+        var sender = new FcmPushSender(new HttpClient(fcm), new FirebaseOptions { ServiceAccountJson = ServiceAccountJson() },
+            cleanup, clock, NullLogger<FcmPushSender>.Instance);
+        return (sender, fcm, cleanup, clock);
+    }
+
+    [Fact]
+    public async Task Sends_each_message_to_fcm_v1_with_the_project_from_the_key()
+    {
+        var (sender, fcm, _, _) = Create();
+
+        await sender.SendAsync([new PushMessage("tok-a", "Задание дня", "Обнимитесь"), new PushMessage("tok-b", "T", "B")]);
+
+        Assert.Equal(2, fcm.Sends.Count);
+        Assert.All(fcm.Sends, s =>
+        {
+            Assert.Equal("https://fcm.googleapis.com/v1/projects/ailu-test/messages:send", s.Url);
+            Assert.Equal("Bearer at-1", s.Auth);
+        });
+        var a = fcm.Sends.Single(s => s.Body.Contains("tok-a"));
+        using var doc = JsonDocument.Parse(a.Body);
+        var m = doc.RootElement.GetProperty("message");
+        Assert.Equal("Задание дня", m.GetProperty("notification").GetProperty("title").GetString());
+        Assert.Equal("Обнимитесь", m.GetProperty("notification").GetProperty("body").GetString());
+        Assert.Equal("default", m.GetProperty("android").GetProperty("notification").GetProperty("channel_id").GetString());
+        Assert.Equal("default", m.GetProperty("apns").GetProperty("payload").GetProperty("aps").GetProperty("sound").GetString());
+    }
+
+    [Fact]
+    public async Task Reuses_the_access_token_until_it_nearly_expires()
+    {
+        var (sender, fcm, _, clock) = Create();
+
+        await sender.SendAsync([new PushMessage("tok-a", "T", "B")]);
+        clock.Advance(TimeSpan.FromMinutes(50));
+        await sender.SendAsync([new PushMessage("tok-a", "T", "B")]);
+        Assert.Equal(1, fcm.TokenRequests);
+
+        clock.Advance(TimeSpan.FromMinutes(10));
+        await sender.SendAsync([new PushMessage("tok-a", "T", "B")]);
+        Assert.Equal(2, fcm.TokenRequests);
+    }
+
+    [Fact]
+    public async Task Removes_tokens_fcm_no_longer_knows_and_keeps_the_rest()
+    {
+        var (sender, fcm, cleanup, _) = Create();
+        fcm.Gone.Add("tok-gone");
+
+        await sender.SendAsync([
+            new PushMessage("tok-ok", "T", "B"),
+            new PushMessage("tok-gone", "T", "B"),
+            new PushMessage("ExponentPushToken[old]", "T", "B"),
+            new PushMessage("flaky", "T", "B")
+        ]);
+
+        Assert.Equal(4, fcm.Sends.Count);
+        Assert.Equal(["ExponentPushToken[old]", "tok-gone"], cleanup.Removed.Order());
+    }
+
+    [Fact]
+    public async Task Stale_devices_are_deleted_from_the_database()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        var (a, _) = await api.PairAsync();
+        (await a.PutAsJsonAsync("/v1/me/devices", new { pushToken = "fcm-stale", platform = "android" })).EnsureSuccessStatusCode();
+        (await a.PutAsJsonAsync("/v1/me/devices", new { pushToken = "fcm-live", platform = "ios" })).EnsureSuccessStatusCode();
+
+        await new DbPushTokenCleanup(api.Services.GetRequiredService<IServiceScopeFactory>()).RemoveAsync(["fcm-stale"]);
+
+        using var scope = api.Services.CreateScope();
+        var tokens = await scope.ServiceProvider.GetRequiredService<AiluDb>().Devices.Select(d => d.PushToken).ToListAsync();
+        Assert.Equal(["fcm-live"], tokens);
     }
 }

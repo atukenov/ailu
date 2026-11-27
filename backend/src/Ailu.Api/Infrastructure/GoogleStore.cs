@@ -175,7 +175,11 @@ public sealed class GoogleStoreClient(HttpClient http, GoogleStoreOptions option
             IssuedAt = now.UtcDateTime,
             Expires = now.AddMinutes(30).UtcDateTime,
             Claims = new Dictionary<string, object> { ["scope"] = Scope },
+            // No provider cache: it would keep this RSA object after it is disposed, and the next sign fails.
             SigningCredentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256)
+            {
+                CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
+            }
         });
         using var res = await http.PostAsync(tokenUri, new FormUrlEncodedContent(new Dictionary<string, string>
         {

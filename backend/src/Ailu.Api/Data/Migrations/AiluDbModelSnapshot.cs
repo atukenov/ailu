@@ -930,8 +930,8 @@ namespace Ailu.Api.Data.Migrations
 
                     b.Property<string>("PushToken")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");

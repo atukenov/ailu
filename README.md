@@ -104,9 +104,12 @@ In production set these env vars on the API (Railway):
 
 ### Push notifications
 
-`DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Expo's push service
-when `Push:UseExpo` is `true`; otherwise (the default, and in Development) they are written to the log.
-Set `Push:SchedulerEnabled` to `false` to turn the job off.
+`DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Firebase Cloud Messaging
+(HTTP v1 API; iPhones are reached through FCM's APNs link) when `Push:Firebase:ServiceAccountJson` holds a
+Firebase service account key (the whole JSON, env var `Push__Firebase__ServiceAccountJson`); the project id is
+read from the key, or `Push:Firebase:ProjectId`. Without a key (the default, and in Development) pushes are
+written to the log. Tokens FCM reports as gone are deleted from `Devices`. Set `Push:SchedulerEnabled` to
+`false` to turn the job off.
 
 ### Store review sign-in
 
@@ -174,7 +177,7 @@ ends; a store subscription keeps running alongside. Codes never touch the 7-day 
 | POST | `/v1/couple/questions/{id}/answer` | blind answer; both answered → revealed, locked, +30 нұр |
 | POST | `/v1/couple/streak/restore` | spend нұр to bring back a broken streak (offer is in `today.streak.restore`) |
 | GET | `/v1/couple/phase` | phase, earned and balance, progress to the next phase |
-| PUT | `/v1/me/devices` | register this device's Expo push token (moves it to the caller if someone else had it) |
+| PUT | `/v1/me/devices` | register this device's Firebase (FCM) push token (moves it to the caller if someone else had it) |
 | POST | `/v1/me/devices/unregister` | stop pushes to this device, on sign-out |
 | GET/POST | `/v1/couple/memories` | memories, newest by the day they happened, 20 per page with `?cursor=` / add one |
 | GET/PATCH/DELETE | `/v1/couple/memories/{id}` | one memory / edit or delete it (author only) |
