@@ -13,7 +13,10 @@ module.exports = ({ config }) => {
   const android = file('GOOGLE_SERVICES_JSON', './google-services.json');
   const ios = file('GOOGLE_SERVICE_INFO_PLIST', './GoogleService-Info.plist');
   if (!android || !ios) {
-    if (process.env.EAS_BUILD_PROFILE === 'production') {
+    // Fail only on the EAS build server (EAS_BUILD=true), where the files come from EAS environment variables.
+    // On your computer `eas credentials` / `eas build` also read this config with the production profile,
+    // and the files are usually not there; failing then would block those commands.
+    if (process.env.EAS_BUILD === 'true' && process.env.EAS_BUILD_PROFILE === 'production') {
       throw new Error('Firebase config files are missing; a production build without push is not allowed.');
     }
     console.warn('[ailu] Firebase config missing: this build will have no push notifications.');
