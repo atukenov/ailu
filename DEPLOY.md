@@ -1,0 +1,186 @@
+# Выкладка Ailu в продакшн
+
+Пошагово: где что создать, что куда вписать и в каком порядке. Что ещё не построено и какие решения открыты, смотрите в [`store/CHECKLIST.md`](store/CHECKLIST.md).
+
+## Как всё устроено
+
+```
+Телефон (приложение из App Store / Google Play, собирается в Expo EAS)
+   │ HTTPS
+   ▼
+api.ailu.kz ── Railway: сервер .NET в Docker (backend/Dockerfile)
+   │            том Railway /data: фото пар
+   ├── Supabase: PostgreSQL
+   ├── Firebase Cloud Messaging: push
+   ├── App Store Server API и Google Play API: проверка покупок
+   └── Anthropic API: AI-идеи для Premium (когда будет ключ)
+
+ailu.kz ── Vercel: сайт (лендинг, юридические документы, страница удаления аккаунта)
+```
+
+Порядок: **1** Supabase → **2** Railway → **3** домен → **4** App Store Connect → **5** Google Play → **6** Firebase → **7** сборки EAS → **8** проверка. Vercel (раздел 9) можно делать в любой момент.
+
+Секреты (ключи, пароли, JSON-файлы) не кладите в git. Они живут только в переменных Railway и в EAS.
+
+---
+
+## 1. Supabase: база данных
+
+1. https://supabase.com → New project. Регион: **Central EU (Frankfurt)**, ближайший к Казахстану. Придумайте пароль базы и сохраните его.
+2. Тариф: для настоящих пользователей нужен Pro: бесплатный проект засыпает после недели без запросов и не делает ежедневных бэкапов.
+3. Project → **Connect** → **Session pooler** (работает по IPv4, прямое подключение Supabase только IPv6). Возьмите оттуда host, порт и пользователя и соберите строку для .NET:
+
+   ```
+   Host=<host из Session pooler>;Port=5432;Database=postgres;Username=postgres.<ref проекта>;Password=<пароль>;SSL Mode=Require
+   ```
+
+   Это значение `ConnectionStrings__Ailu` в Railway. Порт 6543 (transaction pooler) не берите: он ломает подготовленные запросы EF Core.
+4. Таблицы создаст сам сервер при первом запуске (`Database__MigrateOnStartup=true`, раздел 2). Supabase Auth, Storage и API от Supabase приложению не нужны; можно выключить Data API в Settings → API.
+
+> Фото пока хранятся на диске сервера (том Railway). Чтобы перенести их в Supabase Storage, в сервер нужно добавить S3-хранилище; это отдельная задача.
+
+## 2. Railway: сервер
+
+1. https://railway.com → New Project → **Deploy from GitHub repo** → `atukenov/ailu`.
+2. Сервис → **Settings**:
+   - **Root Directory:** `backend`
+   - **Config as code:** путь `/backend/railway.json` (сборка по Dockerfile, проверка `/health`, одна копия).
+   - **Region:** EU West (Amsterdam), рядом с Supabase во Франкфурте.
+   - **Replicas: 1.** Фото лежат на томе, а планировщик push и очисток рассчитан на одну копию.
+3. Сервис → правый клик → **Attach Volume**, путь монтирования **`/data`**, размер от 5 GB (растёт по мере фото). Сервер пишет фото в `/data/photos` и `/data/photos-archive`.
+4. Сервис → **Variables** (Raw Editor). Секреты сгенерируйте командой `openssl rand -base64 48`.
+
+   ```env
+   ASPNETCORE_ENVIRONMENT=Production
+   ConnectionStrings__Ailu=<строка из Supabase, раздел 1>
+   Database__MigrateOnStartup=true
+
+   # Вход
+   Auth__SigningKey=<openssl rand -base64 48>
+   Auth__ReviewPhone=+77000000000
+   Auth__ReviewCode=<шесть цифр>
+
+   # Покупки: App Store (раздел 4)
+   Billing__Apple__IssuerId=<Issuer ID>
+   Billing__Apple__KeyId=<Key ID>
+   Billing__Apple__PrivateKey=<содержимое .p8 целиком, с BEGIN/END>
+   # Покупки: Google Play (раздел 5)
+   Billing__Google__ServiceAccountJson=<содержимое JSON-ключа целиком, одной строкой>
+   Billing__Google__WebhookSecret=<openssl rand -hex 24>
+
+   # Промокоды и подарки
+   Billing__AdminKey=<openssl rand -base64 32>
+
+   # Фотокнига: печать вручную, отметки об отправке (можно оставить пустым)
+   PhotoBook__PrintSecret=
+
+   # AI-идеи для Premium; пусто = встроенная заглушка
+   Ai__ApiKey=
+   Ai__Model=
+   ```
+
+   Push через Firebase и SMS-провайдер добавят свои переменные, когда их построят; имена будут в их PR и здесь.
+5. **Networking** → **Custom Domain** → `api.ailu.kz` (Railway покажет CNAME для DNS, раздел 3). Пока домена нет, можно нажать **Generate Domain** и получить адрес `*.up.railway.app`.
+6. Deploy. В логах должно быть `Now listening on: http://[::]:...`, а `https://api.ailu.kz/health` должен ответить `{"status":"ok"}`.
+7. Дальше каждый пуш в `main` выкладывается сам; новые миграции базы применяются при старте.
+
+## 3. Домен
+
+У регистратора домена (например ailu.kz):
+
+| Запись | Имя | Значение |
+| --- | --- | --- |
+| CNAME | `api` | адрес, который показал Railway |
+| A / CNAME | `@`, `www` | значения, которые покажет Vercel (раздел 9) |
+
+После этого впишите адрес сервера в `app/eas.json` → `build.base.env.EXPO_PUBLIC_API_URL` (сейчас там заглушка `https://api.ailu.kz`).
+
+## 4. App Store Connect
+
+Нужен оплаченный Apple Developer Program.
+
+1. **Apps → +** → New App: платформа iOS, бандл `kz.ailu.app`, основной язык русский, SKU `ailu`. Apple ID приложения (число) впишите в `app/eas.json` → `submit.production.ios.ascAppId`.
+2. **Business → Agreements, Tax, and Banking:** подписать Paid Apps, заполнить банк и налоги. Без этого покупки не работают даже в тесте.
+3. **Подписки** (Monetization → Subscriptions): группа «Ailu», в ней четыре подписки, цены в тенге:
+
+   | Product ID | Срок | Цена |
+   | --- | --- | --- |
+   | `kz.ailu.plus.monthly` | 1 месяц | 1 490 ₸ |
+   | `kz.ailu.plus.yearly` | 1 год | 14 304 ₸ |
+   | `kz.ailu.premium.monthly` | 1 месяц | 2 490 ₸ |
+   | `kz.ailu.premium.yearly` | 1 год | 23 904 ₸ |
+
+   Premium выше Plus в группе (уровень 1), чтобы переход считался повышением. Бесплатный пробный период в магазине **не** включайте: 7 дней Premium даёт сервер.
+4. **In-App Purchases:** Non-Consumable `kz.ailu.story.year`, 1 990 ₸ (видео-история года).
+5. **Ключ для сервера:** Users and Access → Integrations → **In-App Purchase** → Generate. Скачайте `.p8` (один раз!). Issuer ID, Key ID и содержимое файла идут в `Billing__Apple__*` на Railway.
+6. **Уведомления о покупках:** App Information → App Store Server Notifications → Version 2, адрес для Production и для Sandbox: `https://api.ailu.kz/v1/billing/webhooks/apple`.
+7. **Push-ключ** для Firebase: Certificates, Identifiers & Profiles → Keys → + → Apple Push Notifications service (APNs). Скачайте `.p8`, он нужен в разделе 6.
+8. Карточка приложения: текст из `store/listing-ru.md`, App Privacy из `store/data-safety.md`, Age Rating из `store/age-rating.md` (16+), скриншоты 6.9" из `store/screenshots/ru/ios/`, ссылки на политику конфиденциальности и поддержку.
+9. **App Review Information:** вход для ревьюера (номер `Auth__ReviewPhone` и код `Auth__ReviewCode`, текст в `store/CHECKLIST.md`).
+
+## 5. Google Play Console
+
+1. **Create app:** название Ailu, язык по умолчанию русский, приложение, бесплатное. Пакет `kz.ailu.app` закрепится первой загруженной сборкой.
+2. **Сервисный аккаунт** (для сервера и для `eas submit`):
+   1. https://console.cloud.google.com → новый проект → APIs & Services → включить **Google Play Android Developer API**.
+   2. IAM → Service Accounts → Create → Keys → Add key → JSON. Скачайте файл.
+   3. Play Console → Users and permissions → Invite new users → e-mail сервисного аккаунта; права на приложение: **View financial data** и **Manage orders and subscriptions**, плюс **Release** для `eas submit`.
+   4. Содержимое JSON идёт в `Billing__Google__ServiceAccountJson` на Railway. Тот же файл положите рядом с `app/` как `google-service-account.json` (он не попадает в git) и пропишите путь в `app/eas.json` → `submit.production.android.serviceAccountKeyPath`.
+3. **Monetize → Subscriptions:** подписка `plus` с базовыми планами `monthly` (1 490 ₸, автопродление каждый месяц) и `yearly` (14 304 ₸, каждый год); подписка `premium` с `monthly` (2 490 ₸) и `yearly` (23 904 ₸). Бесплатные пробные предложения не создавайте.
+4. **Monetize → In-app products:** `year_story`, 1 990 ₸.
+5. **Уведомления о покупках (RTDN):**
+   1. Google Cloud → Pub/Sub → Create topic `play-billing`.
+   2. В правах темы добавьте `google-play-developer-notifications@system.gserviceaccount.com` с ролью **Pub/Sub Publisher**.
+   3. Create subscription → Delivery type **Push**, endpoint: `https://api.ailu.kz/v1/billing/webhooks/google?secret=<Billing__Google__WebhookSecret>`.
+   4. Play Console → Monetize → Monetization setup → Real-time developer notifications: тема `projects/<id проекта>/topics/play-billing`, нажмите Send test notification.
+6. Карточка: тексты из `store/listing-ru.md` и `store/listing-kk.md`, Data safety из `store/data-safety.md`, Content rating и Target audience из `store/age-rating.md` (16–17 и 18+), App access (вход для ревьюера), Ads: нет, Delete account URL: https://atukenov.github.io/ailu/legal/delete-account-ru.html, скриншоты из `store/screenshots/ru/android/`.
+7. Личный аккаунт разработчика: до продакшна обязательно закрытое тестирование с 12 тестировщиками 14 дней подряд.
+
+## 6. Firebase: push-уведомления
+
+Код переходит на Firebase в отдельном треде; аккаунт можно готовить уже сейчас.
+
+1. https://console.firebase.google.com → Add project (Google Analytics можно выключить).
+2. **Add app → Android**, пакет `kz.ailu.app` → скачать `google-services.json`.
+3. **Add app → iOS**, бандл `kz.ailu.app` → скачать `GoogleService-Info.plist`.
+4. Project settings → Cloud Messaging → Apple app configuration → загрузить **APNs-ключ** `.p8` из раздела 4.7 (Key ID и Team ID есть в Apple Developer).
+5. Project settings → Service accounts → **Generate new private key**: JSON для сервера, чтобы он мог отправлять push.
+6. Куда положить эти три файла и как назвать переменную на Railway, допишем сюда вместе с PR про Firebase.
+
+## 7. Сборки приложения (Expo EAS)
+
+1. Один раз: `cd app && npx eas-cli@latest login && npx eas-cli@latest init` (запишет `extra.eas.projectId` в `app.json`, закоммитьте).
+2. Проверьте `app/eas.json`: `EXPO_PUBLIC_API_URL` указывает на ваш сервер, `ascAppId` вписан.
+3. iOS: `npx eas-cli@latest build -p ios --profile production`, затем `npx eas-cli@latest submit -p ios --profile production`. Сертификаты EAS создаст сам, когда спросит Apple ID.
+4. Android: `npx eas-cli@latest build -p android --profile production`. Первую AAB загрузите в Play Console вручную (Testing → Internal testing), дальше работает `npx eas-cli@latest submit -p android --profile production`.
+5. Тест покупок: iOS через TestFlight (покупки идут в песочницу, сервер это понимает), Android через внутреннее тестирование и License testing в Play Console.
+6. Мелкие правки без новой сборки (только JS): `npx eas-cli@latest update --channel production`. Всё, что меняет нативную часть (новые библиотеки, иконки, Firebase, виджет), требует новой сборки и ревью.
+
+## 8. Проверка после выкладки
+
+1. `https://api.ailu.kz/health` → `{"status":"ok"}`.
+2. Вход по номеру ревьюера с кодом из `Auth__ReviewCode`: открывается демо-пара.
+3. Покупка Plus в TestFlight → в профиле «Plus», у партнёра тоже.
+4. Загрузка фото в воспоминание, затем перезапуск сервиса на Railway: фото на месте (значит, том подключён).
+5. Промокод для подарка, проданного лично:
+
+   ```sh
+   curl -X POST https://api.ailu.kz/v1/admin/promo-codes \
+     -H "X-Admin-Key: <Billing__AdminKey>" -H "Content-Type: application/json" \
+     -d '{"code":"AIGERIM2027","tier":"premium","months":3,"days":0,"maxRedemptions":1,"note":"Подарок, оплата лично"}'
+   ```
+
+   Код: 4–32 буквы и цифры (дефисы и пробелы игнорируются). Срок: `months` до 24 или `days` до 366. Пара вводит его в «Профиль → Ввести код». Список кодов: `GET` на тот же адрес с тем же заголовком.
+
+## 9. Vercel: сайт
+
+Сейчас юридические документы и страница удаления аккаунта открываются с GitHub Pages (`docs/`, адрес https://atukenov.github.io/ailu/legal/), и для магазинов этого достаточно. Vercel нужен, когда появится свой домен и лендинг:
+
+1. https://vercel.com → Add New → Project → импорт `atukenov/ailu`.
+2. Root Directory: папка сайта (лендинга ещё нет; это отдельная задача).
+3. Settings → Domains → `ailu.kz` и `www.ailu.kz`, DNS-записи из раздела 3.
+4. После переезда документов поменяйте `extra.legalUrl` в `app/app.json`, ссылки в `store/listing-*.md` и адрес удаления аккаунта в Play Console.
+
+## Что сколько стоит (ориентиры, проверьте на сайтах)
+
+Apple Developer 99 $ в год, Google Play 25 $ один раз, Expo EAS: бесплатный тариф с ограниченным числом сборок в месяц. Railway, Supabase Pro, Vercel и Firebase берут помесячно по использованию; на старте это обычно десятки долларов в месяц на всё вместе.
