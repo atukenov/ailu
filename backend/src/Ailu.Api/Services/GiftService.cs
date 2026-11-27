@@ -9,107 +9,13 @@ public enum RedeemResult { Applied, NotFound, Used, Ended }
 
 public sealed record Redeemed(RedeemResult Result, PlanCode? Code = null, Subscription? Subscription = null);
 
-// Gift subscriptions and promo codes. Both end up as a code a couple enters; entering it adds a
+// Gift subscriptions and promo codes, both made by the team (/v1/admin/...). Gifts are sold person to person,
+// outside the app: the buyer pays the team, the team makes a gift code and hands it over. Both end up as a
+// code a couple enters; entering it adds a
 // Subscription row, so the plan, its expiry and the couple's limits work exactly as for a store purchase.
 // A code never touches the 7-day trial: the trial is its own row and stays available (or used) as before.
-public sealed class GiftService(AiluDb db, BillingService billing, IGiftCheckout checkout, BillingOptions options, TimeProvider clock,
-    ILogger<GiftService> log)
+public sealed class GiftService(AiluDb db, BillingService billing, TimeProvider clock)
 {
-    public bool Available => checkout.Available;
-
-    public GiftProduct? Product(string id) => options.Gifts.FirstOrDefault(p => p.Id == id);
-
-    // A gift is ordered, then paid on the provider's page. The code exists only once the provider says paid.
-    public async Task<GiftOrder> OrderAsync(Guid buyer, GiftProduct product, CancellationToken ct)
-    {
-        var now = clock.GetUtcNow();
-        var order = new GiftOrder
-        {
-            Id = Guid.NewGuid(), BuyerUserId = buyer, ProductId = product.Id, Tier = product.Tier, Months = product.Months,
-            PriceKzt = product.PriceKzt, Status = GiftOrderStatus.Pending, Provider = checkout.Provider, CreatedAt = now, UpdatedAt = now
-        };
-        var session = await checkout.StartAsync(order, ct);
-        order.CheckoutId = session.CheckoutId;
-        order.PaymentUrl = session.PaymentUrl;
-        db.GiftOrders.Add(order);
-        await db.SaveChangesAsync(ct);
-        // A checkout with nothing to open may already be paid.
-        if (session.PaymentUrl is null) await RefreshAsync(order, ct);
-        return order;
-    }
-
-    public async Task RefreshAsync(string checkoutId, CancellationToken ct)
-    {
-        var order = await db.GiftOrders.SingleOrDefaultAsync(o => o.Provider == checkout.Provider && o.CheckoutId == checkoutId, ct);
-        if (order is not null) await RefreshAsync(order, ct);
-    }
-
-    // Asks the provider where the payment stands and follows it: paid gets a code, a refund withdraws it.
-    public async Task RefreshAsync(GiftOrder order, CancellationToken ct)
-    {
-        if (order.CheckoutId is null || order.Provider != checkout.Provider) return;
-        if (order.Status is GiftOrderStatus.Cancelled or GiftOrderStatus.Refunded) return;
-        var status = await checkout.FetchAsync(order.CheckoutId, ct);
-        if (status is null) return;
-        var now = clock.GetUtcNow();
-
-        switch (status.Value)
-        {
-            case GiftPaymentStatus.Paid when order.Status == GiftOrderStatus.Pending:
-                await IssueAsync(order, now, ct);
-                break;
-            case GiftPaymentStatus.Cancelled when order.Status == GiftOrderStatus.Pending:
-                order.Status = GiftOrderStatus.Cancelled;
-                order.UpdatedAt = now;
-                await db.SaveChangesAsync(ct);
-                break;
-            case GiftPaymentStatus.Refunded when order.Status == GiftOrderStatus.Paid:
-                await RefundAsync(order, now, ct);
-                break;
-        }
-    }
-
-    private async Task IssueAsync(GiftOrder order, DateTimeOffset now, CancellationToken ct)
-    {
-        var code = new PlanCode
-        {
-            Id = Guid.NewGuid(), Code = PlanCodes.NewGiftCode(), Kind = PlanCodeKind.Gift, Tier = order.Tier, Months = order.Months,
-            MaxRedemptions = 1, GiftOrderId = order.Id, CreatedAt = now
-        };
-        db.PlanCodes.Add(code);
-        order.Status = GiftOrderStatus.Paid;
-        order.PaidAt = now;
-        order.CodeId = code.Id;
-        order.UpdatedAt = now;
-        try
-        {
-            await db.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
-        {
-            // The webhook and the buyer's screen asked at once: the first one issued the code.
-            db.ChangeTracker.Clear();
-        }
-    }
-
-    // A refunded gift stops working. If it was already entered, the plan it gave ends now.
-    private async Task RefundAsync(GiftOrder order, DateTimeOffset now, CancellationToken ct)
-    {
-        order.Status = GiftOrderStatus.Refunded;
-        order.UpdatedAt = now;
-        await db.SaveChangesAsync(ct);
-        if (order.CodeId is not { } codeId) return;
-
-        await db.PlanCodes.Where(c => c.Id == codeId && c.DisabledAt == null)
-            .ExecuteUpdateAsync(u => u.SetProperty(c => c.DisabledAt, now), ct);
-        var subscriptions = db.CodeRedemptions.Where(r => r.CodeId == codeId).Select(r => r.SubscriptionId);
-        var couples = await db.Subscriptions.Where(s => subscriptions.Contains(s.Id)).Select(s => s.CoupleId).ToListAsync(ct);
-        await db.Subscriptions.Where(s => subscriptions.Contains(s.Id))
-            .ExecuteUpdateAsync(u => u.SetProperty(s => s.Status, SubscriptionStatus.Revoked).SetProperty(s => s.UpdatedAt, now), ct);
-        foreach (var id in couples) await billing.RecomputeAsync(id, ct);
-        log.LogInformation("Gift order {OrderId} refunded", order.Id);
-    }
-
     public async Task<Redeemed> RedeemAsync(CoupleScope scope, string typed, CancellationToken ct)
     {
         var now = clock.GetUtcNow();
@@ -188,5 +94,29 @@ public sealed class GiftService(AiluDb db, BillingService billing, IGiftCheckout
         db.PlanCodes.Add(code);
         await db.SaveChangesAsync(ct);
         return code;
+    }
+
+    // A one-time code for a gift the team has been paid for. Twelve random characters, shown in groups of four.
+    public async Task<PlanCode> CreateGiftAsync(CouplePlan tier, int months, string? note, CancellationToken ct)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            var code = new PlanCode
+            {
+                Id = Guid.NewGuid(), Code = PlanCodes.NewGiftCode(), Kind = PlanCodeKind.Gift, Tier = tier, Months = months,
+                MaxRedemptions = 1, Note = note, CreatedAt = clock.GetUtcNow()
+            };
+            db.PlanCodes.Add(code);
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                return code;
+            }
+            catch (DbUpdateException e) when (attempt < 3 && e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                // 60 random bits make this all but impossible; try another code rather than fail.
+                db.ChangeTracker.Clear();
+            }
+        }
     }
 }

@@ -28,7 +28,6 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<PlanCode> PlanCodes => Set<PlanCode>();
     public DbSet<CodeRedemption> CodeRedemptions => Set<CodeRedemption>();
-    public DbSet<GiftOrder> GiftOrders => Set<GiftOrder>();
     public DbSet<LoveQuizRound> LoveQuizRounds => Set<LoveQuizRound>();
     public DbSet<LoveQuizAnswer> LoveQuizAnswers => Set<LoveQuizAnswer>();
     public DbSet<Achievement> Achievements => Set<Achievement>();
@@ -245,7 +244,6 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         b.Entity<PlanCode>(e =>
         {
             e.HasIndex(x => x.Code).IsUnique();
-            e.HasIndex(x => x.GiftOrderId).IsUnique();
             e.Property(x => x.Code).HasMaxLength(32);
             e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
             e.Property(x => x.Tier).HasConversion<string>().HasMaxLength(10);
@@ -263,19 +261,6 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
             e.HasOne<Couple>().WithMany().HasForeignKey(x => x.CoupleId);
             e.HasOne<Subscription>().WithMany().HasForeignKey(x => x.SubscriptionId);
-        });
-
-        b.Entity<GiftOrder>(e =>
-        {
-            e.HasIndex(x => x.BuyerUserId);
-            e.HasIndex(x => new { x.Provider, x.CheckoutId }).IsUnique();
-            e.Property(x => x.ProductId).HasMaxLength(40);
-            e.Property(x => x.Tier).HasConversion<string>().HasMaxLength(10);
-            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
-            e.Property(x => x.Provider).HasMaxLength(20);
-            e.Property(x => x.CheckoutId).HasMaxLength(200);
-            e.Property(x => x.PaymentUrl).HasMaxLength(1000);
-            e.HasOne<User>().WithMany().HasForeignKey(x => x.BuyerUserId);
         });
 
         b.Entity<Achievement>(e =>
@@ -346,7 +331,6 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         b.Entity<PhotoBookOrder>(e =>
         {
             e.HasIndex(x => x.CoupleId);
-            e.HasIndex(x => x.PaymentId).IsUnique();
             e.HasIndex(x => x.PrintJobId).IsUnique();
             e.HasIndex(x => x.Status);
             // At most one order of a book waiting for payment: the book is locked to it until it is paid or cancelled.
@@ -358,8 +342,7 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
             e.Property(x => x.Address).HasMaxLength(250);
             e.Property(x => x.Comment).HasMaxLength(250);
             e.Property(x => x.Content).HasColumnType("jsonb");
-            e.Property(x => x.PaymentId).HasMaxLength(100);
-            e.Property(x => x.PayUrl).HasMaxLength(500);
+            e.Property(x => x.PaymentNote).HasMaxLength(200);
             e.Property(x => x.PrintJobId).HasMaxLength(100);
             e.Property(x => x.TrackingNumber).HasMaxLength(100);
             e.HasOne<PhotoBook>().WithMany().HasForeignKey(x => x.BookId);

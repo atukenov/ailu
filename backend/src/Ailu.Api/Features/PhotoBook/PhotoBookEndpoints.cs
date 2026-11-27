@@ -16,8 +16,12 @@ public sealed record SpreadDto(int Position, string Layout, IReadOnlyList<SlotDt
 public sealed record CoverDto(string Title, string? Subtitle, BookPhotoDto? Photo, Box PhotoBox, Box TitleBox, Box SubtitleBox);
 public sealed record LayoutDto(string Layout, IReadOnlyList<Box> Slots, Box? Story);
 public sealed record OrderDto(Guid Id, int Year, string Status, int PriceKzt, bool Mine, string? RecipientName, string? Phone,
-    string? City, string? Address, string? Comment, string? PayUrl, string? TrackingNumber, DateTimeOffset CreatedAt,
+    string? City, string? Address, string? Comment, string? TrackingNumber, DateTimeOffset CreatedAt,
     DateTimeOffset? PaidAt, DateTimeOffset? ShippedAt, DateTimeOffset? DeliveredAt);
+// What the team sees to arrange payment with the couple and to mark the order paid.
+public sealed record AdminOrderDto(Guid Id, int Year, string Status, int PriceKzt, string? RecipientName, string? Phone,
+    string? City, string? Address, string? Comment, string? PaymentNote, DateTimeOffset CreatedAt, DateTimeOffset? PaidAt);
+public sealed record MarkPaidRequest(string? Note);
 
 // Empty counts the boxes still without a photo, the cover's included; the book can be ordered at 0.
 // Locked while an order waits for payment, so the book paid for is the book that was ordered.
@@ -48,15 +52,17 @@ public static class PhotoBookEndpoints
         g.MapPut("/{year:int}/spreads/{position:int}", UpdateSpread);
         g.MapPost("/{year:int}/spreads/{position:int}/move", Move);
         g.MapPost("/{year:int}/orders", Order);
-        g.MapPost("/orders/{id:guid}/pay", Pay);
         g.MapDelete("/orders/{id:guid}", Cancel);
 
-        // Anonymous: the signature is the permission (see BookUrls), Kaspi and the printer check their own.
+        // Anonymous: the signature is the permission (see BookUrls), the printer checks its own.
         app.MapGet("/v1/photo-books/{id:guid}/preview.pdf", Preview).WithTags("Photo book");
-        app.MapPost("/v1/payments/kaspi", KaspiNotice).WithTags("Photo book");
         app.MapPost("/v1/print/notices", PrintNotice).WithTags("Photo book");
-        if (app.ServiceProvider.GetRequiredService<PhotoBookOptions>().UseFakeKaspi)
-            app.MapGet("/v1/payments/kaspi/fake/{paymentId}", FakePay).WithTags("Photo book");
+
+        // The team takes payment for a printed book directly from the couple (a physical good can't be sold
+        // through the app stores), then marks the order paid here; the print job picks it up.
+        var admin = app.MapGroup("/v1/admin/photo-book-orders").WithTags("Admin");
+        admin.MapGet("", AdminOrders);
+        admin.MapPost("/{id:guid}/paid", MarkPaid);
     }
 
     // The years the couple has photos from, newest first: each can become a book.
@@ -253,9 +259,9 @@ public static class PhotoBookEndpoints
         return Results.Ok(await ToDto(book, scope, db, urls, bookUrls, options, ct));
     }
 
-    // Orders a printed copy: keeps the book as it is now and asks Kaspi for a payment. If Kaspi can't be
-    // reached the order is still kept, without a payment link; "pay" asks again.
-    private static async Task<IResult> Order(int year, OrderRequest body, HttpContext http, AiluDb db, IKaspiPayments kaspi,
+    // Orders a printed copy: keeps the book as it is now and waits for payment. The team contacts the couple
+    // by the phone on the order to agree payment, then marks it paid (MarkPaid).
+    private static async Task<IResult> Order(int year, OrderRequest body, HttpContext http, AiluDb db,
         PhotoBookOptions options, TimeProvider clock, ILogger<PhotoBookOrder> log, CancellationToken ct)
     {
         var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
@@ -295,21 +301,8 @@ public static class PhotoBookEndpoints
             // The partner ordered the same book a moment ago.
             return Errors.Conflict("order_waiting", "Эта книга уже заказана и ждёт оплаты.");
         }
-        await RequestPaymentAsync(order, db, kaspi, log, ct);
+        log.LogWarning("Photo book order {Order} for {Year} waits for payment: contact the couple", order.Id, year);
         return Results.Created($"/v1/couple/photo-books/orders/{order.Id}", ToDto(order, scope));
-    }
-
-    private static async Task<IResult> Pay(Guid id, HttpContext http, AiluDb db, IKaspiPayments kaspi,
-        ILogger<PhotoBookOrder> log, CancellationToken ct)
-    {
-        var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
-        if (scope is null) return Errors.NoCouple();
-        var order = await db.PhotoBookOrders.SingleOrDefaultAsync(o => o.Id == id && o.CoupleId == scope.Couple.Id, ct);
-        if (order is null) return OrderNotFound();
-        if (order.Status != PhotoBookOrderStatus.AwaitingPayment)
-            return Errors.Conflict("order_not_waiting", "Этот заказ уже оплачен или отменён.");
-        if (order.PayUrl is null) await RequestPaymentAsync(order, db, kaspi, log, ct);
-        return Results.Ok(ToDto(order, scope));
     }
 
     private static async Task<IResult> Cancel(Guid id, HttpContext http, AiluDb db, TimeProvider clock, CancellationToken ct)
@@ -345,20 +338,6 @@ public static class PhotoBookEndpoints
         return Results.File(file, "application/pdf", $"ailu-{book.Year}.pdf");
     }
 
-    private static async Task<IResult> KaspiNotice(HttpRequest request, IKaspiPayments kaspi, PhotoBookPrinting printing,
-        CancellationToken ct)
-    {
-        if (await kaspi.ReadNoticeAsync(request, ct) is not { } notice) return Results.Unauthorized();
-        if (notice.Paid) await printing.MarkPaidAsync(notice.PaymentId, ct);
-        else await printing.MarkFailedAsync(notice.PaymentId, ct);
-        return Results.Ok();
-    }
-
-    private static async Task<IResult> FakePay(string paymentId, PhotoBookPrinting printing, CancellationToken ct) =>
-        await printing.MarkPaidAsync(paymentId, ct)
-            ? Results.Content("<!doctype html><meta charset=utf-8><p>Оплачено (тестовый Kaspi). Вернитесь в Ailu.</p>", "text/html")
-            : Results.NotFound();
-
     private static async Task<IResult> PrintNotice(HttpRequest request, IPrintVendor vendor, AiluDb db, TimeProvider clock,
         CancellationToken ct)
     {
@@ -387,21 +366,35 @@ public static class PhotoBookEndpoints
         return Results.Ok();
     }
 
-    private static async Task RequestPaymentAsync(PhotoBookOrder order, AiluDb db, IKaspiPayments kaspi,
-        ILogger<PhotoBookOrder> log, CancellationToken ct)
+    private static async Task<IResult> AdminOrders(string? status, HttpContext http, AiluDb db, BillingOptions options,
+        CancellationToken ct)
     {
-        try
+        if (!AdminKey.Allows(http, options)) return Results.Unauthorized();
+        var query = db.PhotoBookOrders.AsNoTracking();
+        // Default: the ones waiting for the team to take payment.
+        var wanted = status is null or "" ? "awaiting_payment" : status;
+        if (wanted != "all")
         {
-            var link = await kaspi.CreateAsync(order.Id, order.PriceKzt, $"Ailu: фотокнига {order.Year}", ct);
-            order.PaymentId = link.PaymentId;
-            order.PayUrl = link.Url;
-            await db.SaveChangesAsync(ct);
+            var match = Enum.GetValues<PhotoBookOrderStatus>().Where(x => Status(x) == wanted).ToList();
+            if (match.Count == 0) return Errors.Validation("status", "Статус: awaiting_payment, paid, printing, shipped, delivered, cancelled или all.");
+            query = query.Where(o => o.Status == match[0]);
         }
-        catch (PaymentUnavailableException e)
-        {
-            log.LogWarning("No Kaspi payment for photo book order {Order}: {Reason}", order.Id, e.Message);
-        }
+        var orders = await query.OrderByDescending(o => o.CreatedAt).Take(200).ToListAsync(ct);
+        return Results.Ok(orders.Select(ToAdmin).ToList());
     }
+
+    private static async Task<IResult> MarkPaid(Guid id, MarkPaidRequest? body, HttpContext http, AiluDb db, BillingOptions options,
+        PhotoBookPrinting printing, CancellationToken ct)
+    {
+        if (!AdminKey.Allows(http, options)) return Results.Unauthorized();
+        if (body?.Note?.Length > 200) return Errors.Validation("note", "Заметка до 200 символов.");
+        if (!await printing.MarkPaidAsync(id, body?.Note, ct)) return OrderNotFound();
+        var order = await db.PhotoBookOrders.AsNoTracking().SingleAsync(o => o.Id == id, ct);
+        return Results.Ok(ToAdmin(order));
+    }
+
+    private static AdminOrderDto ToAdmin(PhotoBookOrder o) => new(o.Id, o.Year, Status(o.Status), o.PriceKzt, o.RecipientName,
+        o.Phone, o.City, o.Address, o.Comment, o.PaymentNote, o.CreatedAt, o.PaidAt);
 
     private static void Set(PhotoBookSpread spread, SpreadLayout layout, Guid[] photos, Guid? memoryId, string? title, string? text,
         DateOnly? date)
@@ -445,7 +438,7 @@ public static class PhotoBookEndpoints
 
     private static OrderDto ToDto(PhotoBookOrder o, CoupleScope scope) => new(o.Id, o.Year, Status(o.Status), o.PriceKzt,
         o.OrderedById == scope.UserId, o.RecipientName, o.Phone, o.City, o.Address, o.Comment,
-        o.Status == PhotoBookOrderStatus.AwaitingPayment ? o.PayUrl : null, o.TrackingNumber, o.CreatedAt, o.PaidAt,
+        o.TrackingNumber, o.CreatedAt, o.PaidAt,
         o.ShippedAt, o.DeliveredAt);
 
     private static string Status(PhotoBookOrderStatus status) => status switch

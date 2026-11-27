@@ -1,15 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { Storage } from '@/api/types';
+import { LegalLinks } from '@/components/legal-links';
 import { Moon } from '@/components/moon';
 import { Button, Card, ErrorText, Screen, T } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings, type Strings } from '@/i18n';
-import { purchase, useBilling, type Period, type Tier } from '@/purchases';
+import { purchase, restorePurchases, useBilling, type Period, type Tier } from '@/purchases';
 import { biggerPlan, type PaywallReason } from '@/upsells';
 
 const NAMES: Record<Tier, string> = { plus: 'Plus', premium: 'Premium' };
@@ -86,6 +87,15 @@ export default function Paywall() {
       router.back();
     },
   });
+
+  // Restoring is offered right here too: App Review expects it next to the subscriptions.
+  const restore = useMutation({
+    mutationFn: restorePurchases,
+    onSuccess: (restored) => {
+      if (restored) void queryClient.invalidateQueries();
+    },
+  });
+  const native = Platform.OS === 'ios' || Platform.OS === 'android';
 
   const { title, body } = heading(s, reason, storage.data);
   const tiers = tiersFor(reason, storage.data?.plan);
@@ -164,9 +174,19 @@ export default function Paywall() {
       <ErrorText error={buy.error} />
       <Button title={s.continueFree} variant="ghost" onPress={() => router.back()} />
       <Button title={s.paywallHaveCode} variant="ghost" onPress={() => router.replace('/redeem')} />
-      <T variant="small" style={styles.center}>
-        {s.cancelAnytime}
+      {native && (
+        <Button title={s.planRestore} variant="ghost" onPress={() => restore.mutate()} loading={restore.isPending} />
+      )}
+      {restore.isSuccess && (
+        <T variant="small" style={styles.center}>
+          {restore.data ? s.planRestored : s.planNothingToRestore}
+        </T>
+      )}
+      <ErrorText error={restore.error} />
+      <T variant="small" style={styles.terms}>
+        {s.subscriptionTerms(Platform.OS === 'android' ? 'google' : 'apple')}
       </T>
+      <LegalLinks />
     </Screen>
   );
 }
@@ -174,6 +194,7 @@ export default function Paywall() {
 const styles = StyleSheet.create({
   hero: { alignItems: 'center', gap: Spacing.three, paddingTop: Spacing.four },
   center: { textAlign: 'center' },
+  terms: { textAlign: 'center', color: Colors.textSecondary },
   tierHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   tierName: { fontSize: 22, fontWeight: '500', letterSpacing: 3, color: Colors.accent },
   includes: { color: Colors.accent, fontWeight: '600' },

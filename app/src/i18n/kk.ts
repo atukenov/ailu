@@ -329,7 +329,16 @@ export const kk: Strings = {
   choosePlan: (plan: string) => `${plan} таңдау`,
   planActive: (plan: string) => `${plan} қосылды`,
   continueFree: 'Тегін нұсқамен жалғастыру',
-  cancelAnytime: 'Жазылымнан кез келген уақытта бас тарта аласыз.',
+  subscriptionTerms: (store: 'apple' | 'google') => {
+    const account = store === 'apple' ? 'Apple ID' : 'Google Play';
+    return (
+      `Жазылым сіз оны тоқтатқанша автоматты түрде жаңарады. Төлем сатып алуды растаған кезде ${account} аккаунтыңыздан ` +
+      `алынады, содан кейін автожаңарту ағымдағы кезең аяқталуына кемінде 24 сағат қалғанда өшірілмесе, әр кезеңнің ` +
+      `(ай немесе жыл) басында сол бағамен алынады. Жазылымды тоқтатуға және автожаңартуды өшіруге ${account} ` +
+      `баптауларында болады: ${store === 'apple' ? 'Баптаулар → атыңыз → Жазылымдар' : 'Google Play → Профиль → Төлемдер мен жазылымдар → Жазылымдар'}. ` +
+      `Қолданбаны өшіру жазылымды тоқтатпайды.`
+    );
+  },
   photoLimitTitle: (limit: number) => `Барлық ${limit} фото орны толды`,
   photoLimitBody: (next: string, limit: number) => `Сақтағандарыңыздың бәрі өзіңізде қалады. ${next} нұсқасына ${limit} фото сыяды.`,
   streakUpsellBody: 'Алдағының бәрін ашыңыз.',
@@ -489,7 +498,10 @@ export const kk: Strings = {
   bookIntro: (spreads: number) =>
     `Ailu жылдағы естеліктеріңізден ${spreads} бет-жаймалық кітапты өзі құрастырады. Суреттер мен жазуларды қалауыңызша ауыстырып, кейін жеткізумен басып шығаруға тапсырыс беріңіз.`,
   bookFrom: (photos: number, memories: number) => `${memories} естеліктен ${photos} сурет`,
-  bookPriceNote: 'Басып шығару және Қазақстан бойынша жеткізу бағаға кіреді. Kaspi арқылы төлеу.',
+  bookPriceNote: 'Басып шығару және Қазақстан бойынша жеткізу бағаға кіреді. Төлем туралы жеке келісеміз: тапсырыстан кейін біз сізге жазамыз.',
+  bookPlaceOrder: (price: string) => `${price} тапсырыс беру`,
+  bookAwaitingPayment: (phone: string) =>
+    `Төлем туралы келісу үшін бір күн ішінде ${phone} нөміріне жазамыз. Төлемнен кейін кітап басып шығаруға жіберіледі.`,
   bookBuild: 'Кітапты құрастыру',
   bookNoPhotosTitle: 'Кітап құрастыруға әзірге ештеңе жоқ',
   bookNoPhotosBody: 'Кітап суреті бар естеліктерден құрастырылады. Алғашқыларын қосыңыз, сонда ол осында пайда болады.',
@@ -515,8 +527,6 @@ export const kk: Strings = {
     cancelled: 'Болдырылмады',
   },
   bookTracking: (n: string) => `Трек-нөмір: ${n}`,
-  bookKaspiSoon: 'Kaspi арқылы төлеу жақында қосылады. Тапсырыс сақталды, оған кейінірек оралыңыз.',
-  bookPay: (price: string) => `Kaspi арқылы ${price} төлеу`,
   bookCancelOrder: 'Тапсырысты болдырмау',
   bookCancelConfirm: 'Тапсырыс әлі төленбеген. Оны болдырмайсыз ба? Кітап қалады, оған қайта тапсырыс беруге болады.',
   bookCancelOk: 'Болдырмау',
@@ -549,7 +559,6 @@ export const kk: Strings = {
   bookAddressPlaceholder: 'Көше, үй, пәтер',
   bookComment: 'Курьерге түсініктеме',
   bookFrozenNote: 'Кітапты дәл қазіргі күйінде басамыз. Тапсырыстан кейінгі түзетулер тек келесі тапсырысқа кіреді.',
-  bookPayKaspi: (price: string) => `Kaspi арқылы ${price} төлеу`,
   planEnterCode: 'Кодты енгізу',
   planGiftEnds: (date: string) => `Сыйлық мерзімі: ${date}`,
   planPromoEnds: (date: string) => `Промокод мерзімі: ${date}`,
@@ -564,22 +573,6 @@ export const kk: Strings = {
   redeemPromoDone: 'Промокод қолданылды!',
   redeemDoneBody: (plan: string, date: string) => `${plan} екеуіңізге қосылды. Мерзімі: ${date}.`,
   redeemDone: 'Дайын',
-  giftsTitle: 'Ailu сыйлау',
-  giftsHint: 'Жақын жұпқа Ailu-дің бірнеше айын сыйлаңыз. Төлемнен кейін код аласыз, оны кез келген мессенджермен жіберуге болады.',
-  giftsSoon: 'Сыйлық жазылымдары жақында пайда болады.',
-  giftsLength: 'Мерзімі',
-  giftsPay: (price: string) => `${price} төлеу`,
-  giftsMine: 'Сіздің сыйлықтарыңыз',
-  giftName: (plan: string, months: number) => `${plan} · ${months} ай`,
-  giftPending: 'Төлемді күтуде',
-  giftPayNow: 'Төлеу',
-  giftCodeHint: 'Сыйлық коды. Оны сыйлайтын адамға жіберіңіз.',
-  giftSend: 'Кодты жіберу',
-  giftRedeemed: 'Сыйлық белсендірілді',
-  giftCancelled: 'Төлем өтпеді',
-  giftRefunded: 'Ақша қайтарылды, код енді жарамсыз',
-  giftShare: (plan: string, months: number, code: string) =>
-    `Сізге Ailu ${plan} ${months} айға сыйлаймын! Ailu-ді ашып, профильде «Кодты енгізу» батырмасын басып, ${code} кодын енгізіңіз.`,
 
   retry: 'Қайталап көру',
   somethingWrong: 'Бір нәрсе дұрыс болмады',
@@ -703,7 +696,6 @@ export const kk: Strings = {
     book_incomplete: 'Кітапта бос орындар қалды. Оларға сурет қосыңыз.',
     order_waiting: 'Бұл кітапқа тапсырыс берілген, ол төлемді күтуде.',
     order_not_found: 'Мұндай тапсырыс жоқ.',
-    order_not_waiting: 'Бұл тапсырыс төленген немесе болдырылмаған.',
     order_paid: 'Төленген тапсырысты қолданбада болдырмау мүмкін емес. Бізге жазыңыз.',
     story_not_open: 'Осы жылдың фильміне 1 желтоқсаннан бастап тапсырыс беруге болады.',
     story_ordered: 'Осы жылдың фильміне тапсырыс берілген. Бізге жазыңыз, екінші сатып алудың ақшасын қайтарамыз.',
@@ -718,8 +710,6 @@ export const kk: Strings = {
     plan_code_not_found: 'Мұндай код жоқ. Қате терілмегенін тексеріңіз.',
     plan_code_used: 'Бұл код қолданылып қойған.',
     plan_code_ended: 'Бұл промокодтың мерзімі аяқталды.',
-    gifts_unavailable: 'Сыйлық жазылымдары әзірге қолжетімсіз. Кейінірек көріңіз.',
-    gift_not_found: 'Мұндай сыйлық жоқ.',
     invalid_productId: 'Мұндай сыйлық жоқ.',
   },
 

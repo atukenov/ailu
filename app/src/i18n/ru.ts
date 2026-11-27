@@ -330,7 +330,17 @@ export const ru = {
   choosePlan: (plan: string) => `Выбрать ${plan}`,
   planActive: (plan: string) => `${plan} подключён`,
   continueFree: 'Продолжить с бесплатной версией',
-  cancelAnytime: 'Вы можете отменить подписку в любое время.',
+  // Apple's and Google's required subscription disclosure, under the plans on the paywall.
+  subscriptionTerms: (store: 'apple' | 'google') => {
+    const account = store === 'apple' ? 'Apple ID' : 'Google Play';
+    return (
+      `Подписка продлевается автоматически, пока вы её не отмените. Оплата списывается с вашего аккаунта ${account} ` +
+      `при подтверждении покупки, а затем в начале каждого периода (месяц или год) по той же цене, если автопродление ` +
+      `не отключено хотя бы за 24 часа до конца текущего периода. Отменить подписку и отключить автопродление можно в ` +
+      `настройках ${account}: ${store === 'apple' ? 'Настройки → ваше имя → Подписки' : 'Google Play → Профиль → Платежи и подписки → Подписки'}. ` +
+      `Удаление приложения не отменяет подписку.`
+    );
+  },
   photoLimitTitle: (limit: number) => `Все ${limit} фото заняты`,
   photoLimitBody: (next: string, limit: number) => `Всё, что вы уже сохранили, остаётся с вами. В ${next} поместится ${limit} фотографий.`,
   streakUpsellBody: 'Откройте всё, что дальше.',
@@ -497,7 +507,10 @@ export const ru = {
     `Ailu сам соберёт книгу на ${spreads} разворотов из ваших воспоминаний за год. Поменяйте фото и подписи как хочется, а потом закажите печать с доставкой.`,
   bookFrom: (photos: number, memories: number) =>
     `${photos} фото из ${memories} ${plural(memories, 'воспоминания', 'воспоминаний', 'воспоминаний')}`,
-  bookPriceNote: 'Печать и доставка по Казахстану включены. Оплата через Kaspi.',
+  bookPriceNote: 'Печать и доставка по Казахстану включены. Об оплате договоримся лично: после заказа мы напишем вам.',
+  bookPlaceOrder: (price: string) => `Заказать за ${price}`,
+  bookAwaitingPayment: (phone: string) =>
+    `Мы напишем вам на ${phone} в течение дня и договоримся об оплате. После оплаты книга уйдёт в печать.`,
   bookBuild: 'Собрать книгу',
   bookNoPhotosTitle: 'Пока не из чего собрать книгу',
   bookNoPhotosBody: 'Книга собирается из воспоминаний с фотографиями. Добавьте первые, и она появится здесь.',
@@ -523,8 +536,6 @@ export const ru = {
     cancelled: 'Отменён',
   } as Record<BookOrderStatus, string>,
   bookTracking: (n: string) => `Трек-номер: ${n}`,
-  bookKaspiSoon: 'Оплата через Kaspi скоро появится. Заказ сохранён, вернитесь к нему позже.',
-  bookPay: (price: string) => `Оплатить ${price} через Kaspi`,
   bookCancelOrder: 'Отменить заказ',
   bookCancelConfirm: 'Заказ ещё не оплачен. Отменить его? Книга останется, её можно будет заказать снова.',
   bookCancelOk: 'Отменить',
@@ -557,7 +568,6 @@ export const ru = {
   bookAddressPlaceholder: 'Улица, дом, квартира',
   bookComment: 'Комментарий для курьера',
   bookFrozenNote: 'Напечатаем книгу такой, какая она сейчас. Правки после заказа войдут только в следующий.',
-  bookPayKaspi: (price: string) => `Оплатить ${price} через Kaspi`,
   planEnterCode: 'Ввести код',
   planGiftEnds: (date: string) => `Подарок действует до ${date}`,
   planPromoEnds: (date: string) => `По промокоду до ${date}`,
@@ -573,22 +583,6 @@ export const ru = {
   redeemPromoDone: 'Промокод применён!',
   redeemDoneBody: (plan: string, date: string) => `${plan} для вас обоих до ${date}.`,
   redeemDone: 'Готово',
-  giftsTitle: 'Подарить Ailu',
-  giftsHint: 'Подарите близкой паре несколько месяцев Ailu. После оплаты вы получите код, его можно отправить в любом мессенджере.',
-  giftsSoon: 'Подарочные подписки скоро появятся.',
-  giftsLength: 'Срок',
-  giftsPay: (price: string) => `Оплатить ${price}`,
-  giftsMine: 'Ваши подарки',
-  giftName: (plan: string, months: number) => `${plan} · ${months} ${plural(months, 'месяц', 'месяца', 'месяцев')}`,
-  giftPending: 'Ждёт оплаты',
-  giftPayNow: 'Оплатить',
-  giftCodeHint: 'Код подарка. Отправьте его тем, кому дарите.',
-  giftSend: 'Отправить код',
-  giftRedeemed: 'Подарок активирован',
-  giftCancelled: 'Оплата не прошла',
-  giftRefunded: 'Деньги вернули, код больше не действует',
-  giftShare: (plan: string, months: number, code: string) =>
-    `Дарю вам Ailu ${plan} на ${months} ${plural(months, 'месяц', 'месяца', 'месяцев')}! Откройте Ailu, в профиле нажмите «Ввести код» и введите ${code}.`,
 
   retry: 'Попробовать ещё раз',
   somethingWrong: 'Что-то пошло не так',
@@ -716,7 +710,6 @@ export const ru = {
     book_incomplete: 'В книге остались пустые места. Добавьте в них фотографии.',
     order_waiting: 'Эта книга уже заказана и ждёт оплаты.',
     order_not_found: 'Такого заказа нет.',
-    order_not_waiting: 'Этот заказ уже оплачен или отменён.',
     order_paid: 'Оплаченный заказ нельзя отменить в приложении. Напишите нам.',
     story_not_open: 'Фильм этого года можно заказать с 1 декабря.',
     story_ordered: 'Фильм этого года уже заказан. Напишите нам, и мы вернём деньги за вторую покупку.',
@@ -731,8 +724,6 @@ export const ru = {
     plan_code_not_found: 'Такого кода нет. Проверьте, нет ли в нём опечатки.',
     plan_code_used: 'Этот код уже использован.',
     plan_code_ended: 'Срок этого промокода закончился.',
-    gifts_unavailable: 'Подарочные подписки пока недоступны. Попробуйте чуть позже.',
-    gift_not_found: 'Такого подарка нет.',
     invalid_productId: 'Такого подарка нет.',
   } as Record<string, string>,
 

@@ -268,7 +268,7 @@ public class PhotoBookTests
     }
 
     [Fact]
-    public async Task An_order_keeps_the_book_as_it_was_and_goes_to_print_once_Kaspi_says_paid()
+    public async Task An_order_keeps_the_book_as_it_was_and_goes_to_print_once_the_team_marks_it_paid()
     {
         var (api, a, b, book) = await FullBook();
         await using var owned = api;
@@ -278,7 +278,6 @@ public class PhotoBookTests
             new { recipientName = "Нурай", phone = "123", city = "Атырау", address = "Абая 1" })));
         var order = await Order(a);
         Assert.Equal(("awaiting_payment", 9900, "+77010000002", true), (order.Status, order.PriceKzt, order.Phone, order.Mine));
-        Assert.StartsWith("/v1/payments/kaspi/fake/", order.PayUrl);
 
         // While it waits for payment the book can't change, and isn't ordered twice.
         var locked = await Ok(await b.GetAsync($"{Url}/2026"));
@@ -287,11 +286,18 @@ public class PhotoBookTests
         Assert.Equal("book_locked", await Code(await b.PatchAsJsonAsync($"{Url}/2026", new { title = "Другое" })));
         Assert.Equal("book_locked", await Code(await b.PostAsync($"{Url}/2026", null)));
         Assert.Equal("order_waiting", await Code(await b.PostAsJsonAsync($"{Url}/2026/orders", Delivery)));
-        Assert.Equal(order.PayUrl, (await (await b.PostAsync($"{Url}/orders/{order.Id}/pay", null))
-            .Content.ReadFromJsonAsync<OrderDto>())!.PayUrl);
 
-        // Paying (the fake Kaspi page) unlocks the book; later edits don't touch the copy being printed.
-        Assert.Equal(HttpStatusCode.OK, (await api.CreateClient().GetAsync(order.PayUrl)).StatusCode);
+        // The team sees the order with the phone to arrange payment, and marks it paid with its key.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await api.CreateClient().PostAsync($"/v1/admin/photo-book-orders/{order.Id}/paid", null)).StatusCode);
+        var waiting = (await Admin(api).GetFromJsonAsync<List<AdminOrderDto>>("/v1/admin/photo-book-orders"))!.Single();
+        Assert.Equal((order.Id, "+77010000002", "Нурай", 9900), (waiting.Id, waiting.Phone, waiting.RecipientName, waiting.PriceKzt));
+
+        // Paying unlocks the book; later edits don't touch the copy being printed.
+        var paid = await Admin(api).PostAsJsonAsync($"/v1/admin/photo-book-orders/{order.Id}/paid", new { note = "перевод 27.11" });
+        Assert.Equal(HttpStatusCode.OK, paid.StatusCode);
+        Assert.Equal(("paid", "перевод 27.11"), ((await paid.Content.ReadFromJsonAsync<AdminOrderDto>())!.Status,
+            (await Admin(api).GetFromJsonAsync<List<AdminOrderDto>>("/v1/admin/photo-book-orders?status=paid"))!.Single().PaymentNote));
+        Assert.Empty((await Admin(api).GetFromJsonAsync<List<AdminOrderDto>>("/v1/admin/photo-book-orders"))!);
         Assert.Equal("paid", (await Ok(await a.GetAsync($"{Url}/2026"))).Orders.Single().Status);
         await Ok(await a.PatchAsJsonAsync($"{Url}/2026", new { title = "Новое название" }));
         Assert.Equal("order_paid", await Code(await a.DeleteAsync($"{Url}/orders/{order.Id}")));
@@ -318,20 +324,17 @@ public class PhotoBookTests
         printer.DefaultRequestHeaders.Add("X-Print-Secret", "print-secret");
         Assert.Equal(HttpStatusCode.OK, (await printer.PostAsJsonAsync("/v1/print/notices", notice)).StatusCode);
         var shipped = (await Ok(await b.GetAsync($"{Url}/2026"))).Orders.Single();
-        Assert.Equal(("shipped", "KZ123", (string?)null), (shipped.Status, shipped.TrackingNumber, shipped.PayUrl));
+        Assert.Equal(("shipped", "KZ123"), (shipped.Status, shipped.TrackingNumber));
     }
 
     [Fact]
-    public async Task Without_Kaspi_the_order_is_kept_unpaid_and_can_be_cancelled()
+    public async Task An_unpaid_order_can_be_cancelled()
     {
-        var (api, a, _, _) = await FullBook(new Dictionary<string, string> { ["PhotoBook:UseFakeKaspi"] = "false" });
+        var (api, a, _, _) = await FullBook();
         await using var owned = api;
 
         var order = await Order(a);
-        Assert.Equal(("awaiting_payment", (string?)null), (order.Status, order.PayUrl));
-        Assert.Null((await (await a.PostAsync($"{Url}/orders/{order.Id}/pay", null)).Content.ReadFromJsonAsync<OrderDto>())!.PayUrl);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await api.CreateClient().PostAsJsonAsync("/v1/payments/kaspi",
-            new { paymentId = "x", paid = true })).StatusCode);
+        Assert.Equal("awaiting_payment", order.Status);
 
         var cancelled = await a.DeleteAsync($"{Url}/orders/{order.Id}");
         Assert.Equal("cancelled", (await cancelled.Content.ReadFromJsonAsync<OrderDto>())!.Status);
@@ -342,21 +345,17 @@ public class PhotoBookTests
     }
 
     [Fact]
-    public async Task A_failed_payment_lets_the_couple_pay_again_and_a_book_with_gaps_cant_be_ordered()
+    public async Task A_cancelled_order_paid_anyway_is_printed_and_a_book_with_gaps_cant_be_ordered()
     {
         var (api, a, _, book) = await FullBook();
         await using var owned = api;
 
+        // The couple cancelled, but had already sent the money: marking it paid still prints it.
         var order = await Order(a);
-        var kaspi = api.CreateClient();
-        Assert.Equal(HttpStatusCode.OK, (await kaspi.PostAsJsonAsync("/v1/payments/kaspi",
-            new { paymentId = $"fake-{order.Id:N}", paid = false })).StatusCode);
-        using (var scope = api.Services.CreateScope())
-            Assert.Null((await scope.ServiceProvider.GetRequiredService<AiluDb>().PhotoBookOrders.SingleAsync()).PayUrl);
-        var again = (await (await a.PostAsync($"{Url}/orders/{order.Id}/pay", null)).Content.ReadFromJsonAsync<OrderDto>())!;
-        Assert.NotNull(again.PayUrl);
-        await kaspi.PostAsJsonAsync("/v1/payments/kaspi", new { paymentId = $"fake-{order.Id:N}", paid = true });
+        await a.DeleteAsync($"{Url}/orders/{order.Id}");
+        Assert.Equal(HttpStatusCode.OK, (await Admin(api).PostAsync($"/v1/admin/photo-book-orders/{order.Id}/paid", null)).StatusCode);
         Assert.Equal("paid", (await Ok(await a.GetAsync($"{Url}/2026"))).Orders.Single().Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await Admin(api).PostAsync($"/v1/admin/photo-book-orders/{Guid.NewGuid()}/paid", null)).StatusCode);
 
         await Ok(await a.PutAsJsonAsync($"{Url}/2026/spreads/5", new
         {
@@ -397,5 +396,12 @@ public class PhotoBookTests
         var order = await scope.ServiceProvider.GetRequiredService<AiluDb>().PhotoBookOrders.SingleAsync();
         Assert.Equal(PhotoBookOrderStatus.Cancelled, order.Status);
         Assert.Equal((null, null, null), (order.RecipientName, order.Phone, order.Address));
+    }
+
+    private static HttpClient Admin(ApiFactory api)
+    {
+        var client = api.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Admin-Key", ApiFactory.AdminKey);
+        return client;
     }
 }

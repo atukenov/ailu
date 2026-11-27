@@ -16,32 +16,26 @@ namespace Ailu.Api.Tests;
 public class GiftTests
 {
     [Fact]
-    public async Task A_gift_is_paid_then_its_code_gives_the_other_couple_the_plan()
+    public async Task The_team_makes_a_gift_code_and_it_gives_the_other_couple_the_plan()
     {
         await using var api = await ApiFactory.StartAsync();
-        var (buyer, _) = await api.PairAsync();
         var (c, d) = await api.PairAsync("+77010000003", "+77010000004");
 
-        var gifts = (await buyer.GetFromJsonAsync<GiftsDto>("/v1/gifts"))!;
-        Assert.True(gifts.Available);
-        Assert.Contains(gifts.Products, p => p is { Id: "plus_3m", Tier: "plus", Months: 3, PriceKzt: 4470 });
-        Assert.Contains(gifts.Products, p => p is { Id: "premium_12m", Months: 12, PriceKzt: 23904 });
+        // Gifts are sold person to person: only the team makes a gift code, after it has been paid.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await api.CreateClient().PostAsJsonAsync("/v1/admin/gift-codes",
+            new { tier = "plus", months = 3 })).StatusCode);
+        await AssertProblem(await Admin(api).PostAsJsonAsync("/v1/admin/gift-codes", new { tier = "gold", months = 3 }),
+            HttpStatusCode.BadRequest, "invalid_tier");
+        await AssertProblem(await Admin(api).PostAsJsonAsync("/v1/admin/gift-codes", new { tier = "plus", months = 0 }),
+            HttpStatusCode.BadRequest, "invalid_months");
+        // The app has no gift checkout any more.
+        Assert.Equal(HttpStatusCode.NotFound, (await c.GetAsync("/v1/gifts")).StatusCode);
 
-        var order = await Order(buyer, "plus_3m");
-        Assert.Equal("pending", order.Status);
-        Assert.Null(order.Code);
-        Assert.StartsWith("https://pay.example/", order.PaymentUrl);
-
-        // Paid on the provider's page; the buyer's screen asks again and gets the code.
-        api.Checkout.PayAll();
-        var paid = (await buyer.GetFromJsonAsync<GiftOrderDto>($"/v1/gifts/{order.Id}"))!;
-        Assert.Equal("paid", paid.Status);
-        Assert.Matches("^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$", paid.Code);
-        Assert.Null(paid.PaymentUrl);
-        Assert.False(paid.Redeemed);
+        var gift = await GiftCode(api, "plus", 3, "Айгерим, перевод 27.11");
+        Assert.Matches("^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$", gift);
 
         // Typed in lower case, without dashes, with O for zero: still the same gift.
-        var typed = paid.Code!.Replace("-", " ").Replace('0', 'O').ToLowerInvariant();
+        var typed = gift.Replace("-", " ").Replace('0', 'O').ToLowerInvariant();
         var res = await c.PostAsJsonAsync("/v1/billing/redeem", new { code = typed });
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
         var redeemed = (await res.Content.ReadFromJsonAsync<RedeemDto>())!;
@@ -56,11 +50,13 @@ public class GiftTests
         Assert.False(billing.Subscription.AutoRenew);
         Assert.Equal(Plans.PlusPhotos, (await d.GetFromJsonAsync<StorageDto>("/v1/couple/storage"))!.PhotoLimit);
 
-        // The buyer sees it was entered, and nobody can enter it again.
-        Assert.True((await buyer.GetFromJsonAsync<GiftOrderDto>($"/v1/gifts/{order.Id}"))!.Redeemed);
-        await AssertProblem(await d.PostAsJsonAsync("/v1/billing/redeem", new { code = paid.Code }), HttpStatusCode.Conflict, "plan_code_used");
-        await AssertProblem(await buyer.PostAsJsonAsync("/v1/billing/redeem", new { code = paid.Code }), HttpStatusCode.Conflict, "plan_code_used");
-        Assert.Equal("free", (await buyer.GetFromJsonAsync<BillingDto>("/v1/billing"))!.Plan);
+        // The team sees it was entered, and nobody can enter it again.
+        var listed = (await Admin(api).GetFromJsonAsync<List<GiftCodeDto>>("/v1/admin/gift-codes"))!.Single();
+        Assert.True(listed.Redeemed);
+        Assert.Equal("Айгерим, перевод 27.11", listed.Note);
+        await AssertProblem(await d.PostAsJsonAsync("/v1/billing/redeem", new { code = gift }), HttpStatusCode.Conflict, "plan_code_used");
+        var (e, _) = await api.PairAsync("+77010000005", "+77010000006");
+        await AssertProblem(await e.PostAsJsonAsync("/v1/billing/redeem", new { code = gift }), HttpStatusCode.Conflict, "plan_code_used");
     }
 
     [Fact]
@@ -68,8 +64,8 @@ public class GiftTests
     {
         await using var api = await ApiFactory.StartAsync();
         var (a, _) = await api.PairAsync();
-        var first = await PaidCode(api, a, "premium_1m");
-        var second = await PaidCode(api, a, "premium_1m");
+        var first = await GiftCode(api, "premium", 1);
+        var second = await GiftCode(api, "premium", 1);
         var start = api.Clock.GetUtcNow();
 
         await Redeem(a, first);
@@ -86,54 +82,6 @@ public class GiftTests
         await RunExpiry(api);
         a = await api.SignInAsync("+77010000001");
         Assert.Equal("free", (await a.GetFromJsonAsync<BillingDto>("/v1/billing"))!.Plan);
-    }
-
-    [Fact]
-    public async Task A_refunded_gift_stops_working()
-    {
-        await using var api = await ApiFactory.StartAsync();
-        var (buyer, _) = await api.PairAsync();
-        var (c, _) = await api.PairAsync("+77010000003", "+77010000004");
-        var order = await Order(buyer, "plus_1m");
-
-        // The provider's notification is checked by its secret, then the payment is asked about.
-        api.Checkout.PayAll();
-        var anon = api.CreateClient();
-        var hook = new { checkoutId = $"chk-{order.Id:N}" };
-        Assert.Equal(HttpStatusCode.Unauthorized, (await anon.PostAsJsonAsync("/v1/gifts/webhooks/checkout?secret=nope", hook)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK,
-            (await anon.PostAsJsonAsync($"/v1/gifts/webhooks/checkout?secret={ApiFactory.GiftWebhookSecret}", hook)).StatusCode);
-        var code = (await buyer.GetFromJsonAsync<GiftsDto>("/v1/gifts"))!.Orders.Single().Code!;
-        await Redeem(c, code);
-        Assert.Equal("plus", (await c.GetFromJsonAsync<BillingDto>("/v1/billing"))!.Plan);
-
-        api.Checkout.Payments[hook.checkoutId] = GiftPaymentStatus.Refunded;
-        await anon.PostAsJsonAsync($"/v1/gifts/webhooks/checkout?secret={ApiFactory.GiftWebhookSecret}", hook);
-        Assert.Equal("free", (await c.GetFromJsonAsync<BillingDto>("/v1/billing"))!.Plan);
-        var refunded = (await buyer.GetFromJsonAsync<GiftsDto>("/v1/gifts"))!.Orders.Single();
-        Assert.Equal("refunded", refunded.Status);
-        Assert.Null(refunded.Code);
-        await AssertProblem(await c.PostAsJsonAsync("/v1/billing/redeem", new { code }), HttpStatusCode.NotFound, "plan_code_not_found");
-    }
-
-    [Fact]
-    public async Task Without_a_payment_provider_gifts_are_not_for_sale()
-    {
-        await using var api = await ApiFactory.StartAsync();
-        var (a, _) = await api.PairAsync();
-        api.Checkout.Available = false;
-
-        var gifts = (await a.GetFromJsonAsync<GiftsDto>("/v1/gifts"))!;
-        Assert.False(gifts.Available);
-        Assert.Empty(gifts.Products);
-        await AssertProblem(await a.PostAsJsonAsync("/v1/gifts", new { productId = "plus_1m" }), HttpStatusCode.ServiceUnavailable, "gifts_unavailable");
-        await AssertProblem(await a.PostAsJsonAsync("/v1/gifts", new { productId = "plus_7m" }), HttpStatusCode.BadRequest, "invalid_productId");
-
-        // An order whose provider can't be reached stays open and is asked about next time.
-        api.Checkout.Available = true;
-        var order = await Order(a, "plus_1m");
-        api.Checkout.Down = true;
-        Assert.Equal("pending", (await a.GetFromJsonAsync<GiftsDto>("/v1/gifts"))!.Orders.Single(o => o.Id == order.Id).Status);
     }
 
     [Fact]
@@ -196,8 +144,7 @@ public class GiftTests
         Assert.False(billing.TrialAvailable);
 
         // ...and a couple that already had its trial can still enter a gift.
-        var (buyer, _) = await api.PairAsync("+77010000003", "+77010000004");
-        await Redeem(a, await PaidCode(api, buyer, "plus_1m"));
+        await Redeem(a, await GiftCode(api, "plus", 1));
         Assert.False((await a.GetFromJsonAsync<BillingDto>("/v1/billing"))!.TrialAvailable);
         await AssertProblem(await a.PostAsync("/v1/billing/trial", null), HttpStatusCode.Conflict, "trial_used");
     }
@@ -206,18 +153,16 @@ public class GiftTests
     public async Task Deleting_an_account_keeps_gift_records_and_unused_codes()
     {
         await using var api = await ApiFactory.StartAsync();
-        var (buyer, _) = await api.PairAsync();
         var (c, _) = await api.PairAsync("+77010000003", "+77010000004");
-        var unused = await PaidCode(api, buyer, "plus_1m");
-        await Redeem(c, await PaidCode(api, buyer, "plus_3m"));
+        var unused = await GiftCode(api, "plus", 1);
+        await Redeem(c, await GiftCode(api, "plus", 3));
 
-        (await buyer.DeleteAsync("/v1/me")).EnsureSuccessStatusCode();
         (await c.DeleteAsync("/v1/me")).EnsureSuccessStatusCode();
 
         using (var scope = api.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AiluDb>();
-            Assert.Equal(2, await db.GiftOrders.CountAsync());
+            Assert.Equal(2, await db.PlanCodes.CountAsync(p => p.Kind == PlanCodeKind.Gift));
             Assert.Equal(1, await db.CodeRedemptions.CountAsync());
             Assert.Equal(1, await db.Subscriptions.CountAsync(s => s.Provider == StoreProvider.Gift));
         }
@@ -243,18 +188,11 @@ public class GiftTests
         return client;
     }
 
-    private static async Task<GiftOrderDto> Order(HttpClient client, string productId)
+    private static async Task<string> GiftCode(ApiFactory api, string tier, int months, string? note = null)
     {
-        var res = await client.PostAsJsonAsync("/v1/gifts", new { productId });
+        var res = await Admin(api).PostAsJsonAsync("/v1/admin/gift-codes", new { tier, months, note });
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
-        return (await res.Content.ReadFromJsonAsync<GiftOrderDto>())!;
-    }
-
-    private static async Task<string> PaidCode(ApiFactory api, HttpClient buyer, string productId)
-    {
-        var order = await Order(buyer, productId);
-        api.Checkout.PayAll();
-        return (await buyer.GetFromJsonAsync<GiftOrderDto>($"/v1/gifts/{order.Id}"))!.Code!;
+        return (await res.Content.ReadFromJsonAsync<GiftCodeDto>())!.Code;
     }
 
     private static async Task<RedeemDto> Redeem(HttpClient client, string code)
