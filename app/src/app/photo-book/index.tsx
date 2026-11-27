@@ -6,7 +6,7 @@ import { Alert, Platform, Pressable, RefreshControl, StyleSheet, View } from 're
 
 import { api, apiLink } from '@/api/client';
 import type { BookOrder, PhotoBook } from '@/api/types';
-import { CoverView, openPayment, SpreadView, tenge } from '@/components/book';
+import { CoverView, SpreadView, tenge } from '@/components/book';
 import { Button, Card, Centered, Chip, ErrorText, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
@@ -36,7 +36,7 @@ export default function PhotoBookScreen() {
     enabled: year !== null,
   });
 
-  // Back from the editor, the order form or Kaspi's page: show what changed.
+  // Back from the editor or the order form: show what changed.
   useFocusEffect(
     useCallback(() => {
       void queryClient.invalidateQueries({ queryKey: ['photo-book'] });
@@ -162,13 +162,6 @@ function OrderCard({ order }: { order: BookOrder }) {
   const s = useStrings();
   const queryClient = useQueryClient();
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['photo-book'] });
-  const pay = useMutation({
-    mutationFn: () => api.payOrder(order.id),
-    onSuccess: async (o) => {
-      if (o.payUrl) await openPayment(o.payUrl);
-      refresh();
-    },
-  });
   const cancel = useMutation({ mutationFn: () => api.cancelOrder(order.id), onSuccess: refresh });
   const waiting = order.status === 'awaiting_payment';
 
@@ -180,18 +173,15 @@ function OrderCard({ order }: { order: BookOrder }) {
         {[order.recipientName, order.city, order.address].filter(Boolean).join(', ')}
       </T>
       {order.trackingNumber && <T variant="small">{s.bookTracking(order.trackingNumber)}</T>}
-      {waiting && !order.payUrl && <T variant="secondary">{s.bookKaspiSoon}</T>}
-      <ErrorText error={pay.error ?? cancel.error} />
+      {waiting && <T variant="secondary">{s.bookAwaitingPayment(order.phone ?? '')}</T>}
+      <ErrorText error={cancel.error} />
       {waiting && (
-        <>
-          <Button title={s.bookPay(tenge(order.priceKzt))} onPress={() => pay.mutate()} loading={pay.isPending} />
-          <Button
-            title={s.bookCancelOrder}
-            variant="ghost"
-            loading={cancel.isPending}
-            onPress={() => confirm(s.bookCancelOrder, s.bookCancelConfirm, s.bookCancelOk, s.cancel, () => cancel.mutate())}
-          />
-        </>
+        <Button
+          title={s.bookCancelOrder}
+          variant="ghost"
+          loading={cancel.isPending}
+          onPress={() => confirm(s.bookCancelOrder, s.bookCancelConfirm, s.bookCancelOk, s.cancel, () => cancel.mutate())}
+        />
       )}
     </Card>
   );

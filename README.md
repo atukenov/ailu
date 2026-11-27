@@ -128,13 +128,18 @@ Both are a code a couple enters (`POST /v1/billing/redeem`); entering it adds a 
 enters a code once (unique indexes on `CodeRedemption`). A second code of the same plan starts where the first
 ends; a store subscription keeps running alongside. Codes never touch the 7-day trial.
 
-- **Gifts** (`/v1/gifts`) are paid outside the stores, as the monetization doc plans for Kaspi on the website.
-  `IGiftCheckout` is the seam: until a provider is set up, `UnconfiguredGiftCheckout` keeps gifts off sale (the
-  app hides the buy form); in Development `FakeGiftCheckout` pays every order at once. A paid order gets a
-  12-character code (`7KQ2-M9XD-4HPA`, no I/L/O/U); a refund withdraws the code and ends the plan it gave. The
-  provider's notification goes to `/v1/gifts/webhooks/checkout?secret=` (`Billing:GiftWebhookSecret`) and only
-  makes the server ask the provider. Products and prices: `Billing:Gifts`, defaulting to 1, 3 and 12 months of
-  each plan at the subscription prices.
+All payments inside the app go through the App Store and Google Play (subscriptions and the video story).
+Nothing else is sold in the app.
+
+- **Gifts** are sold person to person, outside the app: the buyer pays the team directly, then the team makes a
+  one-time gift code and hands it over. The code is 12 characters (`7KQ2-M9XD-4HPA`, no I/L/O/U), works for one
+  couple, and `note` records who paid:
+
+  ```sh
+  curl -X POST $API/v1/admin/gift-codes -H "X-Admin-Key: $KEY" -H 'Content-Type: application/json' \
+    -d '{"tier":"plus","months":3,"note":"Айгерим, перевод 27.11"}'
+  curl $API/v1/admin/gift-codes -H "X-Admin-Key: $KEY"   # which were entered
+  ```
 - **Promo codes** are made by the team with `Billing:AdminKey` set:
 
   ```sh
@@ -142,6 +147,19 @@ ends; a store subscription keeps running alongside. Codes never touch the 7-day 
     -d '{"code":"LOVE2026","tier":"plus","days":30,"maxRedemptions":500,"validUntil":"2026-12-31T19:00:00Z","note":"Instagram"}'
   curl $API/v1/admin/promo-codes -H "X-Admin-Key: $KEY"   # how many couples used each
   ```
+
+### Photo book payment
+
+A printed book is a physical good, so the app stores don't allow selling it through in-app purchase, and
+it isn't. A couple orders in the app (delivery address and phone); the order waits as `awaiting_payment` and
+the app says the team will write to them. The team agrees payment directly, then marks the order paid, and
+the print job picks it up:
+
+```sh
+curl $API/v1/admin/photo-book-orders -H "X-Admin-Key: $KEY"            # waiting for payment (?status=all for every order)
+curl -X POST $API/v1/admin/photo-book-orders/$ORDER/paid -H "X-Admin-Key: $KEY" \
+  -H 'Content-Type: application/json' -d '{"note":"перевод 27.11"}'
+```
 
 ### API (Stage 1)
 

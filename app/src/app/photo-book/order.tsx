@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
-import { CoverView, openPayment, tenge } from '@/components/book';
+import { CoverView, tenge } from '@/components/book';
 import { Button, Card, Centered, ErrorText, Field, Screen, T, TopBar } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { useSession } from '@/session';
 
-// Where the printed book goes, then Kaspi's page to pay. The order keeps the book as it is now.
+// Where the printed book goes. A printed book is a physical good, so it isn't sold through the app stores:
+// after the order the team writes to the couple to agree payment. The order keeps the book as it is now.
 export default function OrderBook() {
   const s = useStrings();
   const { user } = useSession();
@@ -25,8 +26,7 @@ export default function OrderBook() {
 
   const order = useMutation({
     mutationFn: () => api.orderBook(year, { recipientName: name, phone, city, address, comment }),
-    onSuccess: async (o) => {
-      if (o.payUrl) await openPayment(o.payUrl);
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['photo-book', year] });
       router.back();
     },
@@ -64,7 +64,7 @@ export default function OrderBook() {
       <T variant="small">{s.bookFrozenNote}</T>
       <ErrorText error={order.error ?? book.error} />
       <Button
-        title={s.bookPayKaspi(tenge(data?.priceKzt ?? 0))}
+        title={s.bookPlaceOrder(tenge(data?.priceKzt ?? 0))}
         onPress={() => order.mutate()}
         loading={order.isPending}
         disabled={!ready || !data}

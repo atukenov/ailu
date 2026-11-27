@@ -1,9 +1,8 @@
 import { Image } from 'expo-image';
-import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
-import { apiLink, photoUrl } from '@/api/client';
+import { photoUrl } from '@/api/client';
 import type { BookPhoto, Box, PhotoBook, Spread } from '@/api/types';
 import { Colors } from '@/constants/theme';
 import { isoToText } from '@/dates';
@@ -12,11 +11,6 @@ import { isoToText } from '@/dates';
 export const Paper = { paper: '#FFFDF9', ink: '#2A1E18', muted: '#8F857B', hole: '#EEE8E1' } as const;
 
 export const tenge = (n: number) => `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} ₸`;
-
-// Kaspi's payment page opens in the browser; the book screen fetches the order again when the person is back.
-export async function openPayment(url: string) {
-  await WebBrowser.openBrowserAsync(apiLink(url));
-}
 
 // Point sizes of the PDF over the spread's width in points (two 20 cm pages), so text scales with the preview.
 const SPREAD_PT = 1133.86;

@@ -76,7 +76,6 @@ function Routes() {
           <Stack.Screen name="photo-book/order" />
           <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
           <Stack.Screen name="redeem" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="gifts" />
         </Stack.Protected>
       </Stack>
       {signedIn && named && paired && <PurchaseSync />}

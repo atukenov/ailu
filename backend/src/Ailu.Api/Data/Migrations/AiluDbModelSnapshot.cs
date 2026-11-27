@@ -946,71 +946,6 @@ namespace Ailu.Api.Data.Migrations
                     b.ToTable("Devices");
                 });
 
-            modelBuilder.Entity("Ailu.Api.Data.GiftOrder", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BuyerUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CheckoutId")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid?>("CodeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Months")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("PaidAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PaymentUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<int>("PriceKzt")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<string>("Tier")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BuyerUserId");
-
-                    b.HasIndex("Provider", "CheckoutId")
-                        .IsUnique();
-
-                    b.ToTable("GiftOrders");
-                });
-
             modelBuilder.Entity("Ailu.Api.Data.Goal", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1540,13 +1475,9 @@ namespace Ailu.Api.Data.Migrations
                     b.Property<DateTimeOffset?>("PaidAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("PayUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("PaymentId")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<string>("PaymentNote")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(16)
@@ -1590,9 +1521,6 @@ namespace Ailu.Api.Data.Migrations
                     b.HasIndex("CoupleId");
 
                     b.HasIndex("OrderedById");
-
-                    b.HasIndex("PaymentId")
-                        .IsUnique();
 
                     b.HasIndex("PrintJobId")
                         .IsUnique();
@@ -1658,9 +1586,6 @@ namespace Ailu.Api.Data.Migrations
                     b.Property<DateTimeOffset?>("DisabledAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("GiftOrderId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -1690,9 +1615,6 @@ namespace Ailu.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("GiftOrderId")
                         .IsUnique();
 
                     b.ToTable("PlanCodes");
@@ -2213,15 +2135,6 @@ namespace Ailu.Api.Data.Migrations
                     b.HasOne("Ailu.Api.Data.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Ailu.Api.Data.GiftOrder", b =>
-                {
-                    b.HasOne("Ailu.Api.Data.User", null)
-                        .WithMany()
-                        .HasForeignKey("BuyerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -14,8 +14,6 @@ import type {
   Couple,
   DailyQuestion,
   DailyTask,
-  GiftOrder,
-  Gifts,
   Goal,
   GoalInput,
   GoalList,
@@ -212,7 +210,6 @@ export const api = {
   moveSpread: (year: number, position: number, to: number) =>
     request<PhotoBook>('POST', `/v1/couple/photo-books/${year}/spreads/${position}/move`, { to }),
   orderBook: (year: number, input: BookOrderInput) => request<BookOrder>('POST', `/v1/couple/photo-books/${year}/orders`, input),
-  payOrder: (id: string) => request<BookOrder>('POST', `/v1/couple/photo-books/orders/${id}/pay`),
   cancelOrder: (id: string) => request<BookOrder>('DELETE', `/v1/couple/photo-books/orders/${id}`),
   ai: () => request<Ai>('GET', '/v1/couple/ai'),
   // Budget applies to dates and evenings at home; the wish goes to the model as is.
@@ -231,9 +228,6 @@ export const api = {
     request<YearStory>('POST', `/v1/couple/year-story/${year}/google`, { purchaseToken }),
   // A gift code or a promo code; the plan is the couple's, like a subscription.
   redeem: (code: string) => request<Redeemed>('POST', '/v1/billing/redeem', { code }),
-  gifts: () => request<Gifts>('GET', '/v1/gifts'),
-  orderGift: (productId: string) => request<GiftOrder>('POST', '/v1/gifts', { productId }),
-  gift: (id: string) => request<GiftOrder>('GET', `/v1/gifts/${id}`),
 };
 
 // Photo URLs from the API are signed paths; they work without the token, so any image view can load them.
