@@ -36,7 +36,7 @@ ailu-weld.vercel.app ── Vercel: сайт из папки web/ (лендин�
 | Поддержка | `<сайт>/support-ru.html`, `<сайт>/support-kk.html` |
 | Короткие ссылки | `<сайт>/privacy`, `/terms`, `/subscription`, `/delete-account`, `/support` (ведут на русские версии) |
 
-Порядок: **1** Railway: проект и база → **2** Railway: сервер → **9** Vercel: сайт (нужен до магазинов: в них вписываются ссылки на документы) → **4** App Store Connect → **5** Google Play → **6** Firebase → **7** сборки EAS → **8** проверка. Свой домен (раздел 3) — по желанию, в любой момент.
+Порядок: **1** Railway: проект и база → **2** Railway: сервер → **9** Vercel: сайт (нужен до магазинов: в них вписываются ссылки на документы) → **4** App Store Connect → **5** Google Play → **6** Firebase → **7** EAS: проект, идентификаторы, ключи и сборки → **8** проверка. Разделы 7.1, 7.3 и 7.4 (проект EAS, идентификаторы Apple и ключ Android) можно сделать в любой момент, хоть первыми. Свой домен (раздел 3) — по желанию, в любой момент.
 
 Секреты (ключи, пароли, JSON-файлы) не кладите в git. Они живут только в переменных Railway и в EAS.
 
@@ -147,7 +147,7 @@ EAS при первой сборке сам создаёт идентифика�
    - `kz.ailu.app` (основное приложение). Откройте его → вкладка **Capabilities**: включены **App Groups** (с группой `group.kz.ailu.app`), **Push Notifications**, **In-App Purchase** (включён всегда).
    - `kz.ailu.app.widget` (виджет). Capabilities: **App Groups** с той же группой `group.kz.ailu.app`.
 3. Справа вверху фильтр → **App Groups**: есть `group.kz.ailu.app`. Если нет: **+** → App Groups → Description `Ailu`, Identifier `group.kz.ailu.app` → Register, затем отметьте группу в обоих App ID (Edit рядом с App Groups).
-4. Если App ID ещё нет, ничего не создавайте руками: запустите сборку (раздел 7), EAS спросит вход в Apple ID и создаст всё сам. Потом вернитесь и проверьте пункты 2–3.
+4. Если App ID ещё нет, ничего не создавайте руками: выполните раздел 7.3 (`eas credentials -p ios`), EAS спросит вход в Apple ID и создаст всё сам. Потом вернитесь и проверьте пункты 2–3.
 
 **→ В коде после этого:** ничего, если идентификаторы совпали. Если пришлось взять другой бандл (например, `kz.ailu.app` занят), поменяйте его везде: `app/app.json` → `ios.bundleIdentifier`, `android.package`, `expo-widgets.bundleIdentifier` и `groupIdentifier`; `backend/src/Ailu.Api/appsettings.json` → `Billing:Apple:BundleId` и `Billing:Google:PackageName`; `app/src/purchases.ts` → `packageNameAndroid`; Firebase (раздел 6, шаг 2).
 
@@ -448,25 +448,132 @@ Push идут через Firebase Cloud Messaging (PR #29) на iOS и Android.
 1. https://console.firebase.google.com → Add project (Google Analytics можно выключить).
 2. **Add app → iOS**, бандл `kz.ailu.app` → скачать `GoogleService-Info.plist`. **Add app → Android**, пакет `kz.ailu.app` → скачать `google-services.json`. Положите оба файла в `app/` (они не попадают в git).
 3. Apple Developer → Certificates, Identifiers & Profiles → Keys → + → **Apple Push Notifications service (APNs)** → скачать `.p8`. Firebase → Project settings → Cloud Messaging → Apple app configuration → загрузить этот ключ, указать Key ID и Team ID.
-4. Передать файлы в EAS (без них продакшн-сборка специально падает):
-
-   ```sh
-   cd app
-   npx eas-cli@latest env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility secret --environment production
-   npx eas-cli@latest env:create --name GOOGLE_SERVICE_INFO_PLIST --type file --value ./GoogleService-Info.plist --visibility secret --environment production
-   ```
-
+4. Передать оба файла в EAS: раздел 7.2 (без них продакшн-сборка специально падает).
 5. Firebase → Project settings → Service accounts → **Generate new private key**. Весь JSON целиком вставьте в переменную Railway `Push__Firebase__ServiceAccountJson`. `Push__Firebase__ProjectId` задавать не нужно: он берётся из JSON.
 6. Новая нативная сборка (раздел 7) и проверка на настоящих телефонах: разрешить уведомления, дождаться задания дня в 09:00 по времени пары.
 
-## 7. Сборки приложения (Expo EAS)
+## 7. Expo EAS: проект, идентификаторы Apple, ключи и первые сборки
 
-1. Один раз: `cd app && npx eas-cli@latest login && npx eas-cli@latest init` (запишет `extra.eas.projectId` в `app.json`, закоммитьте).
-2. Проверьте `app/eas.json`: `EXPO_PUBLIC_API_URL` = `https://ailu-production.up.railway.app` (уже вписан), `ascAppId` вписан (раздел 4.3), для Android `serviceAccountKeyPath` (раздел 5.6).
-3. iOS: `npx eas-cli@latest build -p ios --profile production`, затем `npx eas-cli@latest submit -p ios --profile production`. Сертификаты EAS создаст сам, когда спросит Apple ID.
-4. Android: `npx eas-cli@latest build -p android --profile production`. Первую AAB загрузите в Play Console вручную (раздел 5.3), дальше работает `npx eas-cli@latest submit -p android --profile production`.
-5. Тест покупок: iOS через TestFlight (покупки идут в песочницу, сервер это понимает), Android через внутреннее тестирование и License testing в Play Console.
-6. Мелкие правки без новой сборки (только JS): `npx eas-cli@latest update --channel production`. Всё, что меняет нативную часть (новые библиотеки, иконки, Firebase, виджет), требует новой сборки и ревью.
+Всё делается в терминале на вашем компьютере (нужны пароль Apple ID и код 2FA, поэтому без вас не запустить). Нужны Node 22 и папка репозитория. Mac не нужен: сборки идут в облаке EAS. Команды по порядку; под каждой написано, что она спросит и что ответить. Если что-то пошло не так, пришлите вывод команды в тред.
+
+Что уже настроено в репозитории и менять не нужно:
+
+| Что | Значение | Где |
+| --- | --- | --- |
+| iOS bundle id, Android package | `kz.ailu.app` | `app/app.json` |
+| Виджет iOS (отдельный App ID) | `kz.ailu.app.widget`, цель `ExpoWidgetsTarget` | `app/app.json` → плагин `expo-widgets` (он сам сообщает EAS о расширении) |
+| Общая группа данных | `group.kz.ailu.app` (у приложения и у виджета) | там же |
+| Push | entitlement `aps-environment` от `expo-notifications`, сами push через Firebase (раздел 6) | `app/app.json`, `app/app.config.js` |
+| Профили сборки | `development` (dev client), `preview` (APK и ad hoc iOS для своих телефонов), `production` (магазины) | `app/eas.json`, у каждого своё окружение EAS (`environment`) |
+| Адрес сервера | `EXPO_PUBLIC_API_URL` = `https://ailu-production.up.railway.app` (в `development` адрес сервера в вашей сети) | `app/eas.json` |
+| Номера сборок | хранит и повышает EAS (`appVersionSource: remote`, `autoIncrement`) | `app/eas.json` |
+| Apple ID приложения для `eas submit` | `6840164020` | `app/eas.json` → `submit.production.ios.ascAppId` |
+
+### 7.1 Вход и проект EAS [сделать]
+
+```sh
+cd app
+npm ci
+npx eas-cli@latest login
+```
+
+Спросит **Email or username** и **Password** аккаунта Expo (если аккаунта нет: https://expo.dev/signup, бесплатно). Проверка: `npx eas-cli@latest whoami` печатает ваш логин.
+
+```sh
+npx eas-cli@latest init
+```
+
+- **Would you like to create a project for @<логин>/ailu?** → `Y`.
+- Если спросит про организацию (**Which account should own this project?**), выберите свой личный аккаунт или организацию, которой будет принадлежать приложение.
+
+Команда допишет в `app/app.json` поля `owner` и `extra.eas.projectId`. Если вместо этого напишет «Cannot automatically write to dynamic config», впишите их вручную: в `expo` добавьте `"owner": "<логин>"`, а в `expo.extra` добавьте `"eas": { "projectId": "<uuid из вывода>" }`.
+
+`eas build:configure` запускать не нужно: `app/eas.json` уже есть.
+
+**→ В коде после этого:** закоммитьте `app/app.json` с `owner` и `projectId` (или пришлите `projectId` в тред, Claude закоммитит).
+
+### 7.2 Файлы Firebase в EAS [сделать после раздела 6, шаги 1–3]
+
+Без них продакшн-сборка специально падает (в `preview` и `development` соберётся, но без push). Из папки `app/`, файлы лежат рядом:
+
+```sh
+npx eas-cli@latest env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility secret --environment production --environment preview --environment development
+npx eas-cli@latest env:create --name GOOGLE_SERVICE_INFO_PLIST --type file --value ./GoogleService-Info.plist --visibility secret --environment production --environment preview --environment development
+npx eas-cli@latest env:list --environment production
+```
+
+Последняя команда должна показать обе переменные. `EXPO_PUBLIC_API_URL` в EAS создавать не нужно, он задан в `eas.json`.
+
+### 7.3 Идентификаторы, сертификат и профили iOS [сделать]
+
+Это и есть «EAS создаёт идентификаторы»: без сборки, одной командой.
+
+```sh
+npx eas-cli@latest credentials -p ios
+```
+
+1. **Which build profile do you want to configure?** → `production`.
+2. **Do you want to log in to your Apple account?** → `Y`. **Apple ID** → почта аккаунта разработчика, затем пароль и **6-значный код 2FA** с вашего телефона. Если команд несколько, выберите ту, на которую оплачен Developer Program.
+3. В меню выберите **Build Credentials: Manage everything needed to build your project** → **Set up all the required credentials to build your project**.
+4. EAS пройдёт по двум целям: `Ailu` (`kz.ailu.app`) и `ExpoWidgetsTarget` (`kz.ailu.app.widget`). Для каждой:
+   - создаст App ID, если его нет, и включит нужные возможности (App Groups с `group.kz.ailu.app`, Push Notifications);
+   - **Generate a new Apple Distribution Certificate?** → `Y` (спросит один раз, сертификат общий; если предложит **Reuse** существующий, тоже `Y`);
+   - **Generate a new Apple Provisioning Profile?** → `Y`.
+5. Если спросит **Would you like to set up Push Notifications for your project?** (ключ push для сервиса Expo) → `N`. Push идут через Firebase, ключ APNs создаётся вручную и загружается в Firebase (раздел 6, шаг 3). У Apple не больше двух ключей APNs на команду, лишний не нужен.
+6. Выйдите из меню (**Exit**).
+
+Потом проверьте в Apple Developer по разделу 4.1 (два App ID, у обоих App Groups с `group.kz.ailu.app`, у основного Push Notifications). Если какой-то возможности нет, ничего страшного: первая сборка (7.5) сверяет возможности с приложением и включает недостающие сама. Если не включила, отметьте вручную по 4.1, шаг 3, и запустите `npx eas-cli@latest credentials -p ios` ещё раз, чтобы профили пересоздались (**Build Credentials** → **Provisioning Profile** → **Delete**, потом снова **Set up all**).
+
+Для `preview` на iOS (установка на свои телефоны без TestFlight) телефоны нужно зарегистрировать: `npx eas-cli@latest device:create` → **Website** → откройте ссылку или QR на каждом телефоне и установите профиль. Можно пропустить и тестировать через TestFlight.
+
+### 7.4 Ключ подписи Android [сделать]
+
+```sh
+npx eas-cli@latest credentials -p android
+```
+
+1. **Which build profile do you want to configure?** → `production`.
+2. **Keystore: Manage everything needed to build your project** → **Set up a new keystore** → **Generate a new Android Keystore?** → `Y`.
+3. Выход (**Exit**).
+
+Ключ хранится в EAS, это ключ загрузки. Google переподписывает приложение своим ключом (Play App Signing, раздел 5.3). Резервную копию можно скачать там же: **Download existing keystore**; храните её вне git.
+
+### 7.5 Первые сборки [сделать]
+
+iOS:
+
+```sh
+npx eas-cli@latest build -p ios --profile production
+```
+
+- Если спросит про вход в Apple → `Y` и тот же Apple ID (сессия обычно уже сохранена после 7.3).
+- **Reuse / Generate** для сертификата и профилей → `Y` (всё уже создано в 7.3, EAS просто возьмёт).
+- Про push-ключ Expo → `N` (как в 7.3).
+- Сборка идёт 15–40 минут, ссылку на неё EAS печатает сразу (можно закрыть терминал и смотреть на https://expo.dev).
+
+Отправка в App Store Connect (TestFlight):
+
+```sh
+npx eas-cli@latest submit -p ios --profile production --latest
+```
+
+Спросит Apple ID и предложит создать **App Store Connect API Key** → `Y` (EAS создаст ключ и дальше будет отправлять без пароля). Через 15–30 минут сборка появится в App Store Connect → TestFlight.
+
+Android:
+
+```sh
+npx eas-cli@latest build -p android --profile production
+```
+
+Ключ возьмётся из 7.4. В конце будет ссылка на `.aab`: первую загрузите в Play Console вручную (раздел 5.3). Дальше `npx eas-cli@latest submit -p android --profile production --latest` (нужен ключ сервисного аккаунта, 5.6).
+
+Если при первой сборке спросит про номер версии (**Initialize the remote version with ...?**) → `Y`.
+
+### 7.6 Дальше
+
+- Тест покупок: iOS через TestFlight (покупки идут в песочницу, сервер это понимает), Android через внутреннее тестирование и License testing в Play Console.
+- Сборка для разработки на своём телефоне: `npx eas-cli@latest build -p ios --profile development` (или `-p android`). Для неё нужен сервер в вашей сети: адрес в `app/eas.json` → `build.development.env.EXPO_PUBLIC_API_URL`.
+- Обновления «по воздуху» (`eas update`) пока не подключены: в приложении нет `expo-updates`. Сейчас каждое изменение идёт новой сборкой. Подключить можно позже (`npx eas-cli@latest update:configure`, затем новая сборка).
 
 ## 8. Проверка после выкладки
 

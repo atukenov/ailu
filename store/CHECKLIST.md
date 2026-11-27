@@ -66,7 +66,12 @@
 - [x] **Хостинг:** Railway (сервер и база), Vercel (сайт).
 - [x] **Railway:** проект, Postgres, сервер, том, переменные.
 - [ ] **Бэкапы на Railway:** расписание Daily и Weekly для Postgres и для тома с фото, один раз попробовать восстановление (`DEPLOY.md`, раздел 1).
-- [ ] **Аккаунт Expo** (бесплатно): `cd app && npx eas-cli@latest login && npx eas-cli@latest init`, закоммитить `extra.eas.projectId`.
+- [ ] **Expo EAS** (бесплатно), по шагам в `DEPLOY.md`, раздел 7:
+  - [ ] вход и проект: `npx eas-cli@latest login`, `npx eas-cli@latest init`, закоммитить `owner` и `extra.eas.projectId` в `app/app.json` (7.1);
+  - [ ] идентификаторы Apple, сертификат и профили для приложения и виджета: `npx eas-cli@latest credentials -p ios` (7.3), потом сверить по 4.1;
+  - [ ] ключ подписи Android: `npx eas-cli@latest credentials -p android` (7.4);
+  - [ ] файлы Firebase в окружениях EAS (7.2, после раздела 6);
+  - [ ] первые сборки iOS и Android и отправка в TestFlight (7.5).
 - [ ] **Firebase:** проект, приложения iOS и Android, APNs-ключ, файлы в EAS, сервисный ключ на Railway (`DEPLOY.md`, раздел 6).
 - [ ] **Юрлицо.** Аккаунты разработчика на ТОО требуют номер D-U-N-S. На личном аккаунте в магазине будет видно ваше имя. От этого зависит, что вписать в `web/config.json` → `operator`.
 - [ ] **Юрист в РК** проверяет `web/content/*` (документ 6 требует этого до запуска). Особенно: хранение данных за пределами Казахстана (Railway, Нидерланды) и передача Anthropic (США); возраст 16 лет без согласия родителей. После проверки `showDraftNotice: false` в `web/config.json`.
