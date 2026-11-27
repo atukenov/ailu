@@ -9,9 +9,9 @@ App Store Connect қазақ тілін локализация ретінде ұ
 
 - **Атауы:** Ailu — екеуіңізге
 - **Санат:** Өмір салты (Lifestyle)
-- **Қолдау сайты:** https://ailu.vercel.app/support-kk.html
-- **Құпиялылық саясаты:** https://ailu.vercel.app/legal/privacy-kk.html
-- **Пайдаланушы келісімі:** https://ailu.vercel.app/legal/terms-kk.html
+- **Қолдау сайты:** https://ailu-weld.vercel.app/support-kk.html
+- **Құпиялылық саясаты:** https://ailu-weld.vercel.app/legal/privacy-kk.html
+- **Пайдаланушы келісімі:** https://ailu-weld.vercel.app/legal/terms-kk.html
 
 ## App Store
 
@@ -55,8 +55,8 @@ Ailu серіктесті бақыламайды: қосымшада геоло�
 ЖАЗЫЛЫМ
 Негізгі мүмкіндіктер тегін. Plus пен Premium-ды біреуіңіз рәсімдейді, ал олар екеуіңізге де ашылады. Жазылымды кезең аяқталуына кемінде 24 сағат қалғанда App Store баптауларында болдырмасаңыз, ол автоматты түрде ұзартылады.
 
-Пайдаланушы келісімі: https://ailu.vercel.app/legal/terms-kk.html
-Құпиялылық саясаты: https://ailu.vercel.app/legal/privacy-kk.html
+Пайдаланушы келісімі: https://ailu-weld.vercel.app/legal/terms-kk.html
+Құпиялылық саясаты: https://ailu-weld.vercel.app/legal/privacy-kk.html
 
 **Жаңалықтар (1.0.0 нұсқасы):**
 Ailu-дың алғашқы нұсқасы: күннің тапсырмасы мен сұрағы, ай мен нұр, күндер сериясы, естеліктер, мақсаттар және көңіл күй.

@@ -7,9 +7,9 @@
 
 - **Название:** Ailu — для двоих
 - **Категория:** Образ жизни (App Store: Lifestyle, вторичная — Social Networking; Google Play: Lifestyle)
-- **Сайт поддержки:** https://ailu.vercel.app/support-ru.html
-- **Политика конфиденциальности:** https://ailu.vercel.app/legal/privacy-ru.html
-- **Пользовательское соглашение (EULA):** https://ailu.vercel.app/legal/terms-ru.html
+- **Сайт поддержки:** https://ailu-weld.vercel.app/support-ru.html
+- **Политика конфиденциальности:** https://ailu-weld.vercel.app/legal/privacy-ru.html
+- **Пользовательское соглашение (EULA):** https://ailu-weld.vercel.app/legal/terms-ru.html
 
 ## App Store
 
@@ -53,8 +53,8 @@ Ailu не следит за партнёром: в приложении нет �
 ПОДПИСКА
 Основные функции бесплатны. Plus и Premium оформляет один из вас, а открываются они обоим. Подписка продлевается автоматически, пока вы не отмените её в настройках App Store не позднее чем за 24 часа до конца периода.
 
-Пользовательское соглашение: https://ailu.vercel.app/legal/terms-ru.html
-Политика конфиденциальности: https://ailu.vercel.app/legal/privacy-ru.html
+Пользовательское соглашение: https://ailu-weld.vercel.app/legal/terms-ru.html
+Политика конфиденциальности: https://ailu-weld.vercel.app/legal/privacy-ru.html
 
 **Что нового (версия 1.0.0):**
 Первая версия Ailu: задание и вопрос дня, луна и нұр, серия дней, воспоминания, цели и настроение.

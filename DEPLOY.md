@@ -20,7 +20,7 @@ ailu-production.up.railway.app ── Railway: сервер .NET в Docker (back
    ├── App Store Server API и Google Play API: проверка покупок
    └── Anthropic API: AI-идеи для Premium (когда будет ключ)
 
-ailu.vercel.app ── Vercel: сайт из папки web/ (лендинг, юридические документы, поддержка, удаление аккаунта)
+ailu-weld.vercel.app ── Vercel: сайт из папки web/ (лендинг, юридические документы, поддержка, удаление аккаунта)
 ```
 
 Адреса сейчас:
@@ -28,7 +28,7 @@ ailu.vercel.app ── Vercel: сайт из папки web/ (лендинг, ю
 | Что | Адрес |
 | --- | --- |
 | Сервер (API) | https://ailu-production.up.railway.app (проверка: `/health`) |
-| Сайт | https://ailu.vercel.app (замените, если Vercel выдал другой адрес, см. раздел 9) |
+| Сайт | https://ailu-weld.vercel.app (адрес от Vercel, подтверждён Левом 28.11.2026; если появится свой домен, см. раздел 9) |
 | Политика конфиденциальности | `<сайт>/legal/privacy-ru.html`, `<сайт>/legal/privacy-kk.html` |
 | Пользовательское соглашение | `<сайт>/legal/terms-ru.html`, `-kk.html` |
 | Условия подписки | `<сайт>/legal/subscription-ru.html`, `-kk.html` |
@@ -206,7 +206,7 @@ EAS при первой сборке сам создаёт идентифика�
 
 Слева **Trust & Safety → App Privacy** (или **App Privacy**).
 
-1. **Privacy Policy URL:** `https://ailu.vercel.app/legal/privacy-ru.html`. **User Privacy Choices URL** — оставьте пустым.
+1. **Privacy Policy URL:** `https://ailu-weld.vercel.app/legal/privacy-ru.html`. **User Privacy Choices URL** — оставьте пустым.
 2. **Data Collection → Get Started / Edit** → «Yes, we collect data from this app».
 3. Отметьте ровно эти типы (таблица с пояснениями в [`store/data-safety.md`](store/data-safety.md)):
    - Contact Info: **Name**, **Phone Number**, **Physical Address** (доставка фотокниги);
@@ -280,7 +280,7 @@ EAS при первой сборке сам создаёт идентифика�
    - Вкладка **iPhone 6.9" Display**: 3–10 скриншотов 1320 × 2868 (или 1290 × 2796), PNG или JPG без прозрачности. Готовые: `store/screenshots/ru/ios/` (6 штук, новый интерфейс). Меньшие размеры iPhone Apple возьмёт из 6.9" автоматически.
    - iPad не нужен: в `app/app.json` стоит `supportsTablet: false`.
 2. **Promotional Text, Description, Keywords:** из [`store/listing-ru.md`](store/listing-ru.md) (скопируйте как есть, лимиты проверены скриптом `node store/check-listing.mjs`).
-3. **Support URL:** `https://ailu.vercel.app/support-ru.html`. **Marketing URL:** `https://ailu.vercel.app/`.
+3. **Support URL:** `https://ailu-weld.vercel.app/support-ru.html`. **Marketing URL:** `https://ailu-weld.vercel.app/`.
 4. **Version:** `1.0.0` (должна совпасть с `version` в `app/app.json`). **Copyright:** `2026 <ваше ТОО или ФИО>`.
 5. **Build:** появится через 15–30 минут после `eas submit` (раздел 7). Нажмите **+** (Add Build) и выберите сборку. Вопрос про шифрование (**Export Compliance**) не появится: в `app/app.json` уже стоит `usesNonExemptEncryption: false` (приложение использует только HTTPS). Если всё же спросит: «None of the algorithms mentioned above».
 6. **In-App Purchases and Subscriptions:** + → отметьте 4 подписки (4.7, шаг 6).
@@ -358,7 +358,7 @@ EAS при первой сборке сам создаёт идентифика�
 
 Каждая карточка ниже — отдельная задача на Dashboard. Ответы:
 
-1. **Privacy policy:** `https://ailu.vercel.app/legal/privacy-ru.html` → Save.
+1. **Privacy policy:** `https://ailu-weld.vercel.app/legal/privacy-ru.html` → Save.
 2. **App access:** «All or some functionality in my app is restricted» → **Add instructions**: Name `Review account`, Username `+77000000000`, Password `<Auth__ReviewCode>`, Any other information:
    `Enter the phone, tap «Получить код», enter the code. No SMS is sent for this number. The account is already paired with a demo partner. Account deletion: Profile → «Удалить аккаунт».` → Save.
 3. **Ads:** «No, my app does not contain ads».
@@ -369,7 +369,7 @@ EAS при первой сборке сам создаёт идентифика�
 8. **Data safety:** таблица целиком в [`store/data-safety.md`](store/data-safety.md):
    - Does your app collect or share any of the required user data types? **Yes**.
    - Is all of the user data collected by your app encrypted in transit? **Yes**.
-   - Which account creation methods: **Username and other authentication** (номер телефона и код). Delete account URL: `https://ailu.vercel.app/legal/delete-account-ru.html`.
+   - Which account creation methods: **Username and other authentication** (номер телефона и код). Delete account URL: `https://ailu-weld.vercel.app/legal/delete-account-ru.html`.
    - Do you provide a way for users to request that some or all of their data is deleted? **Yes**.
    - Типы данных: Personal info (Name, Phone number, Address, User IDs), Photos, Messages → Other in-app messages, App activity (Other user-generated content, Other actions), Device or other IDs, Financial info → Purchase history. Для каждого: Collected **Yes**, Shared **No**, Processed ephemerally **No**, Required/Optional как в таблице, Purposes: **App functionality** (для телефона ещё **Account management**).
    - **Preview** → **Submit**.
@@ -424,7 +424,7 @@ ID должны совпасть с `backend/src/Ailu.Api/Infrastructure/Billing
    - **Phone screenshots:** 2–8 штук, 1080 × 1920, из `store/screenshots/ru/android/`.
    - Tablet screenshots не нужны.
 2. **Translations → Add translation → Kazakh – kk** → тексты из [`store/listing-kk.md`](store/listing-kk.md). Скриншоты можно оставить русские.
-3. **Store settings:** App category **Lifestyle**, Tags до 5 (Relationships, Lifestyle…), Store listing contact details: e-mail поддержки (обязательно), сайт `https://ailu.vercel.app/`, телефон по желанию.
+3. **Store settings:** App category **Lifestyle**, Tags до 5 (Relationships, Lifestyle…), Store listing contact details: e-mail поддержки (обязательно), сайт `https://ailu-weld.vercel.app/`, телефон по желанию.
 
 **→ В коде после этого:** ничего.
 
@@ -498,16 +498,16 @@ Push идут через Firebase Cloud Messaging (PR #29) на iOS и Android.
 ### 9.2 Проект на Vercel [сделать]
 
 1. https://vercel.com → **Add New… → Project** → Import Git Repository → `atukenov/ailu` → Import.
-2. **Project Name:** `ailu` (от него зависит адрес `ailu.vercel.app`; если имя занято, Vercel предложит другое, запомните итоговый адрес).
+2. **Project Name:** `ailu`. Vercel выдал адрес `ailu-weld.vercel.app` (имя `ailu` было занято); он уже прописан в приложении, на сайте и в `store/`.
 3. **Framework Preset:** Other. **Root Directory:** Edit → `web` → Continue.
 4. **Build and Output Settings:** Build Command — включите Override и оставьте пустым; Output Directory — `public` (то же написано в `web/vercel.json`). Install Command не нужен.
 5. **Deploy**. Откройте адрес из Vercel и проверьте: `/`, `/kk/`, `/legal/privacy-ru.html`, `/legal/delete-account-kk.html`, `/support-ru.html`, `/privacy` (короткая ссылка).
 6. Каждый пуш в `main`, который меняет `web/`, выкладывается сам. Чтобы Vercel не пересобирал сайт на изменения в `app/` и `backend/`: Project → Settings → Git → **Ignored Build Step** → `git diff --quiet HEAD^ HEAD -- .`.
 
-**→ В коде после этого** (только если адрес не `https://ailu.vercel.app`):
+**→ В коде после этого** (уже сделано для `https://ailu-weld.vercel.app`; повторить, только если адрес сменится, например на свой домен):
 - `app/app.json` → `expo.extra.legalUrl` = `https://<ваш адрес>/legal` (приложение открывает отсюда политику и соглашение; нужна новая сборка или `eas update`).
 - `web/config.json` → `siteUrl`, затем `python3 web/build.py`.
-- Адреса в `store/listing-ru.md`, `store/listing-kk.md`, `store/data-safety.md`, `store/age-rating.md` и в этом файле: `grep -rln "ailu.vercel.app" . | xargs sed -i 's#ailu.vercel.app#<ваш адрес>#g'`.
+- Адреса в `store/listing-ru.md`, `store/listing-kk.md`, `store/data-safety.md`, `store/age-rating.md` и в этом файле: `grep -rln "ailu-weld.vercel.app" . | xargs sed -i 's#ailu-weld.vercel.app#<ваш адрес>#g'`.
 
 CORS на сервере менять не нужно: сайт не обращается к API, а мобильному приложению CORS не нужен (`Cors:Origins` остаётся пустым).
 
