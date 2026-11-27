@@ -1,14 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { User } from '@/api/types';
 import { DeleteAccountButton } from '@/components/delete-account';
 import { LegalLinks } from '@/components/legal-links';
 import { PastCouples } from '@/components/past-couples';
-import { Button, Card, ErrorText, Screen, T } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Button, Card, Chip, ErrorText, Screen, T } from '@/components/ui';
+import { Colors, Spacing, Tones, type Tone } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { manageSubscription, restorePurchases, startTrial, useBilling } from '@/purchases';
 import { useSession } from '@/session';
@@ -91,37 +92,36 @@ export default function Profile() {
 
   return (
     <Screen>
-      <Card>
-        <T variant="heading">
+      <Card tone="pink" style={styles.who}>
+        <View style={styles.avatars}>
+          <Initial name={user?.name ?? s.someone} tone="pink" />
+          {couple.data?.partner?.name && <Initial name={couple.data.partner.name} tone="lavender" overlap />}
+        </View>
+        <T variant="heading" style={styles.whoText}>
           {couple.data?.partner?.name ? s.coupleNames(user?.name ?? s.someone, couple.data.partner.name) : user?.name}
         </T>
-        <T variant="secondary">{user?.phone}</T>
+        <T variant="secondary" style={styles.whoText}>
+          {user?.phone}
+        </T>
       </Card>
 
-      <Card>
+      <Card tone="sky">
         <T variant="label">{s.language}</T>
-        <View style={styles.languages}>
+        <View style={styles.languages} accessibilityRole="radiogroup">
           {LANGUAGES.map((l) => (
-            <Pressable
-              key={l.value}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: user?.locale === l.value }}
-              onPress={() => language.mutate(l.value)}
-              style={[styles.language, user?.locale === l.value && styles.languageSelected]}>
-              <T variant="body">{l.native}</T>
-            </Pressable>
+            <Chip key={l.value} label={l.native} selected={user?.locale === l.value} onPress={() => language.mutate(l.value)} />
           ))}
         </View>
         <ErrorText error={language.error} />
       </Card>
 
-      <Card>
+      <Card tone="lavender">
         <T variant="label">{s.loveQuiz}</T>
         <T variant="secondary">{s.loveQuizNotLabel}</T>
         <Button title={s.loveQuiz} variant="ghost" onPress={() => router.push('/love-quiz')} />
       </Card>
 
-      <Card>
+      <Card tone="coral">
         <T variant="label">{s.yearStory}</T>
         <T variant="secondary">{s.yearStoryIntro}</T>
         <Button title={s.yearStoryOpen} variant="ghost" onPress={() => router.push('/year-story')} />
@@ -130,7 +130,7 @@ export default function Profile() {
       <PastCouples />
 
       {billing.data && (
-        <Card>
+        <Card tone="gold">
           <T variant="label">{s.planTitle}</T>
           <T variant="heading">{s.planName(billing.data.plan)}</T>
           {subLine && <T variant="secondary">{subLine}</T>}
@@ -190,14 +190,29 @@ export default function Profile() {
   );
 }
 
+// A round initial for each partner, side by side.
+function Initial({ name, tone, overlap }: { name: string; tone: Tone; overlap?: boolean }) {
+  return (
+    <LinearGradient colors={Tones[tone].gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.initial, overlap && styles.overlap]}>
+      <Text style={[styles.initialText, { color: Tones[tone].onColor }]}>{name.trim().charAt(0).toUpperCase()}</Text>
+    </LinearGradient>
+  );
+}
+
 const styles = StyleSheet.create({
-  languages: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
-  language: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  who: { alignItems: 'center' },
+  whoText: { textAlign: 'center' },
+  avatars: { flexDirection: 'row' },
+  initial: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: Colors.background,
   },
-  languageSelected: { backgroundColor: Colors.surfaceStrong, borderColor: Colors.accent },
+  overlap: { marginLeft: -16 },
+  initialText: { fontSize: 26, fontWeight: '800' },
+  languages: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
 });

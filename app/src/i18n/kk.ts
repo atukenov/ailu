@@ -34,7 +34,9 @@ export const kk: Strings = {
   checkAgain: 'Серіктесім қабылдады ма, тексеру',
 
   // "және" rather than мен/пен/бен, which would depend on how the first name ends.
-  greeting: (a: string, b: string) => `Сәлем,\n${a} және ${b}`,
+  hello: 'Сәлем,',
+  greeting: (a: string, b: string) => `${a} және ${b}`,
+  navGoals: 'Мақсаттар',
   coupleNames: (a: string, b: string) => `${a} және ${b}`,
   daysTogether: (n: number) => `Бірге ${n} күн`,
   someone: 'сіз',

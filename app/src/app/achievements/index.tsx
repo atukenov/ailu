@@ -2,13 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { BlurTargetView, BlurView } from 'expo-blur';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { type ComponentRef, useCallback, useRef, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { Achievement, AchievementCategory } from '@/api/types';
 import { nextToCelebrate } from '@/celebrations';
+import { ACHIEVEMENT_TONES, Badge } from '@/components/badge';
+import { Tap } from '@/components/motion';
 import { Button, Card, Centered, Chip, ErrorText, ProgressBar, Screen, T, TopBar } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing, Tones } from '@/constants/theme';
 import { isoToText } from '@/dates';
 import { useStrings } from '@/i18n';
 import { openPaywall } from '@/upsells';
@@ -54,8 +56,8 @@ export default function Achievements() {
       <ErrorText error={list.error} />
 
       {data && (
-        <Card>
-          <T variant="heading">{s.achievementsProgress(data.earned, data.total)}</T>
+        <Card tone="gold">
+          <T variant="heading">🏆 {s.achievementsProgress(data.earned, data.total)}</T>
           <ProgressBar percent={data.total ? (data.earned * 100) / data.total : 0} />
           <T variant="secondary">{s.achievementsHint}</T>
         </Card>
@@ -67,6 +69,7 @@ export default function Achievements() {
             key={t}
             label={t === 'all' ? s.achievementsAll : s.achievementCategories[t]}
             selected={tab === t}
+            tone={t === 'all' ? 'lavender' : ACHIEVEMENT_TONES[t]}
             onPress={() => setTab(t)}
           />
         ))}
@@ -79,10 +82,10 @@ export default function Achievements() {
       </View>
 
       {lockedCount > 0 && (
-        <Card>
+        <Card tone="lavender">
           <T variant="heading">{s.achievementsLockedTitle(lockedCount)}</T>
           <T variant="secondary">{s.achievementsLockedHint}</T>
-          <Button title={s.goalLimitCta} variant="ghost" onPress={() => openPaywall('achievements')} />
+          <Button title={s.goalLimitCta} onPress={() => openPaywall('achievements')} />
         </Card>
       )}
     </Screen>
@@ -93,6 +96,7 @@ function Tile({ achievement: a }: { achievement: Achievement }) {
   const s = useStrings();
   if (a.state === 'locked') return <LockedTile achievement={a} />;
   const earned = a.state === 'earned';
+  const tone = ACHIEVEMENT_TONES[a.category];
   const meta =
     a.state === 'earned' && a.happenedOn ? s.achievementDoneOn(isoToText(a.happenedOn)) :
     a.state === 'confirm_needed' ? s.achievementConfirmShort :
@@ -100,21 +104,19 @@ function Tile({ achievement: a }: { achievement: Achievement }) {
     `+${a.nur} ${s.nur}`;
   return (
     <Link href={`/achievements/${a.slug}`} asChild>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${a.title}. ${meta}`} style={styles.tileWrap}>
-        <Card style={styles.tile}>
-          <View style={[styles.badge, earned && styles.badgeEarned]}>
-            <T style={styles.icon}>{a.icon}</T>
-          </View>
+      <Tap accessibilityRole="button" accessibilityLabel={`${a.title}. ${meta}`} style={styles.tileWrap}>
+        <Card tone={earned ? tone : undefined} style={styles.tile}>
+          <Badge icon={a.icon} tone={tone} earned={earned} />
           <T variant="body" numberOfLines={2} style={styles.center}>
             {a.title}
           </T>
           <T
             variant="small"
-            style={[styles.center, a.state === 'confirm_needed' && { color: Colors.accent }, earned && { color: Colors.success }]}>
+            style={[styles.center, a.state === 'confirm_needed' && { color: Colors.accent }, earned && { color: Tones[tone].color, fontWeight: '600' }]}>
             {meta}
           </T>
         </Card>
-      </Pressable>
+      </Tap>
     </Link>
   );
 }
@@ -125,16 +127,14 @@ function LockedTile({ achievement: a }: { achievement: Achievement }) {
   // Android blurs only what sits inside a BlurTargetView; iOS and web blur whatever is behind.
   const target = useRef<ComponentRef<typeof View>>(null);
   return (
-    <Pressable
+    <Tap
       accessibilityRole="button"
       accessibilityLabel={`${s.achievementLockedShort}. ${s.goalLimitCta}`}
       style={styles.tileWrap}
       onPress={() => openPaywall('achievements')}>
       <Card style={{ ...styles.tile, ...styles.lockedTile }}>
         <BlurTargetView ref={target} style={styles.lockedContent}>
-          <View style={styles.badge}>
-            <T style={styles.icon}>{a.icon}</T>
-          </View>
+          <Badge icon={a.icon} tone={ACHIEVEMENT_TONES[a.category]} earned={false} />
           <T variant="body" numberOfLines={2} style={styles.center}>
             {a.title}
           </T>
@@ -157,7 +157,7 @@ function LockedTile({ achievement: a }: { achievement: Achievement }) {
           </View>
         </View>
       </Card>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -174,18 +174,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.lavender,
   },
-  lockText: { color: Colors.onAccent, fontWeight: '600' },
+  lockText: { color: Tones.lavender.onColor, fontWeight: '700' },
   center: { textAlign: 'center' },
-  badge: {
-    width: 64,
-    height: 64,
-    borderRadius: Radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surfaceStrong,
-  },
-  badgeEarned: { backgroundColor: Colors.accent },
-  icon: { fontSize: 30, lineHeight: 38 },
 });

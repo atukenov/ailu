@@ -1,12 +1,14 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
-import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api, photoUrl } from '@/api/client';
 import type { Memory, Storage } from '@/api/types';
 import { Button, Card, Centered, ErrorText, RoundButton, Screen, T, TopBar } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Tap } from '@/components/motion';
+import { Colors, Spacing, Tones } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { biggerPlan, openPaywall, photoLimitReached } from '@/upsells';
 
@@ -44,21 +46,25 @@ export default function Memories() {
 
       {items.some((m) => m.photos.length > 0) && (
         <Link href="/photo-book" asChild>
-          <Pressable accessibilityRole="button" accessibilityLabel={s.photoBook}>
-            <Card style={styles.bookCard}>
-              <T style={styles.bookIcon}>📖</T>
+          <Tap accessibilityRole="button" accessibilityLabel={s.photoBook}>
+            <Card style={styles.bookCard} tone="gold">
+              <LinearGradient colors={Tones.gold.gradient} style={styles.bookBadge}>
+                <T style={styles.bookIcon}>📖</T>
+              </LinearGradient>
               <View style={styles.flex}>
                 <T variant="heading">{s.photoBook}</T>
                 <T variant="small">{s.bookEntryHint}</T>
               </View>
-              <T variant="heading">›</T>
+              <T variant="heading" style={{ color: Colors.gold }}>
+                ›
+              </T>
             </Card>
-          </Pressable>
+          </Tap>
         </Link>
       )}
 
       {items.length === 0 && !list.isError ? (
-        <Card>
+        <Card tone="pink">
           <T variant="heading">{s.memoriesEmpty}</T>
           <T variant="secondary">{s.memoriesEmptyHint}</T>
           <Button title={s.addMemory} onPress={() => router.push('/memories/new')} />
@@ -109,7 +115,7 @@ function MemoryCard({ memory }: { memory: Memory }) {
   const cover = memory.photos[0];
   return (
     <Link href={`/memories/${memory.id}`} asChild>
-      <Pressable accessibilityRole="button" accessibilityLabel={memory.title}>
+      <Tap accessibilityRole="button" accessibilityLabel={memory.title} scaleTo={0.97}>
         {cover ? (
           <View style={styles.photoCard}>
             <Image
@@ -118,8 +124,12 @@ function MemoryCard({ memory }: { memory: Memory }) {
               contentFit="cover"
               transition={150}
             />
-            <View style={styles.shade} />
-            {memory.favorite && <T style={styles.star}>★</T>}
+            <LinearGradient colors={['rgba(23, 15, 29, 0)', 'rgba(23, 15, 29, 0.35)', 'rgba(23, 15, 29, 0.9)']} locations={[0.3, 0.6, 1]} style={StyleSheet.absoluteFill} />
+            {memory.favorite && (
+              <View style={styles.starBadge}>
+                <T style={styles.star}>★</T>
+              </View>
+            )}
             <View style={styles.caption}>
               <T variant="heading" numberOfLines={1}>
                 {memory.title}
@@ -131,7 +141,7 @@ function MemoryCard({ memory }: { memory: Memory }) {
             </View>
           </View>
         ) : (
-          <Card>
+          <Card tone="pink">
             <View style={styles.row}>
               <T variant="heading" style={styles.flex} numberOfLines={2}>
                 {memory.title}
@@ -146,7 +156,7 @@ function MemoryCard({ memory }: { memory: Memory }) {
             )}
           </Card>
         )}
-      </Pressable>
+      </Tap>
     </Link>
   );
 }
@@ -154,8 +164,14 @@ function MemoryCard({ memory }: { memory: Memory }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
-  photoCard: { height: 268, borderRadius: 26, overflow: 'hidden', backgroundColor: Colors.surface },
-  shade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.18)' },
+  photoCard: {
+    height: 268,
+    borderRadius: 28,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Tones.pink.border,
+  },
   caption: {
     position: 'absolute',
     left: 0,
@@ -163,12 +179,23 @@ const styles = StyleSheet.create({
     bottom: 0,
     padding: Spacing.four,
     gap: Spacing.one,
-    backgroundColor: 'rgba(16,14,18,0.55)',
   },
   captionMeta: { color: Colors.text },
-  star: { position: 'absolute', top: Spacing.three, right: Spacing.three, fontSize: 26, color: Colors.moonLit },
-  starInline: { fontSize: 22, color: Colors.moonLit },
+  starBadge: {
+    position: 'absolute',
+    top: Spacing.three,
+    right: Spacing.three,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(23, 15, 29, 0.55)',
+  },
+  star: { fontSize: 22, lineHeight: 26, color: Colors.gold },
+  starInline: { fontSize: 22, color: Colors.gold },
   storage: { textAlign: 'center' },
   bookCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  bookIcon: { fontSize: 30, lineHeight: 38 },
+  bookBadge: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  bookIcon: { fontSize: 26, lineHeight: 32 },
 });

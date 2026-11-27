@@ -1,10 +1,20 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { T } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import type { GoalCategory } from '@/api/types';
+import { Colors, Radius, Spacing, type Tone } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 
 export const MAX_STEPS = 20;
+
+// Each kind of goal has its own colour and picture, on the list and on the goal itself.
+export const GOAL_LOOK: Record<GoalCategory, { tone: Tone; icon: string }> = {
+  travel: { tone: 'sky', icon: '✈️' },
+  home: { tone: 'coral', icon: '🏡' },
+  health: { tone: 'mint', icon: '🌿' },
+  money: { tone: 'gold', icon: '💰' },
+  together: { tone: 'pink', icon: '💞' },
+};
 
 function currentMonth() {
   const now = new Date();

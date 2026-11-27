@@ -1,19 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { Storage } from '@/api/types';
 import { LegalLinks } from '@/components/legal-links';
 import { Moon } from '@/components/moon';
+import { Tap, tapFeedback } from '@/components/motion';
 import { Button, Card, ErrorText, Screen, T } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing, Tones, type Tone } from '@/constants/theme';
 import { useStrings, type Strings } from '@/i18n';
 import { purchase, restorePurchases, useBilling, type Period, type Tier } from '@/purchases';
 import { biggerPlan, type PaywallReason } from '@/upsells';
 
 const NAMES: Record<Tier, string> = { plus: 'Plus', premium: 'Premium' };
+// Plus is the couple's pink; Premium is the moon's gold.
+const TONES: Record<Tier, Tone> = { plus: 'pink', premium: 'gold' };
 
 // Placeholder prices from the monetization doc, used until billing answers. A year is twelve months
 // less 20% (Lev, 2026-10-17); the server's products carry the same numbers.
@@ -104,7 +108,7 @@ export default function Paywall() {
   return (
     <Screen>
       <View style={styles.hero}>
-        <Moon fill={reason === 'streak' ? 1 : 0.75} glow={reason === 'streak'} />
+        <Moon fill={reason === 'streak' ? 1 : 0.75} glow size={110} />
         <T variant="title" style={styles.center}>
           {title}
         </T>
@@ -115,24 +119,39 @@ export default function Paywall() {
 
       <View style={styles.periods} accessibilityRole="radiogroup">
         {(['month', 'year'] as const).map((p) => (
-          <Pressable
+          <Tap
             key={p}
             accessibilityRole="radio"
             accessibilityState={{ checked: period === p }}
-            onPress={() => setPeriod(p)}
+            onPress={() => {
+              tapFeedback();
+              setPeriod(p);
+            }}
             style={[styles.period, period === p && styles.periodOn]}>
+            {period === p && (
+              <LinearGradient colors={Tones.lavender.wash} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+            )}
             <T variant="body" style={period === p ? styles.periodTextOn : undefined}>
               {p === 'month' ? s.periodMonth : s.periodYear}
-              {p === 'year' && <T style={styles.save}> {s.yearlySave(YEARLY_DISCOUNT)}</T>}
             </T>
-          </Pressable>
+            {p === 'year' && (
+              <LinearGradient colors={Tones.mint.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.save}>
+                <Text style={styles.saveText}>{s.yearlySave(YEARLY_DISCOUNT)}</Text>
+              </LinearGradient>
+            )}
+          </Tap>
         ))}
       </View>
 
       {tiers.map((tier) => (
-        <Card key={tier}>
+        <Card key={tier} tone={TONES[tier]}>
           <View style={styles.tierHead}>
-            <T style={styles.tierName}>{NAMES[tier].toUpperCase()}</T>
+            <LinearGradient colors={Tones[TONES[tier]].gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tierPill}>
+              <Text style={[styles.tierName, { color: Tones[TONES[tier]].onColor }]}>
+                {tier === 'premium' ? '★ ' : '♥ '}
+                {NAMES[tier].toUpperCase()}
+              </Text>
+            </LinearGradient>
             <T variant="heading">
               {tenge(priceOf(tier, period))}
               <T variant="small"> {period === 'year' ? s.perYear : s.perMonth}</T>
@@ -144,15 +163,18 @@ export default function Paywall() {
             </T>
           )}
           {tier === 'premium' && (
-            <T variant="small" style={styles.includes}>
+            <T variant="small" style={[styles.includes, { color: Tones.gold.color }]}>
               {s.premiumIncludes}
             </T>
           )}
           <View style={styles.features}>
             {(tier === 'plus' ? s.plusFeatures : s.premiumFeatures).map((f) => (
-              <T key={f} variant="body">
-                {f}
-              </T>
+              <View key={f} style={styles.feature}>
+                <Text style={[styles.tick, { color: Tones[TONES[tier]].color }]}>✓</Text>
+                <T variant="body" style={styles.flex}>
+                  {f}
+                </T>
+              </View>
             ))}
           </View>
           {current === tier ? (
@@ -195,8 +217,12 @@ const styles = StyleSheet.create({
   hero: { alignItems: 'center', gap: Spacing.three, paddingTop: Spacing.four },
   center: { textAlign: 'center' },
   terms: { textAlign: 'center', color: Colors.textSecondary },
-  tierHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  tierName: { fontSize: 22, fontWeight: '500', letterSpacing: 3, color: Colors.accent },
+  tierHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.two },
+  tierPill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: Radius.pill },
+  tierName: { fontSize: 15, fontWeight: '800', letterSpacing: 2 },
+  feature: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-start' },
+  tick: { fontSize: 16, lineHeight: 24, fontWeight: '800' },
+  flex: { flex: 1 },
   includes: { color: Colors.accent, fontWeight: '600' },
   features: { gap: Spacing.two },
   active: { color: Colors.success, textAlign: 'center' },
@@ -204,13 +230,19 @@ const styles = StyleSheet.create({
   periods: { flexDirection: 'row', gap: Spacing.two },
   period: {
     flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'center',
+    overflow: 'hidden',
     alignItems: 'center',
     paddingVertical: Spacing.three,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.surface,
+    borderColor: Colors.border,
   },
-  periodOn: { backgroundColor: Colors.surface, borderColor: Colors.accent },
-  periodTextOn: { fontWeight: '600' },
-  save: { color: Colors.accent, fontWeight: '600' },
+  periodOn: { borderColor: Colors.lavender },
+  periodTextOn: { fontWeight: '700' },
+  save: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radius.pill },
+  saveText: { color: Tones.mint.onColor, fontSize: 12, fontWeight: '800' },
 });
