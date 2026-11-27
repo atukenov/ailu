@@ -590,7 +590,7 @@ export const ru = {
   somethingWrong: 'Что-то пошло не так',
 
   // API problems by `code`. A code missing here shows the server's own (Russian) detail.
-  // Legal documents (docs/legal in the repo, published on GitHub Pages)
+  // Legal documents (the website in web/, on Vercel)
   legalAgree: 'Продолжая, вы подтверждаете, что вам есть 16 лет, и принимаете:',
   terms: 'Пользовательское соглашение',
   privacyPolicy: 'Политика конфиденциальности',

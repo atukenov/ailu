@@ -8,5 +8,5 @@
 | `data-safety.md` | Answers for App Store «App Privacy» and Google Play «Data safety». |
 | `screenshots/` | Framed screenshots (Russian) and the script that makes them. |
 
-The privacy policy and terms are in `docs/legal/` (Russian and Kazakh), published with GitHub Pages from `/docs`.
+The privacy policy, terms, subscription terms, account deletion and support pages are the website in `web/` (Russian and Kazakh), deployed on Vercel. Edit `web/content/`, fill `web/config.json`, run `python3 web/build.py`.
 The app links to them from the sign-in screen and the profile (`app/src/legal.ts`). Build settings are in `app/eas.json`.

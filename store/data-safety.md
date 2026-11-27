@@ -1,6 +1,6 @@
 # Ответы о данных · App Store «App Privacy» и Google Play «Data safety»
 
-Основа: что приложение и сервер реально хранят (`backend/src/Ailu.Api/Data/Entities.cs`) и раздел 2 политики (`docs/legal/privacy-ru.md`). Трекинга, рекламы и сторонней аналитики в приложении нет.
+Основа: что приложение и сервер реально хранят (`backend/src/Ailu.Api/Data/Entities.cs`) и раздел 2 политики (`web/content/ru/privacy.md`). Трекинга, рекламы и сторонней аналитики в приложении нет.
 
 ## App Store Connect · App Privacy
 
@@ -10,12 +10,13 @@
 | --- | --- | --- | --- | --- |
 | Contact Info → Name | да | да | нет | App Functionality |
 | Contact Info → Phone Number | да | да | нет | App Functionality |
+| Contact Info → Physical Address (доставка фотокниги) | да | да | нет | App Functionality |
 | User Content → Photos or Videos | да | да | нет | App Functionality |
-| User Content → Other User Content (ответы, воспоминания, цели, места) | да | да | нет | App Functionality |
+| User Content → Other User Content (ответы, воспоминания, цели, места, пожелание к AI-подборке) | да | да | нет | App Functionality |
 | Sensitive Info (настроение) | да | да | нет | App Functionality |
 | Identifiers → User ID | да | да | нет | App Functionality |
 | Identifiers → Device ID (push-токен) | да | да | нет | App Functionality |
-| Purchases → Purchase History | да, с Фазы 2 | да | нет | App Functionality |
+| Purchases → Purchase History | да | да | нет | App Functionality |
 | Diagnostics → Crash Data, Performance Data | нет | | | Своих отчётов о сбоях пока нет; если подключим Sentry и т. п., добавить |
 | Location, Contacts, Browsing/Search History, Health, Financial Info, Usage Data | нет | | | |
 
@@ -27,12 +28,13 @@
 
 - **Does your app collect or share any of the required user data types?** Yes.
 - **Is all of the user data collected by your app encrypted in transit?** Yes (HTTPS).
-- **Do you provide a way for users to request that their data is deleted?** Yes — в приложении и по ссылке на странице удаления https://atukenov.github.io/ailu/legal/delete-account-ru.html.
+- **Do you provide a way for users to request that their data is deleted?** Yes — в приложении и по ссылке на странице удаления https://ailu.vercel.app/legal/delete-account-ru.html.
 
 | Категория → тип | Collected | Shared | Обязательно? | Цель |
 | --- | --- | --- | --- | --- |
 | Personal info → Name | да | нет | обязательно | App functionality, Account management |
 | Personal info → Phone number | да | нет* | обязательно | Account management |
+| Personal info → Address (доставка фотокниги) | да | нет* | по желанию | App functionality |
 | Personal info → User IDs | да | нет | обязательно | App functionality |
 | Photos and videos → Photos | да | нет | по желанию | App functionality |
 | Messages → Other in-app messages (ответы на вопрос дня) | да | нет | по желанию | App functionality |
@@ -40,9 +42,9 @@
 | App activity → Other actions (задания, серия) | да | нет | обязательно | App functionality |
 | App info and performance | нет | | | |
 | Device or other IDs (push-токен) | да | нет* | по желанию | App functionality |
-| Financial info → Purchase history | да, с Фазы 2 | нет | по желанию | App functionality |
+| Financial info → Purchase history | да | нет | по желанию | App functionality |
 | Location, Contacts, Health and fitness, Web browsing, Audio, Files and docs, Calendar | нет | | | |
 
-\* Передача SMS-провайдеру и сервису push-уведомлений считается «service provider» и по правилам Google не является sharing.
+\* Передача SMS-провайдеру, Firebase (push), Anthropic (AI-подборки Premium, только обезличенное описание пары и пожелание), Railway (хостинг) и типографии (фотокнига) — это обработчики по нашему поручению (service providers), по правилам Google это не sharing. У Apple они тоже не считаются «third-party partners» для трекинга, но данные, которые к ним уходят, всё равно отмечены как собираемые.
 
 Настроение в Google Play отдельной категории не имеет; ближе всего «Health and fitness → Health info». Мы считаем его не медицинскими данными и не отмечаем. Если ревью Google спросит, отметить «Health info · collected · optional · App functionality».

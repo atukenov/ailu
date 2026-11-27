@@ -8,7 +8,7 @@ namespace Ailu.Api.Infrastructure;
 
 // What the model is told about a couple. Nothing in it names or identifies either person: no names,
 // phones, answers, memories or moods leave the server, only the couple's leanings and the library
-// tasks they did (privacy doc: personal data stays in Kazakhstan).
+// tasks they did (privacy policy, section 4: only these anonymous leanings go to Anthropic).
 public sealed record CoupleProfile(
     DateOnly Today,
     int DaysTogether,

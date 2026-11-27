@@ -33,7 +33,8 @@
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_AUDIO",
-        "android.permission.SYSTEM_ALERT_WINDOW"
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "com.google.android.gms.permission.AD_ID"
       ]
     },
     "web": {
@@ -113,7 +114,7 @@
       "kk": "./locales/kk.json"
     },
     "extra": {
-      "legalUrl": "https://atukenov.github.io/ailu/legal"
+      "legalUrl": "https://ailu.vercel.app/legal"
     }
   }
 }

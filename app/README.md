@@ -83,7 +83,7 @@ for them. Store texts, rating answers, screenshots and the publishing checklist 
 | `src/app/` | Screens. `_layout.tsx` decides which are reachable: signed out → `sign-in`; no name yet → `name`; no couple → `pair`; in a couple → `index` (Today), `profile`, `memories/`, `goals/` and `achievements/`. |
 | `src/api/` | Typed client for the API, token storage (Keychain/Keystore), one shared refresh on 401. |
 | `src/photos.ts` | Picking photos and shrinking them before upload. |
-| `src/legal.ts` | Links to the privacy policy and terms (`docs/legal`, on GitHub Pages), in the user's language. |
+| `src/legal.ts` | Links to the privacy policy and terms (the website in `web/`, on Vercel; base URL in `app.json` → `extra.legalUrl`), in the user's language. |
 | `src/notifications.ts` | Permission, push token registration and sign-out unregistration. |
 | `src/i18n/` | Strings. Russian and Kazakh are complete; English falls back to Russian per string. Tasks, questions and pushes come from the server in the user's language. |
 | `src/components/` | `ui.tsx` (screen, card, button, field, chip, progress bar), the goal month picker and the phase moon. |
