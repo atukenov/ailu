@@ -77,9 +77,12 @@ ailu.kz ── Vercel: сайт (лендинг, юридические доку
    # AI-идеи для Premium; пусто = встроенная заглушка
    Ai__ApiKey=
    Ai__Model=
+
+   # Push через Firebase (раздел 6): JSON сервисного аккаунта целиком
+   Push__Firebase__ServiceAccountJson=
    ```
 
-   Push через Firebase и SMS-провайдер добавят свои переменные, когда их построят; имена будут в их PR и здесь.
+   SMS-провайдер добавит свои переменные, когда его построят.
 5. **Networking** → **Custom Domain** → `api.ailu.kz` (Railway покажет CNAME для DNS, раздел 3). Пока домена нет, можно нажать **Generate Domain** и получить адрес `*.up.railway.app`.
 6. Deploy. В логах должно быть `Now listening on: http://[::]:...`, а `https://api.ailu.kz/health` должен ответить `{"status":"ok"}`.
 7. Дальше каждый пуш в `main` выкладывается сам; новые миграции базы применяются при старте.
@@ -114,7 +117,7 @@ ailu.kz ── Vercel: сайт (лендинг, юридические доку
 4. **In-App Purchases:** Non-Consumable `kz.ailu.story.year`, 1 990 ₸ (видео-история года).
 5. **Ключ для сервера:** Users and Access → Integrations → **In-App Purchase** → Generate. Скачайте `.p8` (один раз!). Issuer ID, Key ID и содержимое файла идут в `Billing__Apple__*` на Railway.
 6. **Уведомления о покупках:** App Information → App Store Server Notifications → Version 2, адрес для Production и для Sandbox: `https://api.ailu.kz/v1/billing/webhooks/apple`.
-7. **Push-ключ** для Firebase: Certificates, Identifiers & Profiles → Keys → + → Apple Push Notifications service (APNs). Скачайте `.p8`, он нужен в разделе 6.
+7. **Push-ключ** для Firebase (APNs, `.p8`): создаётся в разделе 6, шаг 3.
 8. Карточка приложения: текст из `store/listing-ru.md`, App Privacy из `store/data-safety.md`, Age Rating из `store/age-rating.md` (16+), скриншоты 6.9" из `store/screenshots/ru/ios/`, ссылки на политику конфиденциальности и поддержку.
 9. **App Review Information:** вход для ревьюера (номер `Auth__ReviewPhone` и код `Auth__ReviewCode`, текст в `store/CHECKLIST.md`).
 
@@ -138,14 +141,21 @@ ailu.kz ── Vercel: сайт (лендинг, юридические доку
 
 ## 6. Firebase: push-уведомления
 
-Код переходит на Firebase в отдельном треде; аккаунт можно готовить уже сейчас.
+Push идут через Firebase Cloud Messaging (PR #29) на iOS и Android.
 
 1. https://console.firebase.google.com → Add project (Google Analytics можно выключить).
-2. **Add app → Android**, пакет `kz.ailu.app` → скачать `google-services.json`.
-3. **Add app → iOS**, бандл `kz.ailu.app` → скачать `GoogleService-Info.plist`.
-4. Project settings → Cloud Messaging → Apple app configuration → загрузить **APNs-ключ** `.p8` из раздела 4.7 (Key ID и Team ID есть в Apple Developer).
-5. Project settings → Service accounts → **Generate new private key**: JSON для сервера, чтобы он мог отправлять push.
-6. Куда положить эти три файла и как назвать переменную на Railway, допишем сюда вместе с PR про Firebase.
+2. **Add app → iOS**, бандл `kz.ailu.app` → скачать `GoogleService-Info.plist`. **Add app → Android**, пакет `kz.ailu.app` → скачать `google-services.json`. Положите оба файла в `app/` (они не попадают в git).
+3. Apple Developer → Certificates, Identifiers & Profiles → Keys → + → **Apple Push Notifications service (APNs)** → скачать `.p8`. Firebase → Project settings → Cloud Messaging → Apple app configuration → загрузить этот ключ, указать Key ID и Team ID.
+4. Передать файлы в EAS (без них продакшн-сборка специально падает):
+
+   ```sh
+   cd app
+   npx eas-cli@latest env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility secret --environment production
+   npx eas-cli@latest env:create --name GOOGLE_SERVICE_INFO_PLIST --type file --value ./GoogleService-Info.plist --visibility secret --environment production
+   ```
+
+5. Firebase → Project settings → Service accounts → **Generate new private key**. Весь JSON целиком вставьте в переменную Railway `Push__Firebase__ServiceAccountJson`. `Push__Firebase__ProjectId` задавать не нужно: он берётся из JSON.
+6. Новая нативная сборка (раздел 7) и проверка на настоящих телефонах: разрешить уведомления, дождаться задания дня в 09:00 по времени пары.
 
 ## 7. Сборки приложения (Expo EAS)
 
