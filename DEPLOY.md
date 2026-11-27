@@ -178,7 +178,7 @@ EAS при первой сборке сам создаёт идентифика�
 
 Внизу **Apple ID** (число, например `6739...`): скопируйте.
 
-**→ В коде после этого:** `app/eas.json` → `submit.production.ios.ascAppId` = это число (сейчас там `ВСТАВИТЬ_APPLE_ID_ПРИЛОЖЕНИЯ`). Если название или подзаголовок отличаются от `store/listing-ru.md`, поправьте файл, чтобы он оставался правдой.
+**→ В коде после этого:** `app/eas.json` → `submit.production.ios.ascAppId` = это число (уже вписано: `6840164020`). Если название или подзаголовок отличаются от `store/listing-ru.md`, поправьте файл, чтобы он оставался правдой.
 
 ### 4.4 Возрастной рейтинг [проверить]
 
@@ -244,7 +244,7 @@ EAS при первой сборке сам создаёт идентифика�
    - **Introductory Offers / Promotional Offers:** **не создавайте**. 7 дней Premium даёт сам сервер, один раз на пару, без карты.
    - **Family Sharing:** выключено (подписка уже общая на пару).
 4. Уровни (**Edit Subscription Levels** в группе): Premium на уровне 1, Plus на уровне 2. Тогда переход с Plus на Premium Apple считает повышением.
-5. Слева **In-App Purchases → +** → Type **Non-Consumable**, Reference Name `Year Story`, Product ID `kz.ailu.story.year`, цена 1 990 ₸, локализация Russian: «Видео-история года» / «Фильм о вашем годе из ваших воспоминаний», Review Information со скриншотом экрана видео-истории (`app-screens/video-story/4-order.png`). Важно: пока нет сервера, который рендерит видео (`store/CHECKLIST.md`), не прикладывайте эту покупку к первой версии на ревью: ревьюер купит и не получит фильм, это отказ по правилу 2.1.
+5. Слева **In-App Purchases → +** → Type **Non-Consumable**, Reference Name `Year Story`, Product ID `kz.ailu.story.year`, цена 1 990 ₸, локализация Russian: «Видео-история года» / «Фильм о вашем годе из ваших воспоминаний», Review Information со скриншотом экрана видео-истории (`app-screens/video-story/4-order.png`). Важно: пока нет сервера, который рендерит видео (`store/CHECKLIST.md`), не прикладывайте эту покупку к первой версии на ревью: ревьюер купит и не получит фильм, это отказ по правилу 2.1. В приложении кнопка заказа сама спрятана, пока на сервере нет рендера.
 6. Новые подписки уходят на ревью вместе с версией приложения: на странице версии (4.10) в блоке **In-App Purchases and Subscriptions** нажмите **+** и отметьте все четыре подписки. Статус до этого «Ready to Submit».
 
 **→ В коде после этого:**
@@ -277,7 +277,7 @@ EAS при первой сборке сам создаёт идентифика�
 Слева под **iOS App** версия **1.0 Prepare for Submission**.
 
 1. **Previews and Screenshots:**
-   - Вкладка **iPhone 6.9" Display**: 3–10 скриншотов 1320 × 2868 (или 1290 × 2796), PNG или JPG без прозрачности. Готовые: `store/screenshots/ru/ios/` (старый интерфейс; новые экраны в `app-screens/ui-refresh/` папки проекта, их ещё нужно обрамить, пункт в чек-листе). Меньшие размеры iPhone Apple возьмёт из 6.9" автоматически.
+   - Вкладка **iPhone 6.9" Display**: 3–10 скриншотов 1320 × 2868 (или 1290 × 2796), PNG или JPG без прозрачности. Готовые: `store/screenshots/ru/ios/` (6 штук, новый интерфейс). Меньшие размеры iPhone Apple возьмёт из 6.9" автоматически.
    - iPad не нужен: в `app/app.json` стоит `supportsTablet: false`.
 2. **Promotional Text, Description, Keywords:** из [`store/listing-ru.md`](store/listing-ru.md) (скопируйте как есть, лимиты проверены скриптом `node store/check-listing.mjs`).
 3. **Support URL:** `https://ailu.vercel.app/support-ru.html`. **Marketing URL:** `https://ailu.vercel.app/`.
@@ -403,7 +403,7 @@ ID должны совпасть с `backend/src/Ailu.Api/Infrastructure/Billing
 4. Railway → `ailu` → Variables → `Billing__Google__ServiceAccountJson` = содержимое JSON целиком одной строкой.
 5. Тот же файл положите как `app/google-service-account.json` (в git он не попадёт).
 
-**→ В коде после этого:** в `app/eas.json` → `submit.production.android` добавьте `"serviceAccountKeyPath": "./google-service-account.json"`. Права в Play Console начинают действовать до суток; если сервер отвечает 401/403 при проверке покупки, подождите.
+**→ В коде после этого:** ничего: `app/eas.json` → `submit.production.android.serviceAccountKeyPath` уже указывает на `./google-service-account.json` (шаг 5). Права в Play Console начинают действовать до суток; если сервер отвечает 401/403 при проверке покупки, подождите.
 
 ### 5.7 Уведомления о покупках (RTDN) [сделать]
 

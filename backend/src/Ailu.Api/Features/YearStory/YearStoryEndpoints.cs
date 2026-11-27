@@ -18,7 +18,8 @@ public sealed record StorySlideDto(string Kind, int DurationMs, DateOnly? Date, 
 // renderer gave up and someone has to look.
 public sealed record YearStoryOrderDto(string Status, DateTimeOffset OrderedAt, bool PaidByMe, DateTimeOffset? ReadyAt, string? Video);
 
-public sealed record YearStoryDto(int Year, IReadOnlyList<int> Years, bool Open, DateOnly OpensOn, int PriceKzt,
+// CanOrder is false while the server has no video renderer: the preview works, the purchase is closed.
+public sealed record YearStoryDto(int Year, IReadOnlyList<int> Years, bool Open, bool CanOrder, DateOnly OpensOn, int PriceKzt,
     string AppleProductId, string GoogleProductId, int Memories, int MinMemories, int DurationMs,
     IReadOnlyList<StorySlideDto> Slides, YearStoryOrderDto? Order);
 
@@ -34,26 +35,26 @@ public static class YearStoryEndpoints
         g.MapGet("", Get);
         g.MapPost("/{year:int}/apple", (int year, YearStoryAppleClaim body, HttpContext http, AiluDb db, YearStoryService stories,
                 IEnumerable<IStoreClient> stores, BillingOptions options, PhotoUrls urls, TimeProvider clock, ILogger<YearStoryDto> log,
-                CancellationToken ct) =>
-            Order(StoreProvider.Apple, year, body.TransactionId, "transactionId", http, db, stories, stores, options, urls, clock, log, ct));
+                IStoryRenderer renderer, CancellationToken ct) =>
+            Order(StoreProvider.Apple, year, body.TransactionId, "transactionId", http, db, stories, stores, options, urls, clock, log, renderer, ct));
         g.MapPost("/{year:int}/google", (int year, YearStoryGoogleClaim body, HttpContext http, AiluDb db, YearStoryService stories,
                 IEnumerable<IStoreClient> stores, BillingOptions options, PhotoUrls urls, TimeProvider clock, ILogger<YearStoryDto> log,
-                CancellationToken ct) =>
-            Order(StoreProvider.Google, year, body.PurchaseToken, "purchaseToken", http, db, stories, stores, options, urls, clock, log, ct));
+                IStoryRenderer renderer, CancellationToken ct) =>
+            Order(StoreProvider.Google, year, body.PurchaseToken, "purchaseToken", http, db, stories, stores, options, urls, clock, log, renderer, ct));
 
         // Anonymous: the signature in the URL is the permission, like photos.
         app.MapGet("/v1/stories/{id:guid}/video", Video).WithTags("YearStory");
     }
 
     private static async Task<IResult> Get(int? year, HttpContext http, AiluDb db, YearStoryService stories, BillingOptions options,
-        PhotoUrls urls, TimeProvider clock, CancellationToken ct)
+        PhotoUrls urls, TimeProvider clock, IStoryRenderer renderer, CancellationToken ct)
     {
         var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
         if (scope is null) return Errors.NoCouple();
         var today = CoupleCalendar.Today(scope.Couple, clock);
         var y = year ?? YearStoryService.DefaultYear(scope.Couple, today);
         if (!YearStoryService.Years(scope.Couple, today).Contains(y)) return Errors.Validation("year", "Вас ещё не было вместе в этом году.");
-        return Results.Ok(await Load(scope, y, db, stories, options, urls, clock, ct));
+        return Results.Ok(await Load(scope, y, db, stories, options, urls, clock, renderer, ct));
     }
 
     // The app buys the product from the store, then hands the purchase here. The store decides whether it
@@ -61,7 +62,7 @@ public static class YearStoryEndpoints
     // before it lets anyone pay, so a refusal here means both partners bought at the same moment.
     private static async Task<IResult> Order(StoreProvider provider, int year, string? storeId, string field, HttpContext http,
         AiluDb db, YearStoryService stories, IEnumerable<IStoreClient> stores, BillingOptions options, PhotoUrls urls, TimeProvider clock,
-        ILogger log, CancellationToken ct)
+        ILogger log, IStoryRenderer renderer, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(storeId) || storeId.Length > 500) return Errors.Validation(field, "Нет данных о покупке.");
         storeId = storeId.Trim();
@@ -74,8 +75,11 @@ public static class YearStoryEndpoints
         var existing = await db.YearStories.AsNoTracking().SingleOrDefaultAsync(s => s.CoupleId == scope.Couple.Id && s.Year == year, ct);
         if (existing is not null)
             return existing.Provider == provider && existing.StoreId == storeId
-                ? Results.Ok(await Load(scope, year, db, stories, options, urls, clock, ct))
+                ? Results.Ok(await Load(scope, year, db, stories, options, urls, clock, renderer, ct))
                 : AlreadyOrdered(log, scope, year, storeId);
+
+        if (!renderer.Configured)
+            return Errors.Conflict("story_orders_closed", "Заказ фильма пока закрыт. Превью можно смотреть уже сейчас.");
 
         var store = stores.Single(s => s.Provider == provider);
         var product = options.YearStory;
@@ -127,7 +131,7 @@ public static class YearStoryEndpoints
                 log.LogWarning(e, "Could not acknowledge year story purchase for couple {Couple}", scope.Couple.Id);
             }
         }
-        return Results.Ok(await Load(scope, year, db, stories, options, urls, clock, ct));
+        return Results.Ok(await Load(scope, year, db, stories, options, urls, clock, renderer, ct));
     }
 
     // Someone paid for a film the couple already has. The store has the money, so support refunds it.
@@ -149,7 +153,7 @@ public static class YearStoryEndpoints
     }
 
     private static async Task<YearStoryDto> Load(CoupleScope scope, int year, AiluDb db, YearStoryService stories, BillingOptions options,
-        PhotoUrls urls, TimeProvider clock, CancellationToken ct)
+        PhotoUrls urls, TimeProvider clock, IStoryRenderer renderer, CancellationToken ct)
     {
         var today = CoupleCalendar.Today(scope.Couple, clock);
         var locale = scope.Me.User?.Locale;
@@ -180,7 +184,7 @@ public static class YearStoryEndpoints
 
         var product = options.YearStory;
         return new YearStoryDto(year, YearStoryService.Years(scope.Couple, today), YearStoryService.IsOpen(year, today),
-            YearStoryService.OpensOn(year), product.PriceKzt, product.AppleProductId, product.GoogleProductId, memories,
+            renderer.Configured, YearStoryService.OpensOn(year), product.PriceKzt, product.AppleProductId, product.GoogleProductId, memories,
             YearStoryPlan.MinMemories, YearStoryPlan.DurationMs(slides),
             slides.Select(s => new StorySlideDto(s.Kind, s.DurationMs, s.Date, s.MemoryId,
                 s.PhotoId is { } photo ? urls.For(photo, PhotoProcessor.Screen) : null,

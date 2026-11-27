@@ -5,6 +5,7 @@ using Ailu.Api.Data;
 using Ailu.Api.Features.Auth;
 using Ailu.Api.Features.Daily;
 using Ailu.Api.Features.Pairing;
+using Ailu.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -123,6 +124,32 @@ public class PairingTests
         // Tokens have expired too; sign in again to isolate the invitation expiry.
         b = await api.SignInAsync("+77010000002");
         Assert.Equal(HttpStatusCode.NotFound, (await b.PostAsync($"/v1/couple/invitations/{api.Sms.LastCode("+77010000002")}/accept", null)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Expired_invitations_and_the_numbers_in_them_are_deleted()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        var a = await api.SignInAsync("+77010000001");
+        var b = await api.SignInAsync("+77010000002");
+        (await a.PostAsJsonAsync("/v1/couple/invitations", new { phone = "+77010000002" })).EnsureSuccessStatusCode();
+        (await b.PostAsync($"/v1/couple/invitations/{api.Sms.LastCode("+77010000002")}/accept", null)).EnsureSuccessStatusCode();
+        api.Clock.Advance(TimeSpan.FromHours(12));
+        var c = await api.SignInAsync("+77010000003");
+        (await c.PostAsJsonAsync("/v1/couple/invitations", new { phone = "+77010000004" })).EnsureSuccessStatusCode();
+
+        using var scope = api.Services.CreateScope();
+        var job = scope.ServiceProvider.GetRequiredService<InvitationCleanupJob>();
+        var db = scope.ServiceProvider.GetRequiredService<AiluDb>();
+        Assert.Equal(0, await job.RunOnceAsync());
+        api.Clock.Advance(TimeSpan.FromHours(13));
+        // The accepted one has expired: the couple stays, the number goes.
+        Assert.Equal(1, await job.RunOnceAsync());
+        Assert.Equal("+77010000004", (await db.Invitations.SingleAsync()).Phone);
+        Assert.Equal(1, await db.Couples.CountAsync());
+        api.Clock.Advance(TimeSpan.FromHours(12));
+        Assert.Equal(1, await job.RunOnceAsync());
+        Assert.False(await db.Invitations.AnyAsync());
     }
 
     [Fact]

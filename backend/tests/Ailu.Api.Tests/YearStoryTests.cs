@@ -257,6 +257,24 @@ public class YearStoryTests
     }
 
     [Fact]
+    public async Task Without_a_renderer_the_preview_works_and_the_purchase_is_closed()
+    {
+        var (api, a, _, _) = await CoupleWithAYear();
+        await using var _ = api;
+        Assert.True((await Story(a)).CanOrder);
+        api.Renderer.Configured = false;
+        var story = await Story(a);
+        Assert.False(story.CanOrder);
+        Assert.NotEmpty(story.Slides);
+        api.Apple.Products["t1"] = Paid("t1");
+        var res = await a.PostAsJsonAsync("/v1/couple/year-story/2026/apple", new { transactionId = "t1" });
+        Assert.Equal(HttpStatusCode.Conflict, res.StatusCode);
+        Assert.Contains("story_orders_closed", await res.Content.ReadAsStringAsync());
+        await using var scope = api.Services.CreateAsyncScope();
+        Assert.Equal(0, await scope.ServiceProvider.GetRequiredService<AiluDb>().YearStories.CountAsync());
+    }
+
+    [Fact]
     public async Task Google_purchases_are_acknowledged()
     {
         var (api, a, _, _) = await CoupleWithAYear();

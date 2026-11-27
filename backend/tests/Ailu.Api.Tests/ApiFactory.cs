@@ -73,6 +73,7 @@ public sealed class TestRenderer : IStoryRenderer
     public ConcurrentQueue<StoryRenderRequest> Requests { get; } = new();
     public bool Unavailable { get; set; }
     public bool Broken { get; set; }
+    public bool Configured { get; set; } = true;
 
     public Task<byte[]> RenderAsync(StoryRenderRequest request, CancellationToken ct = default)
     {
@@ -178,6 +179,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Push:SchedulerEnabled", "false");
         builder.UseSetting("Photos:PurgeEnabled", "false");
         builder.UseSetting("Mood:RetentionEnabled", "false");
+        builder.UseSetting("Pairing:CleanupEnabled", "false");
         builder.UseSetting("Photos:Root", PhotoRoot);
         builder.UseSetting("Billing:ExpiryEnabled", "false");
         builder.UseSetting("YearStory:RenderEnabled", "false");

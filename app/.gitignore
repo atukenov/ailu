@@ -46,3 +46,6 @@ example
 google-services.json
 GoogleService-Info.plist
 google-service-account.json
+
+# Play Console service account for eas submit (DEPLOY.md 5.6)
+google-service-account.json
