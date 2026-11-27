@@ -45,4 +45,4 @@
 - **Ads:** приложение не содержит рекламы.
 - **News app:** No. **COVID-19 contact tracing:** No. **Government app:** No.
 - **Financial features:** No. **Health apps:** No (отметка настроения — не медицинская функция).
-- **Account deletion:** https://ailu.vercel.app/legal/delete-account-ru.html (удаление в приложении — PR #13).
+- **Account deletion:** https://ailu-weld.vercel.app/legal/delete-account-ru.html (удаление в приложении — PR #13).

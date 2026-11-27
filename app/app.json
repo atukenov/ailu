@@ -145,7 +145,7 @@
       "kk": "./locales/kk.json"
     },
     "extra": {
-      "legalUrl": "https://ailu.vercel.app/legal"
+      "legalUrl": "https://ailu-weld.vercel.app/legal"
     }
   }
 }

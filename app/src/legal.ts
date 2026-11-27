@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 
 // The legal pages are the website in web/ (deployed on Vercel), one page per language:
 // <site>/legal/<doc>-<ru|kk>.html. The base comes from extra.legalUrl in app.json.
-const BASE = (Constants.expoConfig?.extra?.legalUrl as string | undefined) ?? 'https://ailu.vercel.app/legal';
+const BASE = (Constants.expoConfig?.extra?.legalUrl as string | undefined) ?? 'https://ailu-weld.vercel.app/legal';
 
 export type LegalDoc = 'privacy' | 'terms';
 

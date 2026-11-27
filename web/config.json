@@ -1,6 +1,6 @@
 {
   "_comment": "Fill the empty fields, then run: python3 web/build.py. Empty fields show up on the pages as a yellow [fill in] mark.",
-  "siteUrl": "https://ailu.vercel.app",
+  "siteUrl": "https://ailu-weld.vercel.app",
   "apiUrl": "https://ailu-production.up.railway.app",
   "appStoreUrl": "",
   "playUrl": "",
