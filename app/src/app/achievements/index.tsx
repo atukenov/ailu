@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { BlurTargetView, BlurView } from 'expo-blur';
 import { Link, router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { type ComponentRef, useCallback, useRef, useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
@@ -9,7 +10,7 @@ import { nextToCelebrate } from '@/celebrations';
 import { ACHIEVEMENT_TONES, Badge } from '@/components/badge';
 import { Tap } from '@/components/motion';
 import { Button, Card, Centered, Chip, ErrorText, ProgressBar, Screen, T, TopBar } from '@/components/ui';
-import { Colors, Spacing, Tones } from '@/constants/theme';
+import { Colors, Radius, Spacing, Tones } from '@/constants/theme';
 import { isoToText } from '@/dates';
 import { useStrings } from '@/i18n';
 import { openPaywall } from '@/upsells';
@@ -93,19 +94,19 @@ export default function Achievements() {
 
 function Tile({ achievement: a }: { achievement: Achievement }) {
   const s = useStrings();
+  if (a.state === 'locked') return <LockedTile achievement={a} />;
   const earned = a.state === 'earned';
   const tone = ACHIEVEMENT_TONES[a.category];
   const meta =
     a.state === 'earned' && a.happenedOn ? s.achievementDoneOn(isoToText(a.happenedOn)) :
     a.state === 'confirm_needed' ? s.achievementConfirmShort :
     a.state === 'waiting_for_partner' ? s.stepWaiting :
-    a.state === 'locked' ? s.achievementLockedShort :
     `+${a.nur} ${s.nur}`;
   return (
     <Link href={`/achievements/${a.slug}`} asChild>
       <Tap accessibilityRole="button" accessibilityLabel={`${a.title}. ${meta}`} style={styles.tileWrap}>
-        <Card tone={earned ? tone : undefined} style={a.state === 'locked' ? { ...styles.tile, ...styles.locked } : styles.tile}>
-          <Badge icon={a.state === 'locked' ? '🔒' : a.icon} tone={tone} earned={earned} />
+        <Card tone={earned ? tone : undefined} style={styles.tile}>
+          <Badge icon={a.icon} tone={tone} earned={earned} />
           <T variant="body" numberOfLines={2} style={styles.center}>
             {a.title}
           </T>
@@ -120,11 +121,61 @@ function Tile({ achievement: a }: { achievement: Achievement }) {
   );
 }
 
+// Free couples see what a bigger plan holds, but blurred: a tap goes straight to the paywall.
+function LockedTile({ achievement: a }: { achievement: Achievement }) {
+  const s = useStrings();
+  // Android blurs only what sits inside a BlurTargetView; iOS and web blur whatever is behind.
+  const target = useRef<ComponentRef<typeof View>>(null);
+  return (
+    <Tap
+      accessibilityRole="button"
+      accessibilityLabel={`${s.achievementLockedShort}. ${s.goalLimitCta}`}
+      style={styles.tileWrap}
+      onPress={() => openPaywall('achievements')}>
+      <Card style={{ ...styles.tile, ...styles.lockedTile }}>
+        <BlurTargetView ref={target} style={styles.lockedContent}>
+          <Badge icon={a.icon} tone={ACHIEVEMENT_TONES[a.category]} earned={false} />
+          <T variant="body" numberOfLines={2} style={styles.center}>
+            {a.title}
+          </T>
+          <T variant="small" style={styles.center}>
+            +{a.nur} {s.nur}
+          </T>
+        </BlurTargetView>
+        <BlurView
+          intensity={30}
+          tint="dark"
+          blurTarget={target}
+          blurMethod="dimezisBlurViewSdk31Plus"
+          style={styles.blur}
+        />
+        <View style={styles.lockOverlay} pointerEvents="none">
+          <View style={styles.lockPill}>
+            <T variant="small" style={styles.lockText}>
+              🔒 {s.achievementLockedShort}
+            </T>
+          </View>
+        </View>
+      </Card>
+    </Tap>
+  );
+}
+
 const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
   tileWrap: { width: '47%', flexGrow: 1 },
   tile: { alignItems: 'center', gap: Spacing.two, minHeight: 170 },
-  locked: { opacity: 0.55 },
+  lockedTile: { overflow: 'hidden' },
+  lockedContent: { alignItems: 'center', gap: Spacing.two },
+  blur: { ...StyleSheet.absoluteFill, borderRadius: Radius.lg, overflow: 'hidden' },
+  lockOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
+  lockPill: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.lavender,
+  },
+  lockText: { color: Tones.lavender.onColor, fontWeight: '700' },
   center: { textAlign: 'center' },
 });

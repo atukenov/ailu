@@ -41,9 +41,12 @@ public sealed class AiUnavailableException(string message, Exception? inner = nu
 
 public sealed class AiOptions
 {
-    // An Anthropic API key. Empty means the built-in stub writes the ideas.
+    // An Anthropic API key (env var Ai__ApiKey). Empty means the built-in stub writes the ideas.
     public string ApiKey { get; set; } = "";
-    public string Model { get; set; } = "claude-opus-5-5";
+
+    // Haiku is the cheapest tier: a heavy Premium couple (30 selections + 60 personal tasks a month) costs
+    // about $0.08 a month on it. Env var Ai__Model.
+    public string Model { get; set; } = "claude-haiku-5-5";
 
     // Short creative texts need little deliberation; "low" keeps each answer quick and cheap.
     public string Effort { get; set; } = "low";
@@ -54,8 +57,12 @@ public sealed class AiOptions
 
 public sealed class ClaudeAiWriter(AiOptions options, ILogger<ClaudeAiWriter> log) : IAiWriter
 {
-    // Refusals are re-served by a fallback model the API picks for the refusal's category.
+    // Refusals are re-served by a fallback model the API picks for the refusal's category. Haiku has no
+    // server-side fallback, so there a refusal ends the call and the caller's own fallback takes over
+    // (library task, or "try later" for a selection).
     private const string FallbackBeta = "server-side-fallback-2026-07-01";
+
+    public static bool HasServerFallbacks(string model) => !model.StartsWith("claude-haiku", StringComparison.Ordinal);
 
     private readonly AnthropicClient client = new()
     {
@@ -76,20 +83,24 @@ public sealed class ClaudeAiWriter(AiOptions options, ILogger<ClaudeAiWriter> lo
         return AiPrompts.ParseTask(json, request.Categories) ?? throw new AiUnavailableException("The model wrote no usable task.");
     }
 
-    public static MessageCreateParams Request(AiOptions options, string system, string user, Dictionary<string, JsonElement> schema) => new()
+    public static MessageCreateParams Request(AiOptions options, string system, string user, Dictionary<string, JsonElement> schema)
     {
-        Model = options.Model,
-        MaxTokens = 8000,
-        Betas = [FallbackBeta],
-        Fallbacks = new Default(),
-        System = system,
-        OutputConfig = new BetaOutputConfig
+        var request = new MessageCreateParams
         {
-            Effort = options.Effort,
-            Format = new BetaJsonOutputFormat { Schema = schema }
-        },
-        Messages = [new() { Role = Role.User, Content = user }]
-    };
+            Model = options.Model,
+            MaxTokens = 8000,
+            System = system,
+            OutputConfig = new BetaOutputConfig
+            {
+                Effort = options.Effort,
+                Format = new BetaJsonOutputFormat { Schema = schema }
+            },
+            Messages = [new() { Role = Role.User, Content = user }]
+        };
+        if (HasServerFallbacks(options.Model))
+            request = request with { Betas = [FallbackBeta], Fallbacks = new Default() };
+        return request;
+    }
 
     private async Task<JsonElement> AskAsync(string system, string user, Dictionary<string, JsonElement> schema, CancellationToken ct)
     {

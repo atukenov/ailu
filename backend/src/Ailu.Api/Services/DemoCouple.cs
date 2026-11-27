@@ -116,7 +116,7 @@ public sealed class DemoCouple(AiluDb db, DailyContentService content, ActivityS
         });
 
         // One achievement already theirs, and one the partner marked for the reviewer to confirm.
-        var achievements = await db.Achievements.Where(a => a.Slug == "first-coffee" || a.Slug == "sunrise")
+        var achievements = await db.Achievements.Where(a => a.Slug == "first-coffee" || a.Slug == "first-dinner")
             .ToDictionaryAsync(a => a.Slug, ct);
         if (achievements.TryGetValue("first-coffee", out var coffee))
         {
@@ -127,10 +127,10 @@ public sealed class DemoCouple(AiluDb db, DailyContentService content, ActivityS
             });
             await nur.AwardAsync(couple, NurSource.Achievement, coffee.Slug, Nur.AchievementEarned, today.AddDays(-10), ct);
         }
-        if (achievements.TryGetValue("sunrise", out var sunrise))
+        if (achievements.TryGetValue("first-dinner", out var dinner))
             db.CoupleAchievements.Add(new CoupleAchievement
             {
-                CoupleId = couple.Id, AchievementId = sunrise.Id, MarkedById = partner.Id, MarkedAt = now.AddDays(-2),
+                CoupleId = couple.Id, AchievementId = dinner.Id, MarkedById = partner.Id, MarkedAt = now.AddDays(-2),
                 HappenedOn = today.AddDays(-2)
             });
 

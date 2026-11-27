@@ -306,7 +306,7 @@ export const ru = {
   paywallHistoryTitle: 'Вся ваша история',
   paywallHistoryBody: 'С Plus история пары открыта целиком, с первого дня. Воспоминания и фото остаются у вас при любом тарифе.',
   paywallAchievementsTitle: 'Все достижения',
-  paywallAchievementsBody: 'События и путешествия: концерты, Наурыз, горы и новые города. Всё, что вы уже получили, остаётся с вами.',
+  paywallAchievementsBody: 'Рассвет вдвоём, пикник, концерты, Наурыз, горы и новые города. Всё, что вы уже получили, остаётся с вами.',
   perMonth: '/ мес',
   perYear: '/ год',
   periodMonth: 'На месяц',
@@ -450,7 +450,7 @@ export const ru = {
   achievementsProgress: (n: number, total: number) => `${n} из ${total}`,
   achievementsHint: 'Достижения даются за то, что случилось в жизни, а не в приложении. Каждое приносит +80 нұр.',
   achievementsLockedTitle: (n: number) => `Ещё ${n} ${plural(n, 'достижение', 'достижения', 'достижений')} в Plus`,
-  achievementsLockedHint: 'Первые моменты открыты всегда. В Plus есть события и путешествия. Всё полученное остаётся с вами.',
+  achievementsLockedHint: 'Три первых момента открыты всегда. Остальные откроются с Plus или Premium. Всё полученное остаётся с вами.',
   achievementLocked: 'Это достижение открывается с Plus. Всё, что вы уже получили, остаётся с вами.',
   achievementLockedShort: 'в Plus',
   achievementConfirmShort: 'подтвердите',
@@ -597,7 +597,7 @@ export const ru = {
 
   // API problems by `code`. A code missing here shows the server's own (Russian) detail.
   // Legal documents (docs/legal in the repo, published on GitHub Pages)
-  legalAgree: 'Продолжая, вы принимаете:',
+  legalAgree: 'Продолжая, вы подтверждаете, что вам есть 16 лет, и принимаете:',
   terms: 'Пользовательское соглашение',
   privacyPolicy: 'Политика конфиденциальности',
 

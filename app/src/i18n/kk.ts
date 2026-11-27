@@ -305,7 +305,7 @@ export const kk: Strings = {
   paywallHistoryTitle: 'Бүкіл тарихыңыз',
   paywallHistoryBody: 'Plus-пен жұптың тарихы алғашқы күннен бастап толық ашылады. Естеліктер мен фотолар кез келген тарифте өзіңізде қалады.',
   paywallAchievementsTitle: 'Барлық жетістіктер',
-  paywallAchievementsBody: 'Оқиғалар мен саяхаттар: концерттер, Наурыз, таулар және жаңа қалалар. Алған жетістіктеріңіз сізбен қалады.',
+  paywallAchievementsBody: 'Бірге қарсы алған таң, пикник, концерттер, Наурыз, таулар және жаңа қалалар. Алған жетістіктеріңіз сізбен қалады.',
   perMonth: '/ ай',
   perYear: '/ жыл',
   periodMonth: 'Бір айға',
@@ -444,7 +444,7 @@ export const kk: Strings = {
   achievementsProgress: (n: number, total: number) => `${total} ішінен ${n}`,
   achievementsHint: 'Жетістіктер қосымшадағы әрекет үшін емес, өмірде болған сәт үшін беріледі. Әрқайсысы +80 нұр әкеледі.',
   achievementsLockedTitle: (n: number) => `Plus-та тағы ${n} жетістік`,
-  achievementsLockedHint: 'Алғашқы сәттер әрдайым ашық. Plus-та оқиғалар мен саяхаттар бар. Алған жетістіктеріңіз сізбен қалады.',
+  achievementsLockedHint: 'Алғашқы үш сәт әрдайым ашық. Қалғандары Plus не Premium-мен ашылады. Алған жетістіктеріңіз сізбен қалады.',
   achievementLocked: 'Бұл жетістік Plus-пен ашылады. Алған жетістіктеріңіз сізбен қалады.',
   achievementLockedShort: 'Plus-та',
   achievementConfirmShort: 'растаңыз',
@@ -586,7 +586,7 @@ export const kk: Strings = {
   retry: 'Қайталап көру',
   somethingWrong: 'Бір нәрсе дұрыс болмады',
 
-  legalAgree: 'Жалғастыра отырып, сіз мыналарды қабылдайсыз:',
+  legalAgree: 'Жалғастыра отырып, сізге 16 жас толғанын растайсыз және мыналарды қабылдайсыз:',
   terms: 'Пайдаланушы келісімі',
   privacyPolicy: 'Құпиялылық саясаты',
 
