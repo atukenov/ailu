@@ -64,6 +64,8 @@ builder.Services.AddScoped<PhotoArchiveJob>();
 if (builder.Configuration.GetValue("Photos:PurgeEnabled", true)) builder.Services.AddHostedService<MemoryPurgeScheduler>();
 builder.Services.AddScoped<MoodRetentionJob>();
 if (builder.Configuration.GetValue("Mood:RetentionEnabled", true)) builder.Services.AddHostedService<MoodRetentionScheduler>();
+builder.Services.AddScoped<InvitationCleanupJob>();
+if (builder.Configuration.GetValue("Pairing:CleanupEnabled", true)) builder.Services.AddHostedService<InvitationCleanupScheduler>();
 
 var billing = builder.Configuration.GetSection("Billing").Get<BillingOptions>() ?? new BillingOptions();
 if (billing.Products.Count == 0) billing.Products = BillingOptions.DefaultProducts();

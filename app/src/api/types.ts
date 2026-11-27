@@ -427,6 +427,8 @@ export type YearStory = {
   years: number[];
   // Ordering opens on 1 December of the year; the preview can be watched all year.
   open: boolean;
+  // False while the server has no video renderer: the preview works, ordering is closed.
+  canOrder: boolean;
   opensOn: string;
   priceKzt: number;
   appleProductId: string;

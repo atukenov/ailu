@@ -13,6 +13,10 @@ public sealed record StoryRenderRequest(Guid StoryId, Guid CoupleId, int Year, s
 // (privacy doc), which limits where it can run.
 public interface IStoryRenderer
 {
+    // False while no renderer is set up. The store purchase is then closed (the app shows the preview only),
+    // so nobody pays for a film that would wait in the queue (App Store guideline 2.1).
+    bool Configured { get; }
+
     // The finished film. Throws RendererUnavailableException when nothing can render right now, which keeps
     // the order in the queue without counting a failed attempt.
     Task<byte[]> RenderAsync(StoryRenderRequest request, CancellationToken ct = default);
@@ -23,6 +27,8 @@ public sealed class RendererUnavailableException(string message) : Exception(mes
 // Stands in until a renderer is set up: orders are taken and wait in the queue, and the log says why.
 public sealed class UnconfiguredStoryRenderer : IStoryRenderer
 {
+    public bool Configured => false;
+
     public Task<byte[]> RenderAsync(StoryRenderRequest request, CancellationToken ct = default) =>
         throw new RendererUnavailableException("No video renderer is configured on this server.");
 }

@@ -33,7 +33,7 @@ export default function YearStoryScreen() {
   const price = useQuery({
     queryKey: ['year-story-price'],
     queryFn: () => storyPrice(data!),
-    enabled: !!data,
+    enabled: !!data?.canOrder,
     staleTime: Infinity,
   });
   const buy = useMutation({
@@ -137,6 +137,8 @@ function OrderCard({
           <T variant="body">{s.yearStoryNeedMore(missing)}</T>
           <Button title={s.yearStoryAddMemory} variant="ghost" onPress={() => router.push('/memories/new')} />
         </>
+      ) : !story.canOrder ? (
+        <T variant="body">{s.yearStoryOrdersSoon}</T>
       ) : !story.open ? (
         <T variant="body">{s.yearStoryOpensOn(s.date(story.opensOn))}</T>
       ) : (

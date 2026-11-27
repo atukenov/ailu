@@ -240,6 +240,7 @@ export async function buyYearStory(story: YearStory): Promise<YearStory | null> 
 async function restoreStoryPurchases() {
   await connect();
   const [story, purchases] = await Promise.all([api.yearStory(), getAvailablePurchases()]);
+  if (!story.canOrder) return;
   for (const p of purchases.filter((p) => p.productId === storySku(story))) {
     await claimStory(story.year, p).catch(() => {});
   }
