@@ -14,11 +14,24 @@ The API must be running (see `../backend`). In Development it writes SMS codes t
 
 ## Push notifications
 
-Once a couple exists, the Today screen asks for notification permission and registers the device's Expo
-push token with the API. This needs a real device and an EAS project: run `npx eas-cli@latest init` once
-in this folder (it writes `extra.eas.projectId` to `app.json`), then use a development build, since
-Expo Go can't receive remote pushes on Android. Without a project id the app works and simply skips
-registration. Sign-out unregisters the device.
+Once a couple exists, the Today screen asks for notification permission and registers the device's Firebase
+Cloud Messaging token with the API (`@react-native-firebase/messaging`; the same kind of token on iOS and
+Android). `app.config.js` adds Firebase to the build only when its two config files are present, so builds
+without them work and simply skip push; a `production` EAS build without them fails. Needs a development
+build on a real device (Expo Go has no Firebase). Sign-out unregisters the device.
+
+One-time setup:
+
+1. Firebase console → create a project → add an iOS app (bundle id `kz.ailu.app`) and an Android app
+   (package `kz.ailu.app`). Download `GoogleService-Info.plist` and `google-services.json`.
+2. Apple Developer → Keys → create a key with Apple Push Notifications service (APNs) → download the `.p8`.
+   Firebase → Project settings → Cloud Messaging → Apple app configuration → upload it with its Key ID and
+   your Team ID.
+3. EAS: `npx eas-cli@latest env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility secret --environment production`
+   and the same for `GOOGLE_SERVICE_INFO_PLIST` with the plist (repeat for `preview`/`development` if you use them).
+   For local builds just put both files in this folder; they are git-ignored.
+4. Server: Firebase → Project settings → Service accounts → Generate new private key; put the whole JSON in the
+   API's `Push__Firebase__ServiceAccountJson` variable.
 
 ## Memories
 
@@ -39,8 +52,8 @@ instead of the "+" button.
 
 Achievements (`src/app/achievements/`) are a collection of real-life moments: Первые, События, Путешествия. One
 partner taps "Мы это сделали" with the date, the other confirms, and both see the "Новое достижение" screen once
-(remembered per phone in `src/celebrations.ts`). Free couples collect the firsts; the rest show locked with a Plus
-card. An earned achievement can get a memory, which opens the new-memory screen with its title and date.
+(remembered per phone in `src/celebrations.ts`). Free couples collect the first three; the rest show blurred, and a tap opens the Plus
+paywall. An earned achievement can get a memory, which opens the new-memory screen with its title and date.
 
 ## AI selections
 

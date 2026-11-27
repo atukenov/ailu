@@ -71,7 +71,7 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
   began; Plus and Premium see everything. Nothing is locked: memories stay open in their own tab.
 
 - **Achievements are for real-life moments, confirmed by both.** The library (`Achievement`, seeded in `Seed.cs`,
-  Russian and Kazakh) is server content: firsts are free, events and travel open with Plus. One partner marks one
+  Russian and Kazakh) is server content: the first three firsts are free, the rest open with Plus and show blurred to Free. One partner marks one
   with the day it happened, the other confirms, and the couple gets +80 нұр once. An earned achievement is never
   undone, not even when the plan lapses; only a new mark checks the plan.
 
@@ -87,15 +87,29 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
 ### AI
 
 `IAiWriter` writes selections and personal tasks. With `Ai:ApiKey` set it is `ClaudeAiWriter` (Anthropic API,
-`Ai:Model` default `claude-opus-5-5`, `Ai:Effort` default `low`, structured JSON output, server-side refusal
-fallbacks); without a key, `StubAiWriter` serves a small built-in set in Russian and Kazakh, so everything works
+`Ai:Model` default `claude-haiku-5-5`, `Ai:Effort` default `low`, structured JSON output; Sonnet/Opus/Fable models
+also get server-side refusal fallbacks, Haiku has none and falls back to the library task or "try later");
+without a key, `StubAiWriter` serves a small built-in set in Russian and Kazakh, so everything works
 before a key exists. The prompts and the checks on what comes back are in `Services/AiPrompts.cs`.
+
+AI is a paid feature: selections and personal tasks are Premium only (`Plans.AiPicksPerMonth`, 30 a month).
+In production set these env vars on the API (Railway):
+
+| Env var | Value |
+|---|---|
+| `Ai__ApiKey` | Anthropic API key from platform.claude.com (Settings, API keys). Set a monthly spend limit there too. |
+| `Ai__Model` | optional, default `claude-haiku-5-5` (about $0.10 / $0.50 per million tokens in / out) |
+| `Ai__Effort` | optional, default `low` |
+| `Ai__TimeoutSeconds` | optional, default `40` |
 
 ### Push notifications
 
-`DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Expo's push service
-when `Push:UseExpo` is `true`; otherwise (the default, and in Development) they are written to the log.
-Set `Push:SchedulerEnabled` to `false` to turn the job off.
+`DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Firebase Cloud Messaging
+(HTTP v1 API; iPhones are reached through FCM's APNs link) when `Push:Firebase:ServiceAccountJson` holds a
+Firebase service account key (the whole JSON, env var `Push__Firebase__ServiceAccountJson`); the project id is
+read from the key, or `Push:Firebase:ProjectId`. Without a key (the default, and in Development) pushes are
+written to the log. Tokens FCM reports as gone are deleted from `Devices`. Set `Push:SchedulerEnabled` to
+`false` to turn the job off.
 
 ### Store review sign-in
 
@@ -163,7 +177,7 @@ ends; a store subscription keeps running alongside. Codes never touch the 7-day 
 | POST | `/v1/couple/questions/{id}/answer` | blind answer; both answered → revealed, locked, +30 нұр |
 | POST | `/v1/couple/streak/restore` | spend нұр to bring back a broken streak (offer is in `today.streak.restore`) |
 | GET | `/v1/couple/phase` | phase, earned and balance, progress to the next phase |
-| PUT | `/v1/me/devices` | register this device's Expo push token (moves it to the caller if someone else had it) |
+| PUT | `/v1/me/devices` | register this device's Firebase (FCM) push token (moves it to the caller if someone else had it) |
 | POST | `/v1/me/devices/unregister` | stop pushes to this device, on sign-out |
 | GET/POST | `/v1/couple/memories` | memories, newest by the day they happened, 20 per page with `?cursor=` / add one |
 | GET/PATCH/DELETE | `/v1/couple/memories/{id}` | one memory / edit or delete it (author only) |

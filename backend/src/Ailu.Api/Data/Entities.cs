@@ -207,7 +207,7 @@ public sealed class NurLedgerEntry
     public DateTimeOffset CreatedAt { get; set; }
 }
 
-// An Expo push token for one of a user's devices. A token moves to whoever signs in on that device last.
+// A Firebase (FCM) registration token for one of a user's devices. A token moves to whoever signs in on that device last.
 public sealed class Device
 {
     public Guid Id { get; set; }

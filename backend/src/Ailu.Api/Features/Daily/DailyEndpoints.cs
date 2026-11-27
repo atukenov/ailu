@@ -211,7 +211,7 @@ public static class DailyEndpoints
     private static IResult TaskNotFound() =>
         Errors.NotFound("task_not_found", "Это задание уже закрыто. Загляните в задание на сегодня.");
 
-    private static TaskDto ToDto(CoupleTask t, CoupleScope scope)
+    internal static TaskDto ToDto(CoupleTask t, CoupleScope scope)
     {
         var mine = scope.Role == MemberRole.A ? t.AcceptedAtA : t.AcceptedAtB;
         var theirs = scope.Role == MemberRole.A ? t.AcceptedAtB : t.AcceptedAtA;
@@ -228,7 +228,7 @@ public static class DailyEndpoints
             mine is not null, theirs is not null, t.CompletedAt, t.ConfirmedAt, d.CoupleId is not null);
     }
 
-    private static QuestionDto ToDto(DailyQuestion q, CoupleScope scope)
+    internal static QuestionDto ToDto(DailyQuestion q, CoupleScope scope)
     {
         var mine = scope.Role == MemberRole.A ? q.AnswerA : q.AnswerB;
         var theirs = scope.Role == MemberRole.A ? q.AnswerB : q.AnswerA;

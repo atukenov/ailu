@@ -129,7 +129,7 @@ namespace Ailu.Api.Data.Migrations
                             Icon = "🌅",
                             Position = 4,
                             Slug = "sunrise",
-                            Tier = "Free",
+                            Tier = "Plus",
                             Title = "Встреча рассвета",
                             TitleKk = "Таңды қарсы алу"
                         },
@@ -142,7 +142,7 @@ namespace Ailu.Api.Data.Migrations
                             Icon = "🧺",
                             Position = 5,
                             Slug = "first-picnic",
-                            Tier = "Free",
+                            Tier = "Plus",
                             Title = "Первый пикник",
                             TitleKk = "Алғашқы пикник"
                         },
@@ -155,7 +155,7 @@ namespace Ailu.Api.Data.Migrations
                             Icon = "📸",
                             Position = 6,
                             Slug = "printed-photo",
-                            Tier = "Free",
+                            Tier = "Plus",
                             Title = "Общее фото",
                             TitleKk = "Ортақ сурет"
                         },
@@ -168,7 +168,7 @@ namespace Ailu.Api.Data.Migrations
                             Icon = "🎁",
                             Position = 7,
                             Slug = "handmade-gift",
-                            Tier = "Free",
+                            Tier = "Plus",
                             Title = "Подарок своими руками",
                             TitleKk = "Қолдан жасалған сыйлық"
                         },
@@ -930,8 +930,8 @@ namespace Ailu.Api.Data.Migrations
 
                     b.Property<string>("PushToken")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");

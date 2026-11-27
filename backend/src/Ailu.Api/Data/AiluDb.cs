@@ -138,7 +138,7 @@ public sealed class AiluDb(DbContextOptions<AiluDb> options) : DbContext(options
         {
             e.HasIndex(x => x.PushToken).IsUnique();
             e.HasIndex(x => x.UserId);
-            e.Property(x => x.PushToken).HasMaxLength(200);
+            e.Property(x => x.PushToken).HasMaxLength(512);
             e.Property(x => x.Platform).HasMaxLength(10);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
         });

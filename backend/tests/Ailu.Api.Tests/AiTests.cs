@@ -314,13 +314,22 @@ public class AiTests
     }
 
     [Fact]
-    public void The_model_request_asks_for_json_with_refusal_fallbacks()
+    public void The_model_request_asks_haiku_for_json_without_fallbacks()
     {
         var request = ClaudeAiWriter.Request(new AiOptions { ApiKey = "k" }, AiPrompts.IdeasSystem, "user", AiPrompts.IdeasSchema);
         var json = JsonSerializer.Serialize(request);
-        Assert.Contains("claude-opus-5-5", json);
-        Assert.Contains("\"fallbacks\":\"default\"", json);
+        Assert.Contains("claude-haiku-5-5", json);
+        Assert.DoesNotContain("fallbacks", json);
         Assert.Contains("json_schema", json);
         Assert.Contains("\"effort\":\"low\"", json);
+    }
+
+    [Fact]
+    public void Larger_models_get_refusal_fallbacks()
+    {
+        var options = new AiOptions { ApiKey = "k", Model = "claude-sonnet-5-5" };
+        var json = JsonSerializer.Serialize(ClaudeAiWriter.Request(options, AiPrompts.TaskSystem, "user", AiPrompts.IdeasSchema));
+        Assert.Contains("claude-sonnet-5-5", json);
+        Assert.Contains("\"fallbacks\":\"default\"", json);
     }
 }

@@ -13,6 +13,7 @@ using Ailu.Api.Features.Pairing;
 using Ailu.Api.Features.PhotoBook;
 using Ailu.Api.Features.Timeline;
 using Ailu.Api.Features.YearStory;
+using Ailu.Api.Features.Widget;
 using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,7 +29,17 @@ builder.Services.AddSingleton(auth);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<TokenIssuer>();
 builder.Services.AddSingleton<ISmsSender, LoggingSmsSender>();
-if (builder.Configuration.GetValue<bool>("Push:UseExpo")) builder.Services.AddHttpClient<IPushSender, ExpoPushSender>();
+var firebase = builder.Configuration.GetSection("Push:Firebase").Get<FirebaseOptions>() ?? new FirebaseOptions();
+if (firebase.Configured)
+{
+    builder.Services.AddSingleton(firebase);
+    builder.Services.AddSingleton<IPushTokenCleanup, DbPushTokenCleanup>();
+    // One long-lived client so the cached OAuth token is shared; connections still recycle for DNS changes.
+    builder.Services.AddSingleton<IPushSender>(sp => new FcmPushSender(
+        new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(15) }),
+        firebase, sp.GetRequiredService<IPushTokenCleanup>(), sp.GetRequiredService<TimeProvider>(),
+        sp.GetRequiredService<ILogger<FcmPushSender>>()));
+}
 else builder.Services.AddSingleton<IPushSender, LoggingPushSender>();
 
 builder.Services.AddDbContext<AiluDb>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Ailu")));
@@ -180,6 +191,7 @@ YearStoryEndpoints.Map(app);
 AiEndpoints.Map(app);
 BillingEndpoints.Map(app);
 GiftEndpoints.Map(app);
+WidgetEndpoints.Map(app);
 
 app.Run();
 
