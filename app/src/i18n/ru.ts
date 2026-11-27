@@ -32,7 +32,9 @@ export const ru = {
   joinCouple: 'Создать пару',
   checkAgain: 'Проверить, принял ли партнёр',
 
-  greeting: (a: string, b: string) => `Привет,\n${a} и ${b}`,
+  hello: 'Привет,',
+  greeting: (a: string, b: string) => `${a} и ${b}`,
+  navGoals: 'Цели',
   coupleNames: (a: string, b: string) => `${a} и ${b}`,
   daysTogether: (n: number) => `${n} ${plural(n, 'день', 'дня', 'дней')} вместе`,
   someone: 'вы',

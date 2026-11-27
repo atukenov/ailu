@@ -5,9 +5,10 @@ import { Alert, Platform, Pressable, StyleSheet, Switch, TextInput, View } from 
 
 import { api } from '@/api/client';
 import type { Goal, GoalStep } from '@/api/types';
-import { MAX_STEPS, MonthPicker } from '@/components/goals';
+import { GOAL_LOOK, MAX_STEPS, MonthPicker } from '@/components/goals';
+import { Burst } from '@/components/motion';
 import { Button, Card, Centered, Chip, ErrorText, ProgressBar, RoundButton, Screen, T, TopBar } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing, Tones } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 
 const POLL_MS = 30_000;
@@ -75,12 +76,16 @@ export default function GoalScreen() {
     <Screen>
       <TopBar title="" onBack={() => router.back()} />
 
-      <Card>
+      <Card tone={g.state === 'done' ? 'mint' : GOAL_LOOK[g.category].tone}>
+        {g.state === 'done' && <Burst size={260} />}
+        <T variant="label">
+          {GOAL_LOOK[g.category].icon} {s.goalCategories[g.category]}
+        </T>
         <T variant="title">{g.title}</T>
         <T variant="small">
-          {[s.goalCategories[g.category], g.targetMonth && s.monthYear(g.targetMonth)].filter(Boolean).join(' · ')}
+          {g.targetMonth ? s.monthYear(g.targetMonth) : s.noDeadline}
         </T>
-        <T variant="heading" style={g.state === 'done' && { color: Colors.success }}>
+        <T variant="heading" style={{ color: Tones[g.state === 'done' ? 'mint' : GOAL_LOOK[g.category].tone].color }}>
           {g.state === 'done' ? `${s.goalDone} · 100%` : `${g.progress}%`}
         </T>
         <ProgressBar percent={g.progress} />
@@ -111,7 +116,7 @@ export default function GoalScreen() {
         <ErrorText error={join.error ?? keep.error ?? remove.error} />
       </Card>
 
-      <Card>
+      <Card tone={GOAL_LOOK[g.category].tone}>
         <T variant="label">{s.goalSteps}</T>
         {g.steps.map((step) => (
           <StepRow key={step.id} goalId={g.id} step={step} canMark={shared} onChange={update} />
@@ -148,7 +153,7 @@ export default function GoalScreen() {
           <Switch
             value={g.weeklyReminder}
             onValueChange={(on) => edit.mutate({ weeklyReminder: on })}
-            trackColor={{ true: Colors.accent, false: Colors.surfaceStrong }}
+            trackColor={{ true: Colors.mint, false: Colors.surfaceStrong }}
             thumbColor={Colors.text}
             accessibilityLabel={s.goalRemind}
           />
@@ -240,7 +245,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkDone: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  checkDone: { backgroundColor: Colors.mint, borderColor: Colors.mint },
   checkMark: { color: Colors.onAccent, fontSize: 14, lineHeight: 18, fontWeight: '700' },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   addInput: {

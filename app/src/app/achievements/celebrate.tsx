@@ -5,8 +5,10 @@ import { StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
 import { addAchievementMemory, markCelebrated } from '@/celebrations';
+import { ACHIEVEMENT_TONES, Badge } from '@/components/badge';
+import { Burst } from '@/components/motion';
 import { Button, Centered, Screen, T } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing, Tones } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 
 // "Новое достижение" from the mockups: shown once per achievement on each partner's phone.
@@ -30,8 +32,9 @@ export default function Celebrate() {
         <T variant="label" style={styles.kicker}>
           {s.achievementNew}
         </T>
-        <View style={styles.badge}>
-          <T style={styles.icon}>{a.icon}</T>
+        <View style={styles.badgeWrap}>
+          <Burst size={300} />
+          <Badge icon={a.icon} tone={ACHIEVEMENT_TONES[a.category]} earned size={168} glow />
         </View>
         <T variant="title" style={styles.center}>
           {a.title}
@@ -40,7 +43,7 @@ export default function Celebrate() {
           {a.body}
         </T>
         <View style={styles.pill}>
-          <T variant="body">{`+${a.nur} ${s.nur}`}</T>
+          <T variant="body" style={styles.nur}>{`+${a.nur} ${s.nur}`}</T>
         </View>
       </View>
       <Button title={s.achievementsSeeAll} onPress={() => router.dismissTo('/achievements')} />
@@ -53,22 +56,14 @@ const styles = StyleSheet.create({
   body: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.five },
   kicker: { color: Colors.accent, letterSpacing: 2 },
   center: { textAlign: 'center' },
-  badge: {
-    width: 168,
-    height: 168,
-    borderRadius: Radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.accent,
-    shadowColor: Colors.accent,
-    shadowOpacity: 0.6,
-    shadowRadius: 40,
-  },
-  icon: { fontSize: 80, lineHeight: 96 },
+  badgeWrap: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center' },
+  nur: { color: Colors.gold, fontWeight: '800' },
   pill: {
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surfaceStrong,
+    backgroundColor: Tones.gold.wash[0],
+    borderWidth: 1,
+    borderColor: Tones.gold.border,
   },
 });

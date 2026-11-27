@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { api } from '@/api/client';
 import type { Mood, MoodLevel } from '@/api/types';
 import { Button, Card, ErrorText, Field, T } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing, Tones } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 
 export const MOODS: MoodLevel[] = ['hard', 'tired', 'even', 'good', 'great'];
@@ -93,7 +93,7 @@ export function MoodCard({ partnerName, pollMs }: { partnerName: string; pollMs:
   const noteChanged = note.trim() !== (mine?.note ?? '');
 
   return (
-    <Card>
+    <Card tone="mint">
       <T variant="label">{s.mood}</T>
       <T variant="heading">{s.moodQuestion}</T>
       <T variant="small">
@@ -127,8 +127,8 @@ export function MoodCard({ partnerName, pollMs }: { partnerName: string; pollMs:
                   disabled={set.isPending}
                   onPress={() => set.mutate(level)}
                   style={[styles.level, selected && styles.levelSelected]}>
-                  <Face mood={level} color={selected ? Colors.accent : Colors.text} />
-                  <T variant="small" numberOfLines={1} style={[styles.levelLabel, selected && { color: Colors.accent }]}>
+                  <Face mood={level} color={selected ? Colors.mint : Colors.text} />
+                  <T variant="small" numberOfLines={1} style={[styles.levelLabel, selected && { color: Colors.mint }]}>
                     {s.moodLevels[level]}
                   </T>
                 </Pressable>
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   levelLabel: { fontSize: 11, lineHeight: 14 },
-  levelSelected: { borderColor: Colors.accent, backgroundColor: Colors.surfaceStrong },
+  levelSelected: { borderColor: Colors.mint, backgroundColor: Tones.mint.wash[0] },
   note: { padding: Spacing.three, borderRadius: Radius.md, backgroundColor: Colors.surfaceStrong },
   week: { flexDirection: 'row', justifyContent: 'space-between' },
   day: { alignItems: 'center', gap: Spacing.one },

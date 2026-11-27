@@ -39,12 +39,12 @@ export default function LoveQuizScreen() {
       <ErrorText error={quiz.error} />
 
       {data && waiting && (
-        <Card>
+        <Card tone="lavender">
           <T variant="secondary">{s.loveQuizWaiting(partnerName)}</T>
         </Card>
       )}
       {data && round?.partnerAnswered && !round.myAnswered && (
-        <Card>
+        <Card tone="lavender">
           <T variant="secondary">{s.loveQuizPartnerDone(partnerName)}</T>
           {data.available && <Button title={s.loveQuizStart} onPress={() => setTaking(true)} />}
         </Card>
@@ -57,7 +57,7 @@ export default function LoveQuizScreen() {
       )}
 
       {data && !waiting && !data.available && (
-        <Card>
+        <Card tone="lavender">
           <T variant="secondary">{s.loveQuizLocked}</T>
           <Button title={s.loveQuizUnlock} onPress={() => openPaywall('quiz')} />
         </Card>
@@ -77,7 +77,7 @@ export default function LoveQuizScreen() {
 function Intro({ quiz }: { quiz: LoveQuiz }) {
   const s = useStrings();
   return (
-    <Card>
+    <Card tone="lavender">
       <T variant="heading">{s.loveQuiz}</T>
       <T variant="secondary">{s.loveQuizIntro}</T>
       <T variant="small">{s.loveQuizNotLabel}</T>
@@ -168,7 +168,7 @@ function Result({ quiz, partnerName }: { quiz: LoveQuiz; partnerName: string }) 
       </View>
       {!result.partner && <T variant="small">{s.loveQuizPartnerGone}</T>}
 
-      <Card>
+      <Card tone="lavender">
         <T variant="label">{s.loveQuizScales}</T>
         {order.map((l) => (
           <View key={l} style={styles.scale}>
@@ -179,7 +179,7 @@ function Result({ quiz, partnerName }: { quiz: LoveQuiz; partnerName: string }) 
         ))}
       </Card>
 
-      <Card>
+      <Card tone="lavender">
         <T variant="label">{s.loveQuizTips}</T>
         {tops.map((l) => (
           <T key={l} variant="body">
@@ -236,9 +236,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
   },
-  optionOn: { backgroundColor: Colors.surfaceStrong, borderColor: Colors.accent },
+  optionOn: { backgroundColor: Colors.surfaceStrong, borderColor: Colors.lavender },
   dot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: Colors.textSecondary },
-  dotOn: { borderColor: Colors.accent, backgroundColor: Colors.accent },
+  dotOn: { borderColor: Colors.lavender, backgroundColor: Colors.lavender },
   titleBlock: { gap: Spacing.two },
   people: { flexDirection: 'row', gap: Spacing.three },
   person: { flex: 1 },

@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { api } from '@/api/client';
 import type { Achievement } from '@/api/types';
 import { addAchievementMemory, markCelebrated } from '@/celebrations';
+import { ACHIEVEMENT_TONES, Badge } from '@/components/badge';
 import { Button, Card, Centered, ErrorText, Field, Screen, T, TopBar } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { isoToText, todayText, toIso } from '@/dates';
 import { useStrings } from '@/i18n';
 import { openPaywall } from '@/upsells';
@@ -69,10 +70,8 @@ export default function AchievementScreen() {
     <Screen>
       <TopBar title="" onBack={() => router.back()} />
 
-      <Card style={styles.hero}>
-        <View style={[styles.badge, a.state === 'earned' && styles.badgeEarned]}>
-          <T style={styles.icon}>{a.icon}</T>
-        </View>
+      <Card style={styles.hero} tone={ACHIEVEMENT_TONES[a.category]}>
+        <Badge icon={a.icon} tone={ACHIEVEMENT_TONES[a.category]} earned={a.state === 'earned'} size={120} glow={a.state === 'earned'} />
         <T variant="title" style={styles.center}>
           {a.title}
         </T>
@@ -85,7 +84,7 @@ export default function AchievementScreen() {
       </Card>
 
       {a.state === 'locked' && (
-        <Card>
+        <Card tone="lavender">
           <T variant="secondary">{s.achievementLocked}</T>
           <Button title={s.goalLimitCta} onPress={() => openPaywall('achievements')} />
         </Card>
@@ -125,7 +124,7 @@ export default function AchievementScreen() {
       )}
 
       {a.state === 'earned' && (
-        <Card>
+        <Card tone="mint">
           <T variant="heading" style={{ color: Colors.success }}>
             {s.achievementDoneOn(isoToText(a.happenedOn ?? ''))}
           </T>
@@ -143,14 +142,4 @@ export default function AchievementScreen() {
 const styles = StyleSheet.create({
   hero: { alignItems: 'center', gap: Spacing.two },
   center: { textAlign: 'center' },
-  badge: {
-    width: 120,
-    height: 120,
-    borderRadius: Radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surfaceStrong,
-  },
-  badgeEarned: { backgroundColor: Colors.accent },
-  icon: { fontSize: 56, lineHeight: 68 },
 });

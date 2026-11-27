@@ -1,12 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
-import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api, photoUrl } from '@/api/client';
 import type { TimelineEvent } from '@/api/types';
+import { Tap } from '@/components/motion';
 import { Button, Card, Centered, ErrorText, Screen, T, TopBar } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { BackgroundGradient, Colors, Spacing, Tones, type Tone } from '@/constants/theme';
 import { useStrings, type Strings } from '@/i18n';
 import { openPaywall } from '@/upsells';
 
@@ -46,13 +48,16 @@ export default function Timeline() {
       )}
 
       <View style={styles.line}>
-        <View style={styles.rail} />
+        <LinearGradient
+          colors={[Colors.accent, Colors.lavender, Colors.sky, 'rgba(127, 200, 255, 0.1)']}
+          style={styles.rail}
+        />
         {recent.map((e, i) => (
           <Moment key={e.id} event={e} fade={i} />
         ))}
         {locked && (
-          <Row fade={recent.length}>
-            <Card>
+          <Row fade={recent.length} tone="gold">
+            <Card tone="gold">
               <T variant="heading">{s.timelineLocked(locked.count)}</T>
               <T variant="secondary">{s.timelineLockedBody(locked.days)}</T>
               <Button title={s.timelineLockedCta} variant="ghost" onPress={() => openPaywall('history')} />
@@ -77,10 +82,15 @@ export default function Timeline() {
 }
 
 // The dot on the line dims as the history goes back, like in the mockup.
-function Row({ fade, children }: { fade: number; children: React.ReactNode }) {
+function Row({ fade, children, tone = 'pink' }: { fade: number; children: React.ReactNode; tone?: Tone }) {
   return (
     <View style={styles.row}>
-      <View style={[styles.dot, { opacity: Math.max(0.35, 1 - fade * 0.15) }]} />
+      <View
+        style={[
+          styles.dot,
+          { backgroundColor: Tones[tone].color, boxShadow: `0 0 10px ${Tones[tone].color}`, opacity: Math.max(0.45, 1 - fade * 0.12) },
+        ]}
+      />
       {children}
     </View>
   );
@@ -89,10 +99,11 @@ function Row({ fade, children }: { fade: number; children: React.ReactNode }) {
 function Moment({ event, fade }: { event: TimelineEvent; fade: number }) {
   const s = useStrings();
   const { title, body, href } = describe(s, event);
+  const tone = TONES[event.kind];
   const content = (
-    <Card style={styles.card}>
+    <Card style={styles.card} tone={tone}>
       <View style={styles.cardText}>
-        <T variant="label" style={styles.date}>
+        <T variant="label">
           {s.date(event.date)}
         </T>
         <T variant="heading">{title}</T>
@@ -104,17 +115,30 @@ function Moment({ event, fade }: { event: TimelineEvent; fade: number }) {
     </Card>
   );
   return (
-    <Row fade={fade}>
+    <Row fade={fade} tone={tone}>
       {href ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={() => router.push(href)}>
+        <Tap accessibilityRole="button" accessibilityLabel={title} onPress={() => router.push(href)}>
           {content}
-        </Pressable>
+        </Tap>
       ) : (
         content
       )}
     </Row>
   );
 }
+
+// Each kind of moment keeps its colour: memories pink, phases gold, goals mint, achievements coral.
+const TONES: Record<TimelineEvent['kind'], Tone> = {
+  start: 'lavender',
+  days_together: 'pink',
+  anniversary: 'pink',
+  phase: 'gold',
+  first_task: 'sky',
+  first_answers: 'lavender',
+  memory: 'pink',
+  goal_done: 'mint',
+  achievement: 'coral',
+};
 
 function describe(s: Strings, e: TimelineEvent): { title: string; body: string | null; href?: Href } {
   switch (e.kind) {
@@ -159,7 +183,7 @@ const styles = StyleSheet.create({
     bottom: 8,
     width: 2,
     borderRadius: 1,
-    backgroundColor: 'rgba(242, 167, 199, 0.35)',
+    opacity: 0.6,
   },
   row: { position: 'relative' },
   dot: {
@@ -169,12 +193,10 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: Colors.accent,
     borderWidth: 2,
-    borderColor: Colors.background,
+    borderColor: BackgroundGradient[1],
   },
   card: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   cardText: { flex: 1, gap: Spacing.one },
-  date: { color: Colors.accent, fontWeight: '700' },
   thumb: { width: 64, height: 64, borderRadius: 14, backgroundColor: Colors.surface },
 });

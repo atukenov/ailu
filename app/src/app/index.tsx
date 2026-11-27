@@ -1,14 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { AiKind, Couple, DailyQuestion, DailyTask, Phase, StreakRestore, Today } from '@/api/types';
 import { MoodCard } from '@/components/mood';
 import { Moon } from '@/components/moon';
-import { Button, Card, Centered, Chip, ErrorText, Field, Screen, T } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Pop, Pulse, Tap, tapFeedback } from '@/components/motion';
+import { Button, Card, Centered, Chip, ErrorText, Field, ProgressBar, Screen, T } from '@/components/ui';
+import { Colors, Radius, Spacing, Tones, type Tone } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { registerForPush } from '@/notifications';
 import { useSession } from '@/session';
@@ -56,6 +58,7 @@ export default function TodayScreen() {
         />
       }>
       <Header me={user?.name ?? s.someone} partner={partnerName} couple={couple.data ?? null} />
+      <QuickNav />
       <PhaseCard phase={today.data.phase} streak={today.data.streak.days} />
       {free && couple.data && today.data.streak.days >= 7 && (
         <StreakUpsell coupleId={couple.data.id} days={today.data.streak.days} />
@@ -80,40 +83,79 @@ export default function TodayScreen() {
   );
 }
 
+// "Привет," sits small above the two names, so long names wrap to two lines at most instead of
+// pushing the greeting down to four; the screens the couple visits most sit as bright tiles below.
 function Header({ me, partner, couple }: { me: string; partner: string; couple: Couple | null }) {
   const s = useStrings();
   return (
     <View style={styles.header}>
       <View style={styles.headerText}>
-        <T variant="title">{s.greeting(me, partner)}</T>
+        <T variant="label" style={{ color: Colors.accent }}>
+          {s.hello}
+        </T>
+        <T variant="title" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.names}>
+          {s.greeting(me, partner)}
+        </T>
         {couple && (
           <Link href="/timeline" asChild>
-            <Pressable accessibilityRole="link" accessibilityLabel={s.timeline} hitSlop={8}>
-              <T variant="secondary">{s.daysTogether(couple.daysTogether)} ›</T>
+            <Pressable accessibilityRole="link" accessibilityLabel={s.timeline} hitSlop={8} style={styles.together}>
+              <Text style={styles.togetherText}>
+                ♥ {s.daysTogether(couple.daysTogether)} ›
+              </Text>
             </Pressable>
           </Link>
         )}
       </View>
-      <Link href="/memories" asChild>
-        <Pressable accessibilityRole="button" accessibilityLabel={s.memories} style={styles.profileButton}>
-          <T variant="heading">✦</T>
-        </Pressable>
-      </Link>
-      <Link href="/achievements" asChild>
-        <Pressable accessibilityRole="button" accessibilityLabel={s.achievements} style={styles.profileButton}>
-          <T variant="heading">☆</T>
-        </Pressable>
-      </Link>
-      <Link href="/goals" asChild>
-        <Pressable accessibilityRole="button" accessibilityLabel={s.goals} style={styles.profileButton}>
-          <T variant="heading">◎</T>
-        </Pressable>
-      </Link>
-      <Link href="/profile" asChild>
-        <Pressable accessibilityRole="button" accessibilityLabel={s.profile} style={styles.profileButton}>
-          <T variant="heading">≡</T>
-        </Pressable>
-      </Link>
+      <Tap
+        accessibilityRole="button"
+        accessibilityLabel={s.profile}
+        onPress={() => {
+          tapFeedback();
+          router.push('/profile');
+        }}
+        scaleTo={0.88}
+        style={styles.profileButton}>
+        <Text style={styles.profileGlyph}>≡</Text>
+      </Tap>
+    </View>
+  );
+}
+
+const NAV: { href: '/memories' | '/goals' | '/achievements'; glyph: string; tone: Tone; label: (s: ReturnType<typeof useStrings>) => string }[] = [
+  { href: '/memories', glyph: '✦', tone: 'pink', label: (s) => s.memories },
+  { href: '/goals', glyph: '◎', tone: 'mint', label: (s) => s.navGoals },
+  { href: '/achievements', glyph: '★', tone: 'gold', label: (s) => s.achievements },
+];
+
+function QuickNav() {
+  const s = useStrings();
+  return (
+    <View style={styles.nav}>
+      {NAV.map((item, i) => {
+        const tone = Tones[item.tone];
+        return (
+          <Tap
+            key={item.href}
+            accessibilityRole="button"
+            accessibilityLabel={item.label(s)}
+            onPress={() => {
+              tapFeedback();
+              router.push(item.href);
+            }}
+            style={styles.navItem}>
+            <LinearGradient colors={tone.wash} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.navTile, { borderColor: tone.border }]}>
+              <Pop delay={200 + i * 90}>
+                <LinearGradient colors={tone.gradient} style={styles.navIcon}>
+                  <Text style={[styles.navGlyph, { color: tone.onColor }]}>{item.glyph}</Text>
+                </LinearGradient>
+              </Pop>
+              <Text style={styles.navLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                {item.label(s)}
+              </Text>
+            </LinearGradient>
+          </Tap>
+        );
+      })}
     </View>
   );
 }
@@ -127,21 +169,37 @@ function moonFill(p: Phase) {
 function PhaseCard({ phase, streak }: { phase: Phase; streak: number }) {
   const s = useStrings();
   return (
-    <Card style={styles.phaseCard}>
-      <Moon fill={moonFill(phase)} glow={phase.index === 5} />
-      <View style={styles.phaseText}>
-        {phase.cycle > 1 && <T variant="label">{s.cycle(phase.cycle)}</T>}
-        <T variant="heading">{s.phases[phase.index]?.name ?? phase.name}</T>
-        <T variant="small">{s.phases[phase.index]?.moon ?? phase.moon}</T>
-        <T variant="body">
-          {s.number(phase.earned)} {s.nur}
-        </T>
-        {phase.nextAt !== null && phase.nextName && (
+    <Card tone="gold" style={styles.phaseCard}>
+      <View style={styles.phaseRow}>
+        <Moon fill={moonFill(phase)} glow={phase.index === 5} size={88} />
+        <View style={styles.phaseText}>
+          {phase.cycle > 1 && <T variant="label">{s.cycle(phase.cycle)}</T>}
+          <T variant="heading">{s.phases[phase.index]?.name ?? phase.name}</T>
+          <T variant="small">{s.phases[phase.index]?.moon ?? phase.moon}</T>
+          <Pop delay={250}>
+            <Text style={styles.nur}>
+              {s.number(phase.earned)} <Text style={styles.nurUnit}>{s.nur}</Text>
+            </Text>
+          </Pop>
+        </View>
+      </View>
+      {phase.nextAt !== null && phase.nextName && (
+        <View style={styles.next}>
+          <ProgressBar percent={phase.fill * 100} />
           <T variant="small">
             {s.toNextPhase(phase.nextAt - phase.earned, s.phases[(phase.index + 1) % s.phases.length]?.name ?? phase.nextName)}
           </T>
+        </View>
+      )}
+      <View style={[styles.streak, streak > 0 ? styles.streakOn : styles.streakOff]}>
+        {streak > 0 ? (
+          <Pulse from={0.9} to={1.12} duration={900}>
+            <Text style={styles.flame}>🔥</Text>
+          </Pulse>
+        ) : (
+          <Text style={styles.flame}>🌙</Text>
         )}
-        <T variant="small" style={{ color: streak > 0 ? Colors.success : Colors.textMuted }}>
+        <T variant="small" style={[styles.streakText, { color: streak > 0 ? Colors.coral : Colors.textSecondary }]}>
           {streak > 0 ? s.streak(streak) : s.streakZero}
         </T>
       </View>
@@ -155,7 +213,7 @@ function RestoreCard({ restore, streak }: { restore: StreakRestore; streak: numb
   const mutation = useTodayUpdate(api.restoreStreak, (t, streak) => ({ ...t, streak }));
   const noneLeft = restore.restoresLeft < restore.missedDays;
   return (
-    <Card>
+    <Card tone="coral">
       <T variant="heading">{streak > 0 ? s.streakRestarted(restore.days) : s.streakLapsed}</T>
       <T variant="secondary">{s.restoreOffer(restore.days, restore.cost)}</T>
       <T variant="small">{s.restoresLeft(restore.restoresLeft, restore.restoresPerMonth)}</T>
@@ -190,8 +248,8 @@ function StreakUpsell({ coupleId, days }: { coupleId: string; days: number }) {
     void upsells.markStreakShown(coupleId);
   };
   return (
-    <Card>
-      <T variant="heading">{s.streak(days)}</T>
+    <Card tone="gold">
+      <T variant="heading">🔥 {s.streak(days)}</T>
       <T variant="secondary">{s.streakUpsellBody}</T>
       <Button
         title={s.streakUpsellCta}
@@ -206,6 +264,7 @@ function StreakUpsell({ coupleId, days }: { coupleId: string; days: number }) {
 }
 
 const AI_KINDS: AiKind[] = ['date', 'home', 'film', 'music'];
+const AI_TONES: Record<AiKind, Tone> = { date: 'pink', home: 'gold', film: 'lavender', music: 'mint' };
 
 // The way into AI selections, as in the mockup's Today ("Музыка на вечер", "Фильм для вас", "Идеи для
 // свидания"). Selections are Premium; other plans see the same row and it opens the Premium paywall.
@@ -214,14 +273,18 @@ function PicksCard({ premium }: { premium: boolean }) {
   const open = (kind: AiKind) =>
     premium ? router.push({ pathname: '/ai-picks', params: { kind } }) : openPaywall('ai');
   return (
-    <Card>
+    <Card tone="sky">
       <View style={styles.picksHead}>
         <T variant="label">{s.aiPicks}</T>
-        {!premium && <T variant="small" style={styles.premiumTag}>Premium</T>}
+        {!premium && (
+          <LinearGradient colors={Tones.gold.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.premiumTag}>
+            <Text style={styles.premiumTagText}>Premium</Text>
+          </LinearGradient>
+        )}
       </View>
       <View style={styles.picks}>
         {AI_KINDS.map((kind) => (
-          <Chip key={kind} label={s.aiKinds[kind]} onPress={() => open(kind)} />
+          <Chip key={kind} label={s.aiKinds[kind]} tone={AI_TONES[kind]} onPress={() => open(kind)} />
         ))}
       </View>
     </Card>
@@ -236,7 +299,7 @@ function LoveQuizNudge({ partnerName }: { partnerName: string }) {
   const round = quiz.data?.round;
   if (!round?.partnerAnswered || round.myAnswered) return null;
   return (
-    <Card>
+    <Card tone="lavender">
       <T variant="label">{s.loveQuiz}</T>
       <T variant="secondary">{s.loveQuizPartnerDone(partnerName)}</T>
       <Button title={s.loveQuizStart} onPress={() => router.push('/love-quiz')} />
@@ -253,7 +316,7 @@ function YearStoryNudge() {
   const data = story.data;
   if (!december || !data?.open || data.order || data.memories < data.minMemories) return null;
   return (
-    <Card>
+    <Card tone="gold">
       <T variant="label">{s.yearStoryKicker}</T>
       <T variant="secondary">{s.yearStoryNudge(data.year)}</T>
       <Button title={s.yearStoryOpen} onPress={() => router.push('/year-story')} />
@@ -310,14 +373,18 @@ function TaskCard({ task, index, last, tasksPerDay, free }: TaskCardProps) {
   const showMore = last && (paid ? index + 1 < tasksPerDay : free);
 
   return (
-    <Card>
+    <Card tone={index === 0 ? 'pink' : 'coral'}>
       <T variant="label">
         {index === 0 ? s.taskOfDay : s.extraTask(index + 1, tasksPerDay)}
         {task.personal && ` · ${s.personalTask}`}
       </T>
       <T variant="heading">{task.title}</T>
       <T variant="secondary">{task.body}</T>
-      <T variant="small">{s.taskMeta(task.durationMin, task.costKzt)}</T>
+      <View style={styles.metaPill}>
+        <T variant="small" style={styles.metaText}>
+          ⏱ {s.taskMeta(task.durationMin, task.costKzt)}
+        </T>
+      </View>
       <ErrorText error={accept.error ?? complete.error ?? next.error} />
       {task.state === 'offered' && (
         <>
@@ -363,7 +430,7 @@ function QuestionCard({ question, partnerName }: { question: DailyQuestion; part
 
   const revealed = !!question.revealedAt;
   return (
-    <Card>
+    <Card tone="lavender">
       <T variant="label">{s.questionOfDay}</T>
       <T variant="heading">“{question.text}”</T>
 
@@ -404,16 +471,27 @@ function QuestionCard({ question, partnerName }: { question: DailyQuestion; part
 function Answer({ label, text }: { label: string; text: string }) {
   return (
     <View style={styles.answer}>
+      <View style={styles.answerBar} />
       <T variant="label">{label}</T>
       <T variant="body">{text}</T>
     </View>
   );
 }
 
+// Waiting on the partner breathes softly; a finished step shows in mint.
 function Status({ text, done }: { text: string; done?: boolean }) {
   return (
-    <View style={styles.status}>
-      <T variant="small" style={{ color: done ? Colors.success : Colors.textSecondary }}>
+    <View style={[styles.status, done && styles.statusDone]}>
+      {done ? (
+        <Pop>
+          <Text style={styles.statusIcon}>✓</Text>
+        </Pop>
+      ) : (
+        <Pulse from={0.8} to={1.1} duration={1100}>
+          <View style={styles.waitingDot} />
+        </Pulse>
+      )}
+      <T variant="small" style={[styles.statusText, { color: done ? Colors.success : Colors.textSecondary }]}>
         {text}
       </T>
     </View>
@@ -422,14 +500,90 @@ function Status({ text, done }: { text: string; done?: boolean }) {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
-  headerText: { flex: 1, gap: Spacing.two },
-  profileButton: { padding: Spacing.two },
-  phaseCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
-  phaseText: { flex: 1, gap: Spacing.one },
-  answer: { gap: Spacing.one, padding: Spacing.three, borderRadius: Radius.md, backgroundColor: Colors.surfaceStrong },
+  headerText: { flex: 1, gap: Spacing.one },
+  names: { fontSize: 30, lineHeight: 38 },
+  together: {
+    alignSelf: 'flex-start',
+    marginTop: Spacing.two,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.pill,
+    backgroundColor: Tones.pink.wash[0],
+    borderWidth: 1,
+    borderColor: Tones.pink.border,
+  },
+  togetherText: { color: Colors.accent, fontSize: 14, fontWeight: '600' },
+  profileButton: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.surfaceStrong,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  profileGlyph: { color: Colors.text, fontSize: 22, lineHeight: 26 },
+  nav: { flexDirection: 'row', gap: Spacing.two },
+  navItem: { flex: 1 },
+  navTile: {
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.one,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+  },
+  navIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  navGlyph: { fontSize: 20, lineHeight: 24, fontWeight: '700' },
+  navLabel: { color: Colors.text, fontSize: 11, fontWeight: '700', textAlign: 'center' },
+  phaseCard: { gap: Spacing.three },
+  phaseRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
+  phaseText: { flex: 1, gap: 2 },
+  nur: { color: Colors.gold, fontSize: 26, lineHeight: 32, fontWeight: '800' },
+  nurUnit: { fontSize: 16, fontWeight: '600' },
+  next: { gap: Spacing.two },
+  streak: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+  },
+  streakOn: { backgroundColor: Tones.coral.wash[0], borderWidth: 1, borderColor: Tones.coral.border },
+  streakOff: { backgroundColor: Colors.surface },
+  streakText: { flex: 1, fontWeight: '600' },
+  flame: { fontSize: 16, lineHeight: 20 },
+  metaPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.surfaceStrong,
+  },
+  metaText: { color: Colors.text },
+  answer: {
+    gap: Spacing.one,
+    padding: Spacing.three,
+    paddingLeft: Spacing.three + 6,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surfaceStrong,
+    overflow: 'hidden',
+  },
+  answerBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: Colors.lavender },
   answerInput: { minHeight: 96, paddingTop: Spacing.three, textAlignVertical: 'top', fontSize: 16 },
-  status: { paddingVertical: Spacing.two },
+  status: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two },
+  statusDone: {
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.md,
+    backgroundColor: Tones.mint.wash[0],
+  },
+  statusIcon: { color: Colors.mint, fontSize: 18, fontWeight: '800' },
+  statusText: { flex: 1 },
+  waitingDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.lavender },
   picksHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  premiumTag: { color: Colors.accent },
+  premiumTag: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: Radius.pill },
+  premiumTagText: { color: Tones.gold.onColor, fontSize: 12, fontWeight: '800' },
   picks: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
 });

@@ -1,13 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { Achievement, AchievementCategory } from '@/api/types';
 import { nextToCelebrate } from '@/celebrations';
+import { ACHIEVEMENT_TONES, Badge } from '@/components/badge';
+import { Tap } from '@/components/motion';
 import { Button, Card, Centered, Chip, ErrorText, ProgressBar, Screen, T, TopBar } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing, Tones } from '@/constants/theme';
 import { isoToText } from '@/dates';
 import { useStrings } from '@/i18n';
 import { openPaywall } from '@/upsells';
@@ -53,8 +55,8 @@ export default function Achievements() {
       <ErrorText error={list.error} />
 
       {data && (
-        <Card>
-          <T variant="heading">{s.achievementsProgress(data.earned, data.total)}</T>
+        <Card tone="gold">
+          <T variant="heading">🏆 {s.achievementsProgress(data.earned, data.total)}</T>
           <ProgressBar percent={data.total ? (data.earned * 100) / data.total : 0} />
           <T variant="secondary">{s.achievementsHint}</T>
         </Card>
@@ -66,6 +68,7 @@ export default function Achievements() {
             key={t}
             label={t === 'all' ? s.achievementsAll : s.achievementCategories[t]}
             selected={tab === t}
+            tone={t === 'all' ? 'lavender' : ACHIEVEMENT_TONES[t]}
             onPress={() => setTab(t)}
           />
         ))}
@@ -78,10 +81,10 @@ export default function Achievements() {
       </View>
 
       {lockedCount > 0 && (
-        <Card>
+        <Card tone="lavender">
           <T variant="heading">{s.achievementsLockedTitle(lockedCount)}</T>
           <T variant="secondary">{s.achievementsLockedHint}</T>
-          <Button title={s.goalLimitCta} variant="ghost" onPress={() => openPaywall('achievements')} />
+          <Button title={s.goalLimitCta} onPress={() => openPaywall('achievements')} />
         </Card>
       )}
     </Screen>
@@ -91,6 +94,7 @@ export default function Achievements() {
 function Tile({ achievement: a }: { achievement: Achievement }) {
   const s = useStrings();
   const earned = a.state === 'earned';
+  const tone = ACHIEVEMENT_TONES[a.category];
   const meta =
     a.state === 'earned' && a.happenedOn ? s.achievementDoneOn(isoToText(a.happenedOn)) :
     a.state === 'confirm_needed' ? s.achievementConfirmShort :
@@ -99,21 +103,19 @@ function Tile({ achievement: a }: { achievement: Achievement }) {
     `+${a.nur} ${s.nur}`;
   return (
     <Link href={`/achievements/${a.slug}`} asChild>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${a.title}. ${meta}`} style={styles.tileWrap}>
-        <Card style={a.state === 'locked' ? { ...styles.tile, ...styles.locked } : styles.tile}>
-          <View style={[styles.badge, earned && styles.badgeEarned]}>
-            <T style={styles.icon}>{a.state === 'locked' ? '🔒' : a.icon}</T>
-          </View>
+      <Tap accessibilityRole="button" accessibilityLabel={`${a.title}. ${meta}`} style={styles.tileWrap}>
+        <Card tone={earned ? tone : undefined} style={a.state === 'locked' ? { ...styles.tile, ...styles.locked } : styles.tile}>
+          <Badge icon={a.state === 'locked' ? '🔒' : a.icon} tone={tone} earned={earned} />
           <T variant="body" numberOfLines={2} style={styles.center}>
             {a.title}
           </T>
           <T
             variant="small"
-            style={[styles.center, a.state === 'confirm_needed' && { color: Colors.accent }, earned && { color: Colors.success }]}>
+            style={[styles.center, a.state === 'confirm_needed' && { color: Colors.accent }, earned && { color: Tones[tone].color, fontWeight: '600' }]}>
             {meta}
           </T>
         </Card>
-      </Pressable>
+      </Tap>
     </Link>
   );
 }
@@ -125,14 +127,4 @@ const styles = StyleSheet.create({
   tile: { alignItems: 'center', gap: Spacing.two, minHeight: 170 },
   locked: { opacity: 0.55 },
   center: { textAlign: 'center' },
-  badge: {
-    width: 64,
-    height: 64,
-    borderRadius: Radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surfaceStrong,
-  },
-  badgeEarned: { backgroundColor: Colors.accent },
-  icon: { fontSize: 30, lineHeight: 38 },
 });
