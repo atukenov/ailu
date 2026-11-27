@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { BlurTargetView, BlurView } from 'expo-blur';
 import { Link, router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { type ComponentRef, useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { api } from '@/api/client';
@@ -90,19 +91,19 @@ export default function Achievements() {
 
 function Tile({ achievement: a }: { achievement: Achievement }) {
   const s = useStrings();
+  if (a.state === 'locked') return <LockedTile achievement={a} />;
   const earned = a.state === 'earned';
   const meta =
     a.state === 'earned' && a.happenedOn ? s.achievementDoneOn(isoToText(a.happenedOn)) :
     a.state === 'confirm_needed' ? s.achievementConfirmShort :
     a.state === 'waiting_for_partner' ? s.stepWaiting :
-    a.state === 'locked' ? s.achievementLockedShort :
     `+${a.nur} ${s.nur}`;
   return (
     <Link href={`/achievements/${a.slug}`} asChild>
       <Pressable accessibilityRole="button" accessibilityLabel={`${a.title}. ${meta}`} style={styles.tileWrap}>
-        <Card style={a.state === 'locked' ? { ...styles.tile, ...styles.locked } : styles.tile}>
+        <Card style={styles.tile}>
           <View style={[styles.badge, earned && styles.badgeEarned]}>
-            <T style={styles.icon}>{a.state === 'locked' ? '🔒' : a.icon}</T>
+            <T style={styles.icon}>{a.icon}</T>
           </View>
           <T variant="body" numberOfLines={2} style={styles.center}>
             {a.title}
@@ -118,12 +119,64 @@ function Tile({ achievement: a }: { achievement: Achievement }) {
   );
 }
 
+// Free couples see what a bigger plan holds, but blurred: a tap goes straight to the paywall.
+function LockedTile({ achievement: a }: { achievement: Achievement }) {
+  const s = useStrings();
+  // Android blurs only what sits inside a BlurTargetView; iOS and web blur whatever is behind.
+  const target = useRef<ComponentRef<typeof View>>(null);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${s.achievementLockedShort}. ${s.goalLimitCta}`}
+      style={styles.tileWrap}
+      onPress={() => openPaywall('achievements')}>
+      <Card style={{ ...styles.tile, ...styles.lockedTile }}>
+        <BlurTargetView ref={target} style={styles.lockedContent}>
+          <View style={styles.badge}>
+            <T style={styles.icon}>{a.icon}</T>
+          </View>
+          <T variant="body" numberOfLines={2} style={styles.center}>
+            {a.title}
+          </T>
+          <T variant="small" style={styles.center}>
+            +{a.nur} {s.nur}
+          </T>
+        </BlurTargetView>
+        <BlurView
+          intensity={30}
+          tint="dark"
+          blurTarget={target}
+          blurMethod="dimezisBlurViewSdk31Plus"
+          style={styles.blur}
+        />
+        <View style={styles.lockOverlay} pointerEvents="none">
+          <View style={styles.lockPill}>
+            <T variant="small" style={styles.lockText}>
+              🔒 {s.achievementLockedShort}
+            </T>
+          </View>
+        </View>
+      </Card>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
   tileWrap: { width: '47%', flexGrow: 1 },
   tile: { alignItems: 'center', gap: Spacing.two, minHeight: 170 },
-  locked: { opacity: 0.55 },
+  lockedTile: { overflow: 'hidden' },
+  lockedContent: { alignItems: 'center', gap: Spacing.two },
+  blur: { ...StyleSheet.absoluteFill, borderRadius: Radius.lg, overflow: 'hidden' },
+  lockOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
+  lockPill: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.accent,
+  },
+  lockText: { color: Colors.onAccent, fontWeight: '600' },
   center: { textAlign: 'center' },
   badge: {
     width: 64,

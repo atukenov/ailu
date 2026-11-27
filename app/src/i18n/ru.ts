@@ -304,7 +304,7 @@ export const ru = {
   paywallHistoryTitle: 'Вся ваша история',
   paywallHistoryBody: 'С Plus история пары открыта целиком, с первого дня. Воспоминания и фото остаются у вас при любом тарифе.',
   paywallAchievementsTitle: 'Все достижения',
-  paywallAchievementsBody: 'События и путешествия: концерты, Наурыз, горы и новые города. Всё, что вы уже получили, остаётся с вами.',
+  paywallAchievementsBody: 'Рассвет вдвоём, пикник, концерты, Наурыз, горы и новые города. Всё, что вы уже получили, остаётся с вами.',
   perMonth: '/ мес',
   perYear: '/ год',
   periodMonth: 'На месяц',
@@ -448,7 +448,7 @@ export const ru = {
   achievementsProgress: (n: number, total: number) => `${n} из ${total}`,
   achievementsHint: 'Достижения даются за то, что случилось в жизни, а не в приложении. Каждое приносит +80 нұр.',
   achievementsLockedTitle: (n: number) => `Ещё ${n} ${plural(n, 'достижение', 'достижения', 'достижений')} в Plus`,
-  achievementsLockedHint: 'Первые моменты открыты всегда. В Plus есть события и путешествия. Всё полученное остаётся с вами.',
+  achievementsLockedHint: 'Три первых момента открыты всегда. Остальные откроются с Plus или Premium. Всё полученное остаётся с вами.',
   achievementLocked: 'Это достижение открывается с Plus. Всё, что вы уже получили, остаётся с вами.',
   achievementLockedShort: 'в Plus',
   achievementConfirmShort: 'подтвердите',
@@ -595,7 +595,7 @@ export const ru = {
 
   // API problems by `code`. A code missing here shows the server's own (Russian) detail.
   // Legal documents (docs/legal in the repo, published on GitHub Pages)
-  legalAgree: 'Продолжая, вы принимаете:',
+  legalAgree: 'Продолжая, вы подтверждаете, что вам есть 16 лет, и принимаете:',
   terms: 'Пользовательское соглашение',
   privacyPolicy: 'Политика конфиденциальности',
 
@@ -735,6 +735,26 @@ export const ru = {
     gift_not_found: 'Такого подарка нет.',
     invalid_productId: 'Такого подарка нет.',
   } as Record<string, string>,
+
+  // Home-screen widget. The widget runs outside the app, so it gets these texts ready-made.
+  widget: {
+    daysTogether: (n: number) => plural(n, 'день вместе', 'дня вместе', 'дней вместе'),
+    streak: (n: number) => plural(n, 'день подряд', 'дня подряд', 'дней подряд'),
+    nur: 'нұр',
+    task: {
+      offered: 'Новое задание ждёт вас',
+      waiting_for_partner: 'Вы приняли. Ждём партнёра',
+      accepted: 'Задание принято. Сделайте его вместе',
+      waiting_for_confirmation: 'Ждём, когда партнёр подтвердит',
+      confirm_needed: 'Подтвердите, что вы сделали это',
+      done: 'Готово на сегодня',
+    } as Record<string, string>,
+    moreTasks: 'Готово. Можно взять ещё одно',
+    newDay: 'Новый день. Задание уже ждёт',
+    partnerAnswered: (name: string) => `${name} ответил(а) на вопрос дня`,
+    answersOpen: 'Ответы на вопрос дня открыты',
+    signedOut: 'Откройте Ailu, чтобы увидеть вашу пару здесь',
+  },
 };
 
 export type Strings = typeof ru;

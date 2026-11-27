@@ -38,6 +38,7 @@ import type {
   Today,
   TokenPair,
   User,
+  WidgetSummary,
   YearPhotos,
   YearStory,
 } from './types';
@@ -138,6 +139,7 @@ export const api = {
 
   today: () => request<Today>('GET', '/v1/couple/today'),
   phase: () => request<Phase>('GET', '/v1/couple/phase'),
+  widget: () => request<WidgetSummary>('GET', '/v1/couple/widget'),
   acceptTask: (id: string) => request<DailyTask>('POST', `/v1/couple/tasks/${id}/accept`),
   completeTask: (id: string) => request<DailyTask>('POST', `/v1/couple/tasks/${id}/complete`),
   moreTask: () => request<DailyTask>('POST', '/v1/couple/tasks/more'),
