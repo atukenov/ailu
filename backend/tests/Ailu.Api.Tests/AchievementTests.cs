@@ -33,7 +33,7 @@ public class AchievementTests
     }
 
     [Fact]
-    public async Task Free_couples_see_the_whole_library_with_only_the_firsts_open()
+    public async Task Free_couples_see_the_whole_library_with_only_the_first_three_open()
     {
         await using var api = await ApiFactory.StartAsync();
         var (a, _) = await api.PairAsync();
@@ -41,8 +41,9 @@ public class AchievementTests
         var list = (await a.GetFromJsonAsync<AchievementList>(Url))!;
         Assert.Equal((0, Seed.Achievements.Length, "free"), (list.Earned, list.Total, list.Plan));
         Assert.Equal(Seed.Achievements.Length, list.Items.Count);
-        Assert.All(list.Items.Where(x => x.Category == "firsts"), x => Assert.Equal(AchievementState.Open, x.State));
-        Assert.All(list.Items.Where(x => x.Category != "firsts"), x => Assert.Equal(AchievementState.Locked, x.State));
+        Assert.All(list.Items.Take(3), x => Assert.Equal(AchievementState.Open, x.State));
+        Assert.All(list.Items.Skip(3), x => Assert.Equal(AchievementState.Locked, x.State));
+        Assert.Equal("plus", list.Items.Single(x => x.Slug == "sunrise").Tier);
         Assert.Equal("Первое кофе", list.Items[0].Title);
 
         var travel = (await a.GetFromJsonAsync<AchievementList>($"{Url}?category=travel"))!;
@@ -50,6 +51,8 @@ public class AchievementTests
         Assert.All(travel.Items, x => Assert.Equal("travel", x.Category));
         Assert.Equal(HttpStatusCode.BadRequest, (await a.GetAsync($"{Url}?category=1")).StatusCode);
 
+        // The fourth first moment is a Plus one now, like events and travel.
+        Assert.Equal(HttpStatusCode.Forbidden, (await Mark(a, "sunrise")).StatusCode);
         var locked = await Mark(a, "first-trip");
         Assert.Equal(HttpStatusCode.Forbidden, locked.StatusCode);
         Assert.Contains("achievement_locked", await locked.Content.ReadAsStringAsync());
@@ -110,11 +113,11 @@ public class AchievementTests
         await using var api = await ApiFactory.StartAsync();
         var (a, b) = await api.PairAsync();
 
-        await Ok(await Mark(a, "sunrise"));
-        Assert.Equal(AchievementState.Open, (await Ok(await b.DeleteAsync($"{Url}/sunrise/done"))).State);
-        await Ok(await Mark(b, "sunrise"));
-        Assert.Equal(AchievementState.Open, (await Ok(await b.DeleteAsync($"{Url}/sunrise/done"))).State);
-        Assert.Equal(AchievementState.Open, (await a.GetFromJsonAsync<AchievementDto>($"{Url}/sunrise"))!.State);
+        await Ok(await Mark(a, "first-dinner"));
+        Assert.Equal(AchievementState.Open, (await Ok(await b.DeleteAsync($"{Url}/first-dinner/done"))).State);
+        await Ok(await Mark(b, "first-dinner"));
+        Assert.Equal(AchievementState.Open, (await Ok(await b.DeleteAsync($"{Url}/first-dinner/done"))).State);
+        Assert.Equal(AchievementState.Open, (await a.GetFromJsonAsync<AchievementDto>($"{Url}/first-dinner"))!.State);
     }
 
     [Fact]
@@ -179,7 +182,9 @@ public class AchievementTests
         {
             Assert.All(new[] { x.Title, x.Body, x.TitleKk, x.BodyKk, x.Icon }, t => Assert.False(string.IsNullOrWhiteSpace(t)));
         });
-        // Free couples always have something to collect.
-        Assert.Contains(Seed.Achievements, x => x.Tier == CouplePlan.Free);
+        // Free gets exactly the first three; everything after them is a Plus teaser.
+        var byPosition = Seed.Achievements.OrderBy(x => x.Position).ToList();
+        Assert.All(byPosition.Take(3), x => Assert.Equal(CouplePlan.Free, x.Tier));
+        Assert.All(byPosition.Skip(3), x => Assert.NotEqual(CouplePlan.Free, x.Tier));
     }
 }
