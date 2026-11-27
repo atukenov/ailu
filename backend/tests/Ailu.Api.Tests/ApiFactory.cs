@@ -127,35 +127,6 @@ public sealed class TestPrintVendor : IPrintVendor
             : null;
 }
 
-// A gift payment provider the test drives: every order gets a page to pay on, and pays when the test says so.
-public sealed class TestCheckout : IGiftCheckout
-{
-    public ConcurrentDictionary<string, GiftPaymentStatus> Payments { get; } = new();
-    public bool Down { get; set; }
-
-    public string Provider => "test";
-    public bool Available { get; set; } = true;
-
-    public Task<GiftCheckoutSession> StartAsync(GiftOrder order, CancellationToken ct = default)
-    {
-        if (Down) throw new StoreUnavailableException("down");
-        var id = $"chk-{order.Id:N}";
-        Payments[id] = GiftPaymentStatus.Pending;
-        return Task.FromResult(new GiftCheckoutSession(id, $"https://pay.example/{id}"));
-    }
-
-    public Task<GiftPaymentStatus?> FetchAsync(string checkoutId, CancellationToken ct = default)
-    {
-        if (Down) throw new StoreUnavailableException("down");
-        return Task.FromResult(Payments.TryGetValue(checkoutId, out var s) ? s : (GiftPaymentStatus?)null);
-    }
-
-    public void PayAll()
-    {
-        foreach (var id in Payments.Keys) Payments[id] = GiftPaymentStatus.Paid;
-    }
-}
-
 public sealed class FakeSms : ISmsSender
 {
     private readonly ConcurrentDictionary<string, string> last = new();
@@ -181,9 +152,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public TestPrintVendor Printer { get; } = new();
     public TestRenderer Renderer { get; } = new();
     public TestAiWriter Ai { get; } = new();
-    public TestCheckout Checkout { get; } = new();
     public const string GoogleWebhookSecret = "test-webhook-secret";
-    public const string GiftWebhookSecret = "test-gift-secret";
     public const string AdminKey = "test-admin-key";
 
     public string PhotoRoot { get; } = Path.Combine(Path.GetTempPath(), $"ailu_photos_{Guid.NewGuid():N}");
@@ -214,8 +183,6 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("YearStory:RenderEnabled", "false");
         builder.UseSetting("Billing:Google:WebhookSecret", GoogleWebhookSecret);
         builder.UseSetting("PhotoBook:PrintEnabled", "false");
-        builder.UseSetting("PhotoBook:UseFakeKaspi", "true");
-        builder.UseSetting("Billing:GiftWebhookSecret", GiftWebhookSecret);
         builder.UseSetting("Billing:AdminKey", AdminKey);
         foreach (var (key, value) in settings) builder.UseSetting(key, value);
         builder.ConfigureServices(s =>
@@ -235,8 +202,6 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             s.AddSingleton<IStoryRenderer>(Renderer);
             s.RemoveAll<IAiWriter>();
             s.AddSingleton<IAiWriter>(Ai);
-            s.RemoveAll<IGiftCheckout>();
-            s.AddSingleton<IGiftCheckout>(Checkout);
         });
     }
 

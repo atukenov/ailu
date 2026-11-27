@@ -207,7 +207,7 @@ public sealed class NurLedgerEntry
     public DateTimeOffset CreatedAt { get; set; }
 }
 
-// An Expo push token for one of a user's devices. A token moves to whoever signs in on that device last.
+// A Firebase (FCM) registration token for one of a user's devices. A token moves to whoever signs in on that device last.
 public sealed class Device
 {
     public Guid Id { get; set; }
@@ -479,7 +479,9 @@ public sealed class PhotoBookSpread
 public enum PhotoBookOrderStatus { AwaitingPayment, Paid, Printing, Shipped, Delivered, Cancelled }
 
 // A printed copy of a book. The book as it was when ordered is kept in Content (JSON), so later edits
-// don't change what was paid for. Paid through Kaspi (IKaspiPayments), printed by IPrintVendor.
+// don't change what was paid for. A printed book is a physical good, so it is never sold through the app
+// stores: the team arranges payment with the couple directly (by the phone on the order) and marks the
+// order paid with POST /v1/admin/photo-book-orders/{id}/paid. Printed by IPrintVendor.
 public sealed class PhotoBookOrder
 {
     public Guid Id { get; set; }
@@ -498,9 +500,8 @@ public sealed class PhotoBookOrder
     public string? Comment { get; set; }
 
     public required string Content { get; set; }
-    // Kaspi's payment and its page, kept so opening "pay" again reuses the same payment.
-    public string? PaymentId { get; set; }
-    public string? PayUrl { get; set; }
+    // How the team was paid ("перевод 27.11"), written when it marks the order paid. Never shown to couples.
+    public string? PaymentNote { get; set; }
     public string? PrintJobId { get; set; }
     public string? TrackingNumber { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
@@ -597,7 +598,8 @@ public sealed class AiPickItem
 public enum PlanCodeKind { Promo, Gift }
 
 // A code that gives the couple who enters it a plan for a while. A promo code is made by the team for many
-// couples (each couple once); a gift code is bought by someone for one couple and works once.
+// couples (each couple once); a gift code is made by the team for one couple, after the buyer has paid the
+// team directly (gifts are sold person to person, outside the app), and works once.
 public sealed class PlanCode
 {
     public Guid Id { get; set; }
@@ -623,7 +625,6 @@ public sealed class PlanCode
 
     // What the team made it for ("Instagram, ноябрь"), never shown to couples.
     public string? Note { get; set; }
-    public Guid? GiftOrderId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset PeriodEnd(DateTimeOffset from) => from.AddMonths(Months).AddDays(Days);
@@ -640,27 +641,3 @@ public sealed class CodeRedemption
     public DateTimeOffset RedeemedAt { get; set; }
 }
 
-public enum GiftOrderStatus { Pending, Paid, Cancelled, Refunded }
-
-// Someone buying a gift subscription. Paid outside the stores (Kaspi on the website, monetization doc);
-// the payment provider is the source of truth, as the stores are for subscriptions. A paid order gets
-// its gift code.
-public sealed class GiftOrder
-{
-    public Guid Id { get; set; }
-    public Guid BuyerUserId { get; set; }
-    public required string ProductId { get; set; }
-    public CouplePlan Tier { get; set; }
-    public int Months { get; set; }
-    public int PriceKzt { get; set; }
-    public GiftOrderStatus Status { get; set; }
-
-    // The payment provider ("kaspi", "fake") and its id for this payment.
-    public required string Provider { get; set; }
-    public string? CheckoutId { get; set; }
-    public string? PaymentUrl { get; set; }
-    public Guid? CodeId { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? PaidAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
-}

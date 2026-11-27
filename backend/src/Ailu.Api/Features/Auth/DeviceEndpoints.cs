@@ -24,7 +24,7 @@ public static class DeviceEndpoints
         CancellationToken ct)
     {
         var token = body.PushToken?.Trim() ?? "";
-        if (token.Length is 0 or > 200) return Errors.Validation("pushToken", "Нужен токен уведомлений.");
+        if (token.Length is 0 or > 512) return Errors.Validation("pushToken", "Нужен токен уведомлений.");
         if (!Platforms.Contains(body.Platform)) return Errors.Validation("platform", "Платформа: ios или android.");
 
         var userId = CurrentUser.Id(http.User);

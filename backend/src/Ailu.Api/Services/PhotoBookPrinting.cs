@@ -4,38 +4,29 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Ailu.Api.Services;
 
-// What happens to an order after the couple pays: Kaspi's notice marks it paid, then this job draws the
-// print file from the book as it was ordered, keeps it, and hands it to the print vendor. Running it as a
-// job keeps the minute of PDF drawing out of Kaspi's request, and retries a vendor that was down.
+// What happens to an order after the couple pays: the team marks it paid (payment is agreed with the couple
+// directly), then this job draws the print file from the book as it was ordered, keeps it, and hands it to
+// the print vendor. Running it as a job keeps the minute of PDF drawing out of the request, and retries a
+// vendor that was down.
 public sealed class PhotoBookPrinting(AiluDb db, BookPdf pdf, IPhotoStore store, IPrintVendor vendor, TimeProvider clock,
     ILogger<PhotoBookPrinting> log)
 {
-    // Kaspi says the payment went through. A payment for an order cancelled meanwhile still wins: the
-    // couple paid, so the book is printed.
-    public async Task<bool> MarkPaidAsync(string paymentId, CancellationToken ct = default)
+    // The team was paid for the order. An order the couple cancelled meanwhile still goes ahead: they paid,
+    // so the book is printed. Marking an order already paid again changes nothing but the note.
+    public async Task<bool> MarkPaidAsync(Guid orderId, string? note, CancellationToken ct = default)
     {
-        var order = await db.PhotoBookOrders.SingleOrDefaultAsync(o => o.PaymentId == paymentId, ct);
-        if (order is null)
-        {
-            log.LogWarning("Kaspi paid {PaymentId}, which matches no photo book order", paymentId);
-            return false;
-        }
+        var order = await db.PhotoBookOrders.SingleOrDefaultAsync(o => o.Id == orderId, ct);
+        if (order is null) return false;
         if (order.Status is PhotoBookOrderStatus.AwaitingPayment or PhotoBookOrderStatus.Cancelled)
         {
             order.Status = PhotoBookOrderStatus.Paid;
             order.PaidAt = clock.GetUtcNow();
             order.CancelledAt = null;
-            await db.SaveChangesAsync(ct);
             log.LogInformation("Photo book order {Order} paid", order.Id);
         }
+        if (!string.IsNullOrWhiteSpace(note)) order.PaymentNote = note.Trim();
+        await db.SaveChangesAsync(ct);
         return true;
-    }
-
-    // A failed or abandoned payment: the order keeps waiting, and the next "pay" makes a new payment.
-    public async Task MarkFailedAsync(string paymentId, CancellationToken ct = default)
-    {
-        await db.PhotoBookOrders.Where(o => o.PaymentId == paymentId && o.Status == PhotoBookOrderStatus.AwaitingPayment)
-            .ExecuteUpdateAsync(s => s.SetProperty(o => o.PaymentId, (string?)null).SetProperty(o => o.PayUrl, (string?)null), ct);
     }
 
     public async Task<int> RunOnceAsync(CancellationToken ct = default)

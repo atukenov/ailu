@@ -8,6 +8,7 @@ import { api } from '@/api/client';
 import { Colors } from '@/constants/theme';
 import { usePurchaseSync } from '@/purchases';
 import { SessionProvider, useSession } from '@/session';
+import { useWidgetSync } from '@/widget/sync';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -76,15 +77,20 @@ function Routes() {
           <Stack.Screen name="photo-book/order" />
           <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
           <Stack.Screen name="redeem" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="gifts" />
         </Stack.Protected>
       </Stack>
       {signedIn && named && paired && <PurchaseSync />}
+      {signedIn && named && paired && <WidgetSync />}
     </>
   );
 }
 
 function PurchaseSync() {
   usePurchaseSync();
+  return null;
+}
+
+function WidgetSync() {
+  useWidgetSync();
   return null;
 }

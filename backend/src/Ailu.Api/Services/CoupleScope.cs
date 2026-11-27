@@ -43,6 +43,21 @@ public static class CoupleCalendar
 
     public static TimeOnly TimeOf(Couple couple, DateTimeOffset instant) => TimeOnly.FromDateTime(Local(couple, instant).DateTime);
 
+    // The instant the couple's calendar day starts, e.g. so a widget can turn over at their midnight.
+    public static DateTimeOffset StartOf(Couple couple, DateOnly day)
+    {
+        var midnight = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
+        try
+        {
+            var zone = TimeZoneInfo.FindSystemTimeZoneById(couple.TimeZone);
+            return new DateTimeOffset(midnight, zone.GetUtcOffset(midnight));
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return new DateTimeOffset(midnight, Fallback);
+        }
+    }
+
     private static DateTimeOffset Local(Couple couple, DateTimeOffset instant)
     {
         try

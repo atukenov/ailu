@@ -65,8 +65,6 @@ export default function Profile() {
   const manage = useMutation({ mutationFn: manageSubscription });
   const native = Platform.OS === 'ios' || Platform.OS === 'android';
   const sub = billing.data?.subscription;
-  // Gift orders decide whether "Подарить Ailu" shows: gifts on sale, or codes already bought.
-  const gifts = useQuery({ queryKey: ['gifts'], queryFn: api.gifts });
   const store = sub?.provider === 'apple' || sub?.provider === 'google';
   const subEnd = sub && s.date(sub.periodEnd.slice(0, 10));
   const subLine = !sub
@@ -159,9 +157,6 @@ export default function Profile() {
             />
           )}
           <Button title={s.planEnterCode} variant="ghost" onPress={() => router.push('/redeem')} />
-          {(gifts.data?.available || !!gifts.data?.orders.length) && (
-            <Button title={s.giftsTitle} variant="ghost" onPress={() => router.push('/gifts')} />
-          )}
           {native && (
             <Button title={s.planRestore} variant="ghost" onPress={() => restore.mutate()} loading={restore.isPending} />
           )}

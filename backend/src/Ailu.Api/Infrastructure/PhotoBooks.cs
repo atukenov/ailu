@@ -11,13 +11,9 @@ namespace Ailu.Api.Infrastructure;
 
 public sealed class PhotoBookOptions
 {
-    // Roadmap: 9 900 ₸ a book; print and delivery in Kazakhstan cost about 4 500 ₸. Sold through Kaspi,
-    // outside the app stores.
+    // Roadmap: 9 900 ₸ a book; print and delivery in Kazakhstan cost about 4 500 ₸. A physical good, so
+    // never sold through the app stores: the team agrees payment with the couple directly.
     public int PriceKzt { get; set; } = 9900;
-
-    // Development only: a stand-in for Kaspi whose payment page is a link back to this server that pays
-    // at once. Refused at startup outside Development and Testing.
-    public bool UseFakeKaspi { get; set; }
 
     // Lets whoever prints the books (by hand for now) report an order shipped or delivered with
     // POST /v1/print/notices and this value in the X-Print-Secret header. Empty turns the endpoint off.
@@ -46,59 +42,6 @@ public sealed record BookContent(string Title, string? Subtitle, Guid? CoverPhot
 }
 
 public sealed record SpreadContent(SpreadLayout Layout, Guid[] PhotoIds, string? Title, string? Text, DateOnly? Date);
-
-// ---- Kaspi ----
-
-public sealed record PaymentLink(string PaymentId, string Url);
-
-// What Kaspi told the server about a payment: paid, or failed / cancelled on Kaspi's side.
-public sealed record PaymentNotice(string PaymentId, bool Paid);
-
-// Kaspi Pay for a merchant account (roadmap: the book is sold through Kaspi, not the app stores). The real
-// client needs that account; until then the server runs with UnconfiguredKaspi and orders wait unpaid.
-public interface IKaspiPayments
-{
-    // A payment for the order, and the Kaspi page the app opens to pay it. Throws PaymentUnavailableException
-    // when Kaspi can't be asked.
-    Task<PaymentLink> CreateAsync(Guid orderId, int amountKzt, string description, CancellationToken ct = default);
-
-    // Reads and checks a notice Kaspi posted to /v1/payments/kaspi. Null when it isn't a genuine one.
-    Task<PaymentNotice?> ReadNoticeAsync(HttpRequest request, CancellationToken ct = default);
-}
-
-public sealed class PaymentUnavailableException(string message) : Exception(message);
-
-public sealed class UnconfiguredKaspi : IKaspiPayments
-{
-    public Task<PaymentLink> CreateAsync(Guid orderId, int amountKzt, string description, CancellationToken ct = default) =>
-        throw new PaymentUnavailableException("Kaspi payments are not configured on this server.");
-
-    public Task<PaymentNotice?> ReadNoticeAsync(HttpRequest request, CancellationToken ct = default) =>
-        Task.FromResult<PaymentNotice?>(null);
-}
-
-// Development only (PhotoBook:UseFakeKaspi). The "payment page" is GET /v1/payments/kaspi/fake/{id} on this
-// server, which pays the order; notices are plain JSON { paymentId, paid }.
-public sealed class FakeKaspi : IKaspiPayments
-{
-    public Task<PaymentLink> CreateAsync(Guid orderId, int amountKzt, string description, CancellationToken ct = default)
-    {
-        var id = $"fake-{orderId:N}";
-        return Task.FromResult(new PaymentLink(id, $"/v1/payments/kaspi/fake/{id}"));
-    }
-
-    public async Task<PaymentNotice?> ReadNoticeAsync(HttpRequest request, CancellationToken ct = default)
-    {
-        try
-        {
-            return await request.ReadFromJsonAsync<PaymentNotice>(ct);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-}
 
 // ---- Printing ----
 

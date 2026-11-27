@@ -65,7 +65,40 @@
           "microphonePermission": false
         }
       ],
-      "expo-iap"
+      "expo-iap",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "kz.ailu.app.widget",
+          "groupIdentifier": "group.kz.ailu.app",
+          "enableAndroid": true,
+          "widgets": [
+            {
+              "name": "CoupleWidget",
+              "displayName": "Ailu",
+              "description": "Серия, нұр, дни вместе и задание дня.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "accessoryCircular",
+                  "accessoryRectangular",
+                  "accessoryInline"
+                ],
+                "initialLayout": "src/widget/couple-widget.ios.tsx"
+              },
+              "android": {
+                "minWidth": 250,
+                "minHeight": 180,
+                "targetCellWidth": 4,
+                "targetCellHeight": 2,
+                "resizeMode": "both",
+                "initialLayout": "src/widget/couple-widget.android.tsx"
+              }
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

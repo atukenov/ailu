@@ -104,9 +104,12 @@ In production set these env vars on the API (Railway):
 
 ### Push notifications
 
-`DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Expo's push service
-when `Push:UseExpo` is `true`; otherwise (the default, and in Development) they are written to the log.
-Set `Push:SchedulerEnabled` to `false` to turn the job off.
+`DailyPushScheduler` runs `DailyPushJob` every minute inside the API. Pushes go through Firebase Cloud Messaging
+(HTTP v1 API; iPhones are reached through FCM's APNs link) when `Push:Firebase:ServiceAccountJson` holds a
+Firebase service account key (the whole JSON, env var `Push__Firebase__ServiceAccountJson`); the project id is
+read from the key, or `Push:Firebase:ProjectId`. Without a key (the default, and in Development) pushes are
+written to the log. Tokens FCM reports as gone are deleted from `Devices`. Set `Push:SchedulerEnabled` to
+`false` to turn the job off.
 
 ### Store review sign-in
 
@@ -141,13 +144,18 @@ Both are a code a couple enters (`POST /v1/billing/redeem`); entering it adds a 
 enters a code once (unique indexes on `CodeRedemption`). A second code of the same plan starts where the first
 ends; a store subscription keeps running alongside. Codes never touch the 7-day trial.
 
-- **Gifts** (`/v1/gifts`) are paid outside the stores, as the monetization doc plans for Kaspi on the website.
-  `IGiftCheckout` is the seam: until a provider is set up, `UnconfiguredGiftCheckout` keeps gifts off sale (the
-  app hides the buy form); in Development `FakeGiftCheckout` pays every order at once. A paid order gets a
-  12-character code (`7KQ2-M9XD-4HPA`, no I/L/O/U); a refund withdraws the code and ends the plan it gave. The
-  provider's notification goes to `/v1/gifts/webhooks/checkout?secret=` (`Billing:GiftWebhookSecret`) and only
-  makes the server ask the provider. Products and prices: `Billing:Gifts`, defaulting to 1, 3 and 12 months of
-  each plan at the subscription prices.
+All payments inside the app go through the App Store and Google Play (subscriptions and the video story).
+Nothing else is sold in the app.
+
+- **Gifts** are sold person to person, outside the app: the buyer pays the team directly, then the team makes a
+  one-time gift code and hands it over. The code is 12 characters (`7KQ2-M9XD-4HPA`, no I/L/O/U), works for one
+  couple, and `note` records who paid:
+
+  ```sh
+  curl -X POST $API/v1/admin/gift-codes -H "X-Admin-Key: $KEY" -H 'Content-Type: application/json' \
+    -d '{"tier":"plus","months":3,"note":"Айгерим, перевод 27.11"}'
+  curl $API/v1/admin/gift-codes -H "X-Admin-Key: $KEY"   # which were entered
+  ```
 - **Promo codes** are made by the team with `Billing:AdminKey` set:
 
   ```sh
@@ -155,6 +163,19 @@ ends; a store subscription keeps running alongside. Codes never touch the 7-day 
     -d '{"code":"LOVE2026","tier":"plus","days":30,"maxRedemptions":500,"validUntil":"2026-12-31T19:00:00Z","note":"Instagram"}'
   curl $API/v1/admin/promo-codes -H "X-Admin-Key: $KEY"   # how many couples used each
   ```
+
+### Photo book payment
+
+A printed book is a physical good, so the app stores don't allow selling it through in-app purchase, and
+it isn't. A couple orders in the app (delivery address and phone); the order waits as `awaiting_payment` and
+the app says the team will write to them. The team agrees payment directly, then marks the order paid, and
+the print job picks it up:
+
+```sh
+curl $API/v1/admin/photo-book-orders -H "X-Admin-Key: $KEY"            # waiting for payment (?status=all for every order)
+curl -X POST $API/v1/admin/photo-book-orders/$ORDER/paid -H "X-Admin-Key: $KEY" \
+  -H 'Content-Type: application/json' -d '{"note":"перевод 27.11"}'
+```
 
 ### API (Stage 1)
 
@@ -174,7 +195,7 @@ ends; a store subscription keeps running alongside. Codes never touch the 7-day 
 | POST | `/v1/couple/questions/{id}/answer` | blind answer; both answered → revealed, locked, +30 нұр |
 | POST | `/v1/couple/streak/restore` | spend нұр to bring back a broken streak (offer is in `today.streak.restore`) |
 | GET | `/v1/couple/phase` | phase, earned and balance, progress to the next phase |
-| PUT | `/v1/me/devices` | register this device's Expo push token (moves it to the caller if someone else had it) |
+| PUT | `/v1/me/devices` | register this device's Firebase (FCM) push token (moves it to the caller if someone else had it) |
 | POST | `/v1/me/devices/unregister` | stop pushes to this device, on sign-out |
 | GET/POST | `/v1/couple/memories` | memories, newest by the day they happened, 20 per page with `?cursor=` / add one |
 | GET/PATCH/DELETE | `/v1/couple/memories/{id}` | one memory / edit or delete it (author only) |

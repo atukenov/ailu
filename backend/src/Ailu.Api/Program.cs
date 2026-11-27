@@ -13,6 +13,7 @@ using Ailu.Api.Features.Pairing;
 using Ailu.Api.Features.PhotoBook;
 using Ailu.Api.Features.Timeline;
 using Ailu.Api.Features.YearStory;
+using Ailu.Api.Features.Widget;
 using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,7 +29,17 @@ builder.Services.AddSingleton(auth);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<TokenIssuer>();
 builder.Services.AddSingleton<ISmsSender, LoggingSmsSender>();
-if (builder.Configuration.GetValue<bool>("Push:UseExpo")) builder.Services.AddHttpClient<IPushSender, ExpoPushSender>();
+var firebase = builder.Configuration.GetSection("Push:Firebase").Get<FirebaseOptions>() ?? new FirebaseOptions();
+if (firebase.Configured)
+{
+    builder.Services.AddSingleton(firebase);
+    builder.Services.AddSingleton<IPushTokenCleanup, DbPushTokenCleanup>();
+    // One long-lived client so the cached OAuth token is shared; connections still recycle for DNS changes.
+    builder.Services.AddSingleton<IPushSender>(sp => new FcmPushSender(
+        new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(15) }),
+        firebase, sp.GetRequiredService<IPushTokenCleanup>(), sp.GetRequiredService<TimeProvider>(),
+        sp.GetRequiredService<ILogger<FcmPushSender>>()));
+}
 else builder.Services.AddSingleton<IPushSender, LoggingPushSender>();
 
 builder.Services.AddDbContext<AiluDb>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Ailu")));
@@ -56,7 +67,6 @@ if (builder.Configuration.GetValue("Mood:RetentionEnabled", true)) builder.Servi
 
 var billing = builder.Configuration.GetSection("Billing").Get<BillingOptions>() ?? new BillingOptions();
 if (billing.Products.Count == 0) billing.Products = BillingOptions.DefaultProducts();
-if (billing.Gifts.Count == 0) billing.Gifts = GiftProduct.Defaults(billing.Products);
 builder.Services.AddSingleton(billing);
 if (billing.UseFakeStore)
 {
@@ -64,7 +74,6 @@ if (billing.UseFakeStore)
         throw new InvalidOperationException("Billing:UseFakeStore is for development only.");
     builder.Services.AddSingleton<IStoreClient>(sp => new FakeStore(StoreProvider.Apple, sp.GetRequiredService<TimeProvider>()));
     builder.Services.AddSingleton<IStoreClient>(sp => new FakeStore(StoreProvider.Google, sp.GetRequiredService<TimeProvider>()));
-    builder.Services.AddSingleton<IGiftCheckout, FakeGiftCheckout>();
 }
 else
 {
@@ -76,8 +85,6 @@ else
         ? sp.GetRequiredService<AppleStoreClient>() : new UnconfiguredStore(StoreProvider.Apple));
     builder.Services.AddTransient<IStoreClient>(sp => billing.Google.Configured
         ? sp.GetRequiredService<GoogleStoreClient>() : new UnconfiguredStore(StoreProvider.Google));
-    // Kaspi (or card acquiring) plugs in here once the merchant account exists.
-    builder.Services.AddSingleton<IGiftCheckout, UnconfiguredGiftCheckout>();
 }
 builder.Services.AddScoped<BillingService>();
 
@@ -92,13 +99,6 @@ if (builder.Configuration.GetValue("Billing:ExpiryEnabled", true)) builder.Servi
 
 var photoBook = builder.Configuration.GetSection("PhotoBook").Get<PhotoBookOptions>() ?? new PhotoBookOptions();
 builder.Services.AddSingleton(photoBook);
-if (photoBook.UseFakeKaspi)
-{
-    if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
-        throw new InvalidOperationException("PhotoBook:UseFakeKaspi is for development only.");
-    builder.Services.AddSingleton<IKaspiPayments, FakeKaspi>();
-}
-else builder.Services.AddSingleton<IKaspiPayments, UnconfiguredKaspi>();
 builder.Services.AddSingleton<IPrintVendor, ManualPrintVendor>();
 builder.Services.AddSingleton<BookPdf>();
 builder.Services.AddSingleton<BookUrls>();
@@ -180,6 +180,7 @@ YearStoryEndpoints.Map(app);
 AiEndpoints.Map(app);
 BillingEndpoints.Map(app);
 GiftEndpoints.Map(app);
+WidgetEndpoints.Map(app);
 
 app.Run();
 
