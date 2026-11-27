@@ -9,7 +9,7 @@ Deployed on Vercel with Root Directory `web` and Output Directory `public` (no b
 | `content/<ru|kk>/*.md` | Legal and support pages (Markdown with a small front matter) |
 | `config.json` | Operator name, IDs, e-mails, site URL. `{{key}}` in the content is replaced with these values |
 | `build.py` | Renders `content/` into `public/` |
-| `public/` | The built site, committed. `style.css` and `favicon.svg` live here |
+| `public/` | The built site, committed. `style.css` lives here; `favicon.svg`, `logo.svg` and the PNG icons come from `node brand/build.mjs` |
 
 ```sh
 pip install markdown
