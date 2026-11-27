@@ -22,7 +22,7 @@
 - [ ] **Аккаунт Expo** (бесплатно): https://expo.dev/signup. Затем в папке `app/` выполнить `npx eas-cli@latest login` и `npx eas-cli@latest init`; это запишет `extra.eas.projectId` в `app.json` (он же нужен для push).
 - [ ] **GitHub Pages для документов:** Settings → Pages → Deploy from a branch → `main`, папка `/docs`. После этого документы будут доступны по адресу https://atukenov.github.io/ailu/legal/privacy-ru.html и т. д. Если появится домен ailu.kz, поменяйте `extra.legalUrl` в `app/app.json` и ссылки в `store/listing-*.md`.
 - [ ] **Заполнить скобки в юридических текстах:** `[НАИМЕНОВАНИЕ ТОО]`, `[БИН]`, адрес, ответственный за данные, email поддержки и email по вопросам данных, хостинг, SMS-провайдер, дата редакции. Найти все: `grep -rn "\[" docs/legal`.
-- [ ] **Юрист в РК** проверяет `docs/legal/*` (документ 6 требует этого до запуска), а также решение о минимальном возрасте 18 лет.
+- [ ] **Юрист в РК** проверяет `docs/legal/*` (документ 6 требует этого до запуска), а также минимальный возраст 16 лет (снижен с 18 в 2026-11-27): нужно ли согласие родителей для 16–17 лет.
 - [ ] **Носитель казахского языка** вычитывает `docs/legal/*-kk.md`, `store/listing-kk.md` и `app/locales/kk.json`.
 - [ ] **Название и бренд:** проверка товарного знака в Казпатенте и занятости имени «Ailu» в магазинах (из брендбука).
 
@@ -34,7 +34,7 @@
 2. Вписать Apple ID приложения в `app/eas.json` → `submit.production.ios.ascAppId`.
 3. Сборка и отправка: `cd app && npx eas-cli@latest build -p ios --profile production`, затем `npx eas-cli@latest submit -p ios --profile production`. EAS сам создаст сертификаты при первой сборке.
 4. App Review Information → Sign-in required: «Phone +7 700 000 00 00 (номер из `Auth__ReviewPhone`), tap «Получить код», enter <код из `Auth__ReviewCode`>. The account is already paired with a demo partner who answers and confirms tasks. Account deletion: Profile → «Удалить аккаунт».»
-5. Заполнить: текст из `store/listing-ru.md`, App Privacy из `store/data-safety.md`, Age Rating из `store/age-rating.md` (вручную поднять до 18+), скриншоты из `store/screenshots/ru/ios/` (1320 × 2868, слот 6.9").
+5. Заполнить: текст из `store/listing-ru.md`, App Privacy из `store/data-safety.md`, Age Rating из `store/age-rating.md` (вручную поднять до 16+), скриншоты из `store/screenshots/ru/ios/` (1320 × 2868, слот 6.9").
 6. Для подписок позже: Agreements, Tax, and Banking → Paid Apps.
 
 ### Google Play Console

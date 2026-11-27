@@ -223,7 +223,7 @@ public class ReviewLoginTests
         // One achievement already earned, one waiting for the reviewer, and the partner confirms new marks at once.
         var achievements = (await r.GetFromJsonAsync<AchievementList>("/v1/couple/achievements"))!;
         Assert.Equal(1, achievements.Earned);
-        Assert.Equal(AchievementState.ConfirmNeeded, achievements.Items.Single(x => x.Slug == "sunrise").State);
+        Assert.Equal(AchievementState.ConfirmNeeded, achievements.Items.Single(x => x.Slug == "first-dinner").State);
         var marked = await (await r.PostAsJsonAsync("/v1/couple/achievements/first-movie/done", new { }))
             .Content.ReadFromJsonAsync<AchievementDto>();
         Assert.Equal(AchievementState.Earned, marked!.State);

@@ -76,8 +76,9 @@ public static class Seed
         new() { Id = 12, Slug = "tradition", Text = "Какую традицию ты хотел(а) бы начать вдвоём?", TextKk = "Екеуміз бірге қандай дәстүр бастасақ дейсің?" }
     ];
 
-    // Achievements for real-life moments, never for app actions (gamification doc). The firsts are the
-    // free basic set; events and travel open with Plus. Kazakh texts are drafts awaiting native review.
+    // Achievements for real-life moments, never for app actions (gamification doc). Free gets the first three
+    // (Lev, 2026-11-27); the rest open with Plus and show blurred to Free as a teaser. Kazakh texts are drafts
+    // awaiting native review.
     public static readonly Achievement[] Achievements =
     [
         new() { Id = 1, Slug = "first-coffee", Category = AchievementCategory.Firsts, Tier = CouplePlan.Free, Position = 1, Icon = "☕",
@@ -89,16 +90,16 @@ public static class Seed
         new() { Id = 3, Slug = "first-dinner", Category = AchievementCategory.Firsts, Tier = CouplePlan.Free, Position = 3, Icon = "🍲",
             Title = "Первый ужин", Body = "Приготовили ужин вдвоём, от начала до конца.",
             TitleKk = "Алғашқы кешкі ас", BodyKk = "Кешкі асты басынан аяғына дейін екеуіңіз әзірледіңіздер." },
-        new() { Id = 4, Slug = "sunrise", Category = AchievementCategory.Firsts, Tier = CouplePlan.Free, Position = 4, Icon = "🌅",
+        new() { Id = 4, Slug = "sunrise", Category = AchievementCategory.Firsts, Tier = CouplePlan.Plus, Position = 4, Icon = "🌅",
             Title = "Встреча рассвета", Body = "Встретили рассвет вместе.",
             TitleKk = "Таңды қарсы алу", BodyKk = "Таңды бірге қарсы алдыңыздар." },
-        new() { Id = 5, Slug = "first-picnic", Category = AchievementCategory.Firsts, Tier = CouplePlan.Free, Position = 5, Icon = "🧺",
+        new() { Id = 5, Slug = "first-picnic", Category = AchievementCategory.Firsts, Tier = CouplePlan.Plus, Position = 5, Icon = "🧺",
             Title = "Первый пикник", Body = "Устроили пикник на природе.",
             TitleKk = "Алғашқы пикник", BodyKk = "Табиғат аясында пикник жасадыңыздар." },
-        new() { Id = 6, Slug = "printed-photo", Category = AchievementCategory.Firsts, Tier = CouplePlan.Free, Position = 6, Icon = "📸",
+        new() { Id = 6, Slug = "printed-photo", Category = AchievementCategory.Firsts, Tier = CouplePlan.Plus, Position = 6, Icon = "📸",
             Title = "Общее фото", Body = "Сделали фото вдвоём и распечатали его.",
             TitleKk = "Ортақ сурет", BodyKk = "Екеуіңіз суретке түсіп, оны қағазға басып шығардыңыздар." },
-        new() { Id = 7, Slug = "handmade-gift", Category = AchievementCategory.Firsts, Tier = CouplePlan.Free, Position = 7, Icon = "🎁",
+        new() { Id = 7, Slug = "handmade-gift", Category = AchievementCategory.Firsts, Tier = CouplePlan.Plus, Position = 7, Icon = "🎁",
             Title = "Подарок своими руками", Body = "Сделали друг другу подарок своими руками.",
             TitleKk = "Қолдан жасалған сыйлық", BodyKk = "Бір-біріңізге өз қолыңызбен сыйлық жасадыңыздар." },
         new() { Id = 8, Slug = "first-concert", Category = AchievementCategory.Events, Tier = CouplePlan.Plus, Position = 8, Icon = "🎵",

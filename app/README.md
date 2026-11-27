@@ -39,8 +39,8 @@ instead of the "+" button.
 
 Achievements (`src/app/achievements/`) are a collection of real-life moments: Первые, События, Путешествия. One
 partner taps "Мы это сделали" with the date, the other confirms, and both see the "Новое достижение" screen once
-(remembered per phone in `src/celebrations.ts`). Free couples collect the firsts; the rest show locked with a Plus
-card. An earned achievement can get a memory, which opens the new-memory screen with its title and date.
+(remembered per phone in `src/celebrations.ts`). Free couples collect the first three; the rest show blurred, and a tap opens the Plus
+paywall. An earned achievement can get a memory, which opens the new-memory screen with its title and date.
 
 <<<<<<< HEAD
 ## AI selections
