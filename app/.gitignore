@@ -45,3 +45,4 @@ example
 # Firebase config (from the Firebase console; on EAS these are file env vars)
 google-services.json
 GoogleService-Info.plist
+google-service-account.json
