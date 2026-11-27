@@ -10,7 +10,8 @@ npm run typecheck && npm run lint
 ```
 
 The API must be running (see `../backend`). In Development it writes SMS codes to its log.
-`npx expo start --web` also works for quick checks; the API allows `http://localhost:8081` for that.
+`npx expo start --web` also works for quick checks; the API allows `http://localhost:8081` and
+`http://localhost:8082` for that.
 
 ## Push notifications
 
