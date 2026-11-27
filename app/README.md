@@ -28,9 +28,9 @@ One-time setup:
 2. Apple Developer → Keys → create a key with Apple Push Notifications service (APNs) → download the `.p8`.
    Firebase → Project settings → Cloud Messaging → Apple app configuration → upload it with its Key ID and
    your Team ID.
-3. EAS: `npx eas-cli@latest env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility secret --environment production`
-   and the same for `GOOGLE_SERVICE_INFO_PLIST` with the plist (repeat for `preview`/`development` if you use them).
-   For local builds just put both files in this folder; they are git-ignored.
+3. EAS: upload both files as secret file variables `GOOGLE_SERVICES_JSON` and `GOOGLE_SERVICE_INFO_PLIST` in all three
+   environments (exact commands in `../DEPLOY.md`, section 7.2). For local builds just put both files in this folder;
+   they are git-ignored.
 4. Server: Firebase → Project settings → Service accounts → Generate new private key; put the whole JSON in the
    API's `Push__Firebase__ServiceAccountJson` variable.
 
@@ -73,7 +73,8 @@ paid on the provider's page in the browser; back in the app, the order shows its
 
 Builds go through EAS (`eas.json`): `development` is a dev client for a phone on your network, `preview` an internal APK or
 ad-hoc build, `production` the store build with remote build numbers (`autoIncrement`). Each profile sets
-`EXPO_PUBLIC_API_URL`; production points at the KZ server once it exists. App name and the photo permission text are
+`EXPO_PUBLIC_API_URL` (production and preview use the Railway API) and its own EAS environment. First-time EAS setup
+(project, Apple identifiers for the app and the widget, signing keys, first builds) is `../DEPLOY.md`, section 7. App name and the photo permission text are
 localized for iOS in `locales/`. Camera, microphone and video permissions are blocked on Android because the app never asks
 for them. Store texts, rating answers, screenshots and the publishing checklist are in `../store/`.
 
