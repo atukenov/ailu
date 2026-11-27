@@ -735,6 +735,26 @@ export const ru = {
     gift_not_found: 'Такого подарка нет.',
     invalid_productId: 'Такого подарка нет.',
   } as Record<string, string>,
+
+  // Home-screen widget. The widget runs outside the app, so it gets these texts ready-made.
+  widget: {
+    daysTogether: (n: number) => plural(n, 'день вместе', 'дня вместе', 'дней вместе'),
+    streak: (n: number) => plural(n, 'день подряд', 'дня подряд', 'дней подряд'),
+    nur: 'нұр',
+    task: {
+      offered: 'Новое задание ждёт вас',
+      waiting_for_partner: 'Вы приняли. Ждём партнёра',
+      accepted: 'Задание принято. Сделайте его вместе',
+      waiting_for_confirmation: 'Ждём, когда партнёр подтвердит',
+      confirm_needed: 'Подтвердите, что вы сделали это',
+      done: 'Готово на сегодня',
+    } as Record<string, string>,
+    moreTasks: 'Готово. Можно взять ещё одно',
+    newDay: 'Новый день. Задание уже ждёт',
+    partnerAnswered: (name: string) => `${name} ответил(а) на вопрос дня`,
+    answersOpen: 'Ответы на вопрос дня открыты',
+    signedOut: 'Откройте Ailu, чтобы увидеть вашу пару здесь',
+  },
 };
 
 export type Strings = typeof ru;

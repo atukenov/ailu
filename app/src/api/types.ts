@@ -101,6 +101,24 @@ export type Today = {
   phase: Phase;
 };
 
+// What the home-screen widget shows, from GET /v1/couple/widget.
+export type WidgetSummary = {
+  date: string;
+  nextDayAt: string;
+  daysTogether: number;
+  partnerName: string | null;
+  plan: Plan;
+  streak: number;
+  streakTomorrow: number;
+  nurBalance: number;
+  nurEarned: number;
+  phaseIndex: number;
+  phaseFill: number;
+  nextPhaseAt: number | null;
+  task: { title: string; state: TaskState; done: number; perDay: number };
+  question: { answered: boolean; partnerAnswered: boolean; revealed: boolean };
+};
+
 export type Photo = { id: string; width: number; height: number; thumb: string; screen: string; full: string };
 
 export type Memory = {
