@@ -87,9 +87,20 @@ dotnet ef migrations add <Name> -p src/Ailu.Api -o Data/Migrations
 ### AI
 
 `IAiWriter` writes selections and personal tasks. With `Ai:ApiKey` set it is `ClaudeAiWriter` (Anthropic API,
-`Ai:Model` default `claude-opus-5-5`, `Ai:Effort` default `low`, structured JSON output, server-side refusal
-fallbacks); without a key, `StubAiWriter` serves a small built-in set in Russian and Kazakh, so everything works
+`Ai:Model` default `claude-haiku-5-5`, `Ai:Effort` default `low`, structured JSON output; Sonnet/Opus/Fable models
+also get server-side refusal fallbacks, Haiku has none and falls back to the library task or "try later");
+without a key, `StubAiWriter` serves a small built-in set in Russian and Kazakh, so everything works
 before a key exists. The prompts and the checks on what comes back are in `Services/AiPrompts.cs`.
+
+AI is a paid feature: selections and personal tasks are Premium only (`Plans.AiPicksPerMonth`, 30 a month).
+In production set these env vars on the API (Railway):
+
+| Env var | Value |
+|---|---|
+| `Ai__ApiKey` | Anthropic API key from platform.claude.com (Settings, API keys). Set a monthly spend limit there too. |
+| `Ai__Model` | optional, default `claude-haiku-5-5` (about $0.10 / $0.50 per million tokens in / out) |
+| `Ai__Effort` | optional, default `low` |
+| `Ai__TimeoutSeconds` | optional, default `40` |
 
 ### Push notifications
 
