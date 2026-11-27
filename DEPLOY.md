@@ -419,7 +419,7 @@ ID должны совпасть с `backend/src/Ailu.Api/Infrastructure/Billing
 
 1. **Main store listing** (русский по умолчанию):
    - App name `Ailu — для двоих` (30), Short description и Full description из [`store/listing-ru.md`](store/listing-ru.md).
-   - **App icon:** 512 × 512 PNG. Внимание: сейчас иконка приложения — шаблон Expo (`app/assets/images/icon.png`), нужна своя (пункт в чек-листе).
+   - **App icon:** 512 × 512 PNG, готовый файл `brand/png/play-store-icon-512.png`.
    - **Feature graphic:** 1024 × 500, готовый файл `store/graphics/play-feature-graphic.png` (исходник рядом, `.html`).
    - **Phone screenshots:** 2–8 штук, 1080 × 1920, из `store/screenshots/ru/android/`.
    - Tablet screenshots не нужны.

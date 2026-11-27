@@ -113,12 +113,13 @@ def render(page: str, lang: str, meta: dict, body: str, all_meta: dict) -> str:
 <link rel="canonical" href="{canonical}">
 <link rel="alternate" hreflang="{other}" href="{CONFIG["siteUrl"].rstrip("/") + url(page, other)}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#170F1D">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="{kind}">
 <header class="top">
-  <a class="brand" href="{url("index", lang)}"><img src="/favicon.svg" alt="" width="28" height="28"> Ailu</a>
+  <a class="brand" href="{url("index", lang)}"><img src="/logo.svg" alt="Ailu" width="90" height="48"></a>
   <nav>
     <a href="{url("support", lang)}">{LANGS[lang]["support"]}</a>
     <a class="lang" href="{url(page, other)}" hreflang="{other}" lang="{other}">{LANGS[other]["short"]}</a>

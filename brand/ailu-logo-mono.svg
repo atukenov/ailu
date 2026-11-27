@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="91 247 782 417"><defs>
+<linearGradient id="wg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF1C9"/><stop offset=".5" stop-color="#FFD27A"/><stop offset="1" stop-color="#FFAE5E"/></linearGradient>
+<linearGradient id="wp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB3CF"/><stop offset="1" stop-color="#FF6F9F"/></linearGradient>
+<mask id="wc" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="1000"><rect width="1000" height="1000" fill="#fff"/><circle cx="292" cy="525" r="92" fill="#000"/></mask></defs><g fill="none" stroke-width="58" stroke-linecap="round"><circle cx="230" cy="525" r="115" fill="#FBF3EC" mask="url(#wc)"/>
+<path d="M316,439 V611" stroke="#FBF3EC"/><path d="M430,439 V611" stroke="#FBF3EC"/>
+<path d="M50,88 C20,65 2,48 2,28 C2,13 14,2 28,2 C38,2 46,8 50,16 C54,8 62,2 72,2 C86,2 98,13 98,28 C98,48 80,65 50,88 Z" transform="translate(430 321) scale(0.72) translate(-50 -45)" fill="#FBF3EC"/><path d="M540,300 V611" stroke="#FBF3EC"/><path d="M650,439 V526 A85,85 0 0 0 820,526 V439 M820,526 V611" stroke="#FBF3EC"/></g></svg>
