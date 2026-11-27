@@ -13,6 +13,7 @@ using Ailu.Api.Features.Pairing;
 using Ailu.Api.Features.PhotoBook;
 using Ailu.Api.Features.Timeline;
 using Ailu.Api.Features.YearStory;
+using Ailu.Api.Features.Widget;
 using Ailu.Api.Infrastructure;
 using Ailu.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -180,6 +181,7 @@ YearStoryEndpoints.Map(app);
 AiEndpoints.Map(app);
 BillingEndpoints.Map(app);
 GiftEndpoints.Map(app);
+WidgetEndpoints.Map(app);
 
 app.Run();
 
