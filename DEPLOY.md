@@ -36,7 +36,57 @@ ailu-weld.vercel.app ── Vercel: сайт из папки web/ (лендин�
 | Поддержка | `<сайт>/support-ru.html`, `<сайт>/support-kk.html` |
 | Короткие ссылки | `<сайт>/privacy`, `/terms`, `/subscription`, `/delete-account`, `/support` (ведут на русские версии) |
 
-Порядок: **1** Railway: проект и база → **2** Railway: сервер → **9** Vercel: сайт (нужен до магазинов: в них вписываются ссылки на документы) → **4** App Store Connect → **5** Google Play → **6** Firebase → **7** EAS: проект, идентификаторы, ключи и сборки → **8** проверка. Разделы 7.1, 7.3 и 7.4 (проект EAS, идентификаторы Apple и ключ Android) можно сделать в любой момент, хоть первыми. Свой домен (раздел 3) — по желанию, в любой момент.
+## Маршрут: что делать по порядку
+
+Идите сверху вниз и отмечайте. В каждом шаге написано, **где** он делается, а ссылка ведёт к подробностям клик за кликом. Шаги iOS (Б) и Android (В) не зависят друг от друга: после блока А можно идти по любому из них или по обоим сразу.
+
+**Уже сделано:** сервер и база на Railway (разделы 1–2), сайт на Vercel (раздел 9), Apple Developer оплачен, приложение создано в App Store Connect и почти заполнено (4.2–4.7).
+
+### А. Общая подготовка (один раз, для обеих платформ)
+
+| # | Что | Где | Подробно |
+| --- | --- | --- | --- |
+| А1 | Node 22 на компьютере, затем `git pull` и `cd app && npm ci` | терминал | 7.1 |
+| А2 | `npx eas-cli@latest login`, потом `npx eas-cli@latest init`, закоммитить `app/app.json` | терминал | 7.1 |
+| А3 | Проект Firebase, в нём приложения iOS и Android (`kz.ailu.app`), скачать `GoogleService-Info.plist` и `google-services.json` в `app/` | console.firebase.google.com | 6, шаги 1–2 |
+| А4 | Ключ APNs (.p8) создать у Apple и загрузить в Firebase | developer.apple.com → Keys, потом Firebase | 6, шаг 3 |
+| А5 | Сервисный ключ Firebase вставить в Railway `Push__Firebase__ServiceAccountJson` | Firebase → Service accounts, потом Railway | 6, шаг 5 |
+| А6 | Оба файла Firebase отправить в EAS (`env:create` ×2) | терминал | 7.2 |
+| А7 | На Railway проверить `Auth__ReviewPhone` и `Auth__ReviewCode` (не пустые) | Railway → Variables | CHECKLIST, раздел 1 |
+
+### Б. iOS: от идентификаторов до ревью
+
+| # | Что | Где | Подробно |
+| --- | --- | --- | --- |
+| Б1 | Идентификаторы, сертификат, профили: `npx eas-cli@latest credentials -p ios` | терминал | 7.3 |
+| Б2 | Проверить два App ID и группу `group.kz.ailu.app` | developer.apple.com → Identifiers | 4.1 |
+| Б3 | **Сборка:** `npx eas-cli@latest build -p ios --profile production` (15–40 мин, ждать на expo.dev) | терминал | 7.5 |
+| Б4 | **Куда сборку:** `npx eas-cli@latest submit -p ios --profile production --latest`. Сборка сама попадает в App Store Connect → TestFlight (через 15–30 мин) | терминал | 7.5 |
+| Б5 | Ключ для проверки покупок и уведомления о покупках | App Store Connect → Users and Access → Integrations; App Information | 4.8, 4.9 |
+| Б6 | TestFlight: поставить на iPhone, войти, купить Plus в песочнице, проверить профиль | TestFlight на телефоне | 4.11 |
+| Б7 | Страница версии 1.0: тексты, скриншоты 6.9" (`store/screenshots/ru/ios/`), **Build → +** выбрать сборку из Б4, вход для ревьюера | App Store Connect → приложение → iOS App 1.0 | 4.10 |
+| Б8 | Подписки: прикрепить к версии (Plus и Premium, месяц и год), у каждой скриншот для ревью | там же, блок In-App Purchases and Subscriptions | 4.7 |
+| Б9 | **Add for Review → Submit** | App Store Connect | 4.10 |
+
+### В. Android: от ключа до продакшна
+
+| # | Что | Где | Подробно |
+| --- | --- | --- | --- |
+| В1 | Создать приложение и платёжный профиль | play.google.com/console | 5.1, 5.2 |
+| В2 | Ключ подписи: `npx eas-cli@latest credentials -p android` | терминал | 7.4 |
+| В3 | **Сборка:** `npx eas-cli@latest build -p android --profile production`, скачать `.aab` по ссылке в конце | терминал | 7.5 |
+| В4 | **Куда сборку (первый раз вручную):** Play Console → Test and release → Testing → **Internal testing** → Create new release → загрузить `.aab` | Play Console | 5.3 |
+| В5 | Сервисный аккаунт (для проверки покупок на сервере и для `eas submit` дальше) | Google Cloud + Play Console | 5.6 |
+| В6 | Подписки (появляются только после загрузки сборки в В4) и уведомления о покупках | Play Console → Monetize with Play | 5.5, 5.7 |
+| В7 | App content (анкеты) и карточка магазина | Play Console → Policy; Grow users → Store presence | 5.4, 5.8 |
+| В8 | Поставить с внутреннего теста на телефон, проверить вход и покупку | Android-телефон | 5.3, шаг 5 |
+| В9 | Закрытый тест (12 тестировщиков, 14 дней) → Apply for production → релиз в продакшн. Следующие сборки: `npx eas-cli@latest submit -p android --profile production --latest` | Play Console | 5.9 |
+
+### Г. После одобрения
+
+Проверка по разделу 8. Новая версия потом: поднять `version` в `app/app.json`, снова Б3–Б4 / В3 + `submit`, номер сборки EAS повышает сам.
+
+Разделы ниже — справочник по каждому сервису; читать их подряд не нужно.
 
 Секреты (ключи, пароли, JSON-файлы) не кладите в git. Они живут только в переменных Railway и в EAS.
 
