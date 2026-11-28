@@ -1,4 +1,6 @@
 {
-  "CFBundleDisplayName": "Ailu",
-  "NSPhotoLibraryUsageDescription": "Ailu фотосуреттеріңізді естеліктерге қосу үшін ашады."
+  "ios": {
+    "CFBundleDisplayName": "Ailu",
+    "NSPhotoLibraryUsageDescription": "Ailu фотосуреттеріңізді естеліктерге қосу үшін ашады."
+  }
 }
