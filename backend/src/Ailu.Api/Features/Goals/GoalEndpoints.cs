@@ -25,6 +25,7 @@ public static class StepState
 // TargetMonth is "yyyy-MM". On PATCH a missing field keeps its value and an empty TargetMonth clears it.
 public sealed record GoalRequest(string? Title, string? Category, string? TargetMonth, bool? WeeklyReminder, List<string>? Steps);
 public sealed record StepRequest(string? Title);
+public sealed record StepOrderRequest(List<Guid>? StepIds);
 public sealed record StepDto(Guid Id, string Title, string State, DateTimeOffset? ClosedAt);
 public sealed record GoalDto(Guid Id, string Title, string Category, string? TargetMonth, bool WeeklyReminder, string State,
     int Progress, int StepsDone, int StepsTotal, bool CreatedByMe, bool RemovalRequestedByMe, bool RemovalRequestedByPartner,
@@ -46,6 +47,7 @@ public static class GoalEndpoints
         g.MapPost("/goals/{id:guid}/keep", Keep);
         g.MapPost("/goals/{id:guid}/join", Join);
         g.MapPost("/goals/{id:guid}/steps", AddStep);
+        g.MapPut("/goals/{id:guid}/steps/order", ReorderSteps);
         g.MapPatch("/goals/{id:guid}/steps/{stepId:guid}", RenameStep);
         g.MapDelete("/goals/{id:guid}/steps/{stepId:guid}", DeleteStep);
         g.MapPost("/goals/{id:guid}/steps/{stepId:guid}/done", MarkStep);
@@ -201,6 +203,26 @@ public static class GoalEndpoints
             Position = goal.Steps.Count == 0 ? 0 : goal.Steps.Max(s => s.Position) + 1
         }); // fix-up adds it to goal.Steps too
         goal.CompletedAt = null;
+        await db.SaveChangesAsync(ct);
+        return Results.Ok(ToDto(goal, scope));
+    }
+
+    // Either partner drags the steps into a new order. The list must name every step of the goal once,
+    // so a step the partner added or removed meanwhile is never silently lost or misplaced.
+    private static async Task<IResult> ReorderSteps(Guid id, StepOrderRequest body, HttpContext http, AiluDb db,
+        CancellationToken ct)
+    {
+        var scope = await CurrentUser.CoupleAsync(http.User, db, ct);
+        if (scope is null) return Errors.NoCouple();
+        var goal = await Live(db, scope).SingleOrDefaultAsync(x => x.Id == id, ct);
+        if (goal is null) return NotFound();
+
+        var ids = body.StepIds ?? [];
+        var byId = goal.Steps.ToDictionary(s => s.Id);
+        if (ids.Count != byId.Count || ids.Distinct().Count() != ids.Count || !ids.All(byId.ContainsKey))
+            return Errors.Conflict("steps_changed", "Этапы только что изменились. Обновите цель и попробуйте ещё раз.");
+
+        for (var i = 0; i < ids.Count; i++) byId[ids[i]].Position = i;
         await db.SaveChangesAsync(ct);
         return Results.Ok(ToDto(goal, scope));
     }
