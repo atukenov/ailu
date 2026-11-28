@@ -12,6 +12,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings, type Strings } from '@/i18n';
 import { buyYearStory, storyPrice } from '@/purchases';
 import { useSession } from '@/session';
+import { usePullRefresh } from '@/refresh';
 
 // While the film is being made, the screen notices when it is ready.
 const POLL_MS = 60_000;
@@ -22,6 +23,7 @@ export default function YearStoryScreen() {
   const s = useStrings();
   const queryClient = useQueryClient();
   const [year, setYear] = useState<number | undefined>(undefined);
+  const [refreshing, refresh] = usePullRefresh();
   const story = useQuery({
     queryKey: ['year-story', year ?? 'default'],
     queryFn: () => api.yearStory(year),
@@ -50,7 +52,7 @@ export default function YearStoryScreen() {
   return (
     <Screen
       refreshControl={
-        <RefreshControl refreshing={story.isRefetching} onRefresh={() => void story.refetch()} tintColor={Colors.accent} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => refresh(story.refetch())} tintColor={Colors.accent} />
       }>
       <TopBar title={s.yearStoryShort} onBack={() => router.back()} />
       <ErrorText error={story.error} />
