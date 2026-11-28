@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import { api } from '@/api/client';
 import type { Goal, GoalStep } from '@/api/types';
 import { GOAL_LOOK, MAX_STEPS, MonthPicker } from '@/components/goals';
 import { Burst } from '@/components/motion';
+import { ReorderList } from '@/components/reorder';
 import { Button, Card, Centered, Chip, ErrorText, ProgressBar, RoundButton, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Radius, Spacing, Tones } from '@/constants/theme';
 import { useStrings } from '@/i18n';
@@ -46,6 +47,22 @@ export default function GoalScreen() {
       update(g);
       setNewStep('');
     },
+  });
+
+  // The new order shows at once; if the partner changed the steps meanwhile, the refetch shows theirs.
+  const reorder = useMutation({
+    mutationFn: (ids: string[]) => api.reorderSteps(id, ids),
+    onMutate: (ids) => {
+      const current = queryClient.getQueryData<Goal>(['goal', id]);
+      if (!current) return;
+      const byId = new Map(current.steps.map((x) => [x.id, x]));
+      queryClient.setQueryData<Goal>(['goal', id], {
+        ...current,
+        steps: ids.map((x) => byId.get(x)).filter((x): x is GoalStep => !!x),
+      });
+    },
+    onSuccess: update,
+    onError: () => void queryClient.invalidateQueries({ queryKey: ['goal', id] }),
   });
 
   if (goal.isPending) return <Centered />;
@@ -118,9 +135,15 @@ export default function GoalScreen() {
 
       <Card tone={GOAL_LOOK[g.category].tone}>
         <T variant="label">{s.goalSteps}</T>
-        {g.steps.map((step) => (
-          <StepRow key={step.id} goalId={g.id} step={step} canMark={shared} onChange={update} />
-        ))}
+        <ReorderList
+          items={g.steps}
+          onReorder={(ids) => reorder.mutate(ids)}
+          labels={{ drag: s.stepDrag, up: s.stepMoveUp, down: s.stepMoveDown }}
+          renderItem={(step, handle) => (
+            <StepRow goalId={g.id} step={step} canMark={shared} onChange={update} handle={handle} />
+          )}
+        />
+        <ErrorText error={reorder.error} />
         {g.steps.length < MAX_STEPS && (
           <View style={styles.addRow}>
             <TextInput
@@ -176,11 +199,13 @@ function StepRow({
   step,
   canMark,
   onChange,
+  handle,
 }: {
   goalId: string;
   step: GoalStep;
   canMark: boolean;
   onChange: (g: Goal) => void;
+  handle: ReactNode;
 }) {
   const s = useStrings();
   const queryClient = useQueryClient();
@@ -198,6 +223,7 @@ function StepRow({
   return (
     <View style={styles.step}>
       <View style={styles.stepRow}>
+        {handle}
         <View style={[styles.check, done && styles.checkDone]}>{done && <T style={styles.checkMark}>✓</T>}</View>
         <T variant="body" style={[styles.flex, done && styles.stepDone]}>
           {step.title}
@@ -234,7 +260,7 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   step: { gap: Spacing.two, paddingVertical: Spacing.one },
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  stepActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingLeft: 36 },
+  stepActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingLeft: 36 + 28 + Spacing.three },
   stepDone: { color: Colors.textSecondary, textDecorationLine: 'line-through' },
   check: {
     width: 24,

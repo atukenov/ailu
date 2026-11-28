@@ -179,6 +179,8 @@ export const api = {
   keepGoal: (id: string) => request<Goal>('POST', `/v1/couple/goals/${id}/keep`),
   addStep: (id: string, title: string) => request<Goal>('POST', `/v1/couple/goals/${id}/steps`, { title }),
   deleteStep: (id: string, stepId: string) => request<Goal>('DELETE', `/v1/couple/goals/${id}/steps/${stepId}`),
+  // Every step of the goal, once each, in the new order.
+  reorderSteps: (id: string, stepIds: string[]) => request<Goal>('PUT', `/v1/couple/goals/${id}/steps/order`, { stepIds }),
   markStep: (id: string, stepId: string, on: boolean) =>
     request<Goal>(on ? 'POST' : 'DELETE', `/v1/couple/goals/${id}/steps/${stepId}/done`),
 

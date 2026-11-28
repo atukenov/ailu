@@ -210,6 +210,45 @@ public class GoalTests
     }
 
     [Fact]
+    public async Task Either_partner_reorders_steps_and_both_see_the_new_order()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        var (a, b) = await api.PairAsync();
+        var goal = await Shared(a, b, "Свадьба", "Зал", "Платье", "Гости");
+        await Ok(await Mark(a, goal, 0));
+        await Ok(await Mark(b, goal, 0)); // a closed step moves too
+        var url = $"/v1/couple/goals/{goal.Id}/steps/order";
+        var ids = goal.Steps.Select(s => s.Id).ToList();
+
+        var moved = await Ok(await b.PutAsJsonAsync(url, new { stepIds = new[] { ids[2], ids[0], ids[1] } }));
+        Assert.Equal(["Гости", "Зал", "Платье"], moved.Steps.Select(s => s.Title));
+        var seen = (await a.GetFromJsonAsync<GoalDto>($"/v1/couple/goals/{goal.Id}"))!;
+        Assert.Equal(["Гости", "Зал", "Платье"], seen.Steps.Select(s => s.Title));
+
+        // A step added afterwards goes to the end.
+        var added = await Ok(await a.PostAsJsonAsync($"/v1/couple/goals/{goal.Id}/steps", new { title = "Кольца" }));
+        Assert.Equal("Кольца", added.Steps[^1].Title);
+    }
+
+    [Fact]
+    public async Task Reorder_must_name_every_step_once()
+    {
+        await using var api = await ApiFactory.StartAsync();
+        var (a, b) = await api.PairAsync();
+        var goal = await Shared(a, b, "Отпуск", "Билеты", "Отель");
+        var url = $"/v1/couple/goals/{goal.Id}/steps/order";
+        var (s0, s1) = (goal.Steps[0].Id, goal.Steps[1].Id);
+
+        foreach (var bad in new[] { new[] { s0 }, new[] { s0, s0 }, new[] { s0, s1, Guid.NewGuid() }, new[] { s1, Guid.NewGuid() } })
+            Assert.Equal(HttpStatusCode.Conflict, (await a.PutAsJsonAsync(url, new { stepIds = bad })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await a.PutAsJsonAsync(url, new { })).StatusCode);
+
+        var (c, _) = await api.PairAsync("+77010000003", "+77010000004");
+        Assert.Equal(HttpStatusCode.NotFound, (await c.PutAsJsonAsync(url, new { stepIds = new[] { s1, s0 } })).StatusCode);
+        Assert.Equal(["Билеты", "Отель"], (await a.GetFromJsonAsync<GoalDto>($"/v1/couple/goals/{goal.Id}"))!.Steps.Select(s => s.Title));
+    }
+
+    [Fact]
     public async Task Either_partner_edits_and_bad_fields_are_refused()
     {
         await using var api = await ApiFactory.StartAsync();
