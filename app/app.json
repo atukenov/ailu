@@ -145,7 +145,33 @@
       "kk": "./locales/kk.json"
     },
     "extra": {
-      "legalUrl": "https://ailu-weld.vercel.app/legal"
-    }
+      "legalUrl": "https://ailu-weld.vercel.app/legal",
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "kz.ailu.app.widget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.kz.ailu.app"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "2774a4c3-21a7-4284-b4a6-da81e0c6358f"
+      }
+    },
+    "owner": "amakenzi"
   }
 }
