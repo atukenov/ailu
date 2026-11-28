@@ -60,6 +60,14 @@ public sealed class AppleStoreClient(HttpClient http, AppleStoreOptions options,
         using (res)
         {
             if (res.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) return null;
+            // Until the app is live on the App Store, production answers 401 even to a good token, while
+            // the sandbox (TestFlight, App Review) answers normally. So production's 401 means "ask the
+            // sandbox"; a key that is really wrong still fails there.
+            if (res.StatusCode is HttpStatusCode.Unauthorized && baseUrl == Production)
+            {
+                log.LogWarning("App Store Server API production returned 401; asking the sandbox.");
+                return null;
+            }
             if (!res.IsSuccessStatusCode)
             {
                 log.LogError("App Store Server API returned {Status}: {Body}", (int)res.StatusCode, await res.Content.ReadAsStringAsync(ct));
@@ -154,7 +162,13 @@ public sealed class AppleStoreClient(HttpClient http, AppleStoreOptions options,
         var now = clock.GetUtcNow();
         using var ec = ECDsa.Create();
         ec.ImportFromPem(options.PrivateKey);
-        var key = new ECDsaSecurityKey(ec) { KeyId = options.KeyId };
+        // The key is disposed when this method returns, so the signer must not be cached for the next token:
+        // a cached one would sign with the disposed key and throw on the second request (the sandbox fallback).
+        var key = new ECDsaSecurityKey(ec)
+        {
+            KeyId = options.KeyId,
+            CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
+        };
         return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
         {
             Issuer = options.IssuerId,
