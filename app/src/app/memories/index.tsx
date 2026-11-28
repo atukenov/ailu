@@ -11,9 +11,11 @@ import { Tap } from '@/components/motion';
 import { Colors, Spacing, Tones } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { biggerPlan, openPaywall, photoLimitReached } from '@/upsells';
+import { usePullRefresh } from '@/refresh';
 
 export default function Memories() {
   const s = useStrings();
+  const [refreshing, refresh] = usePullRefresh();
   const list = useInfiniteQuery({
     queryKey: ['memories'],
     queryFn: ({ pageParam }) => api.memories(pageParam),
@@ -29,11 +31,8 @@ export default function Memories() {
     <Screen
       refreshControl={
         <RefreshControl
-          refreshing={list.isRefetching}
-          onRefresh={() => {
-            void list.refetch();
-            void storage.refetch();
-          }}
+          refreshing={refreshing}
+          onRefresh={() => refresh(Promise.all([list.refetch(), storage.refetch()]))}
           tintColor={Colors.accent}
         />
       }>

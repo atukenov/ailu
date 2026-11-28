@@ -10,6 +10,7 @@ import { CoverView, SpreadView, tenge } from '@/components/book';
 import { Button, Card, Centered, Chip, ErrorText, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
+import { usePullRefresh } from '@/refresh';
 
 function confirm(title: string, body: string, ok: string, cancel: string, action: () => void) {
   if (Platform.OS === 'web') {
@@ -30,6 +31,7 @@ export default function PhotoBookScreen() {
   const [picked, setPicked] = useState<number | null>(params.year ? Number(params.year) : null);
   // The newest year that has a book, else the newest year with photos.
   const year = picked ?? years.data?.years.find((y) => y.hasBook)?.year ?? years.data?.years[0]?.year ?? null;
+  const [refreshing, refresh] = usePullRefresh();
   const book = useQuery({
     queryKey: ['photo-book', year],
     queryFn: () => api.photoBook(year!),
@@ -57,11 +59,8 @@ export default function PhotoBookScreen() {
     <Screen
       refreshControl={
         <RefreshControl
-          refreshing={book.isRefetching}
-          onRefresh={() => {
-            void years.refetch();
-            void book.refetch();
-          }}
+          refreshing={refreshing}
+          onRefresh={() => refresh(Promise.all([years.refetch(), book.refetch()]))}
           tintColor={Colors.accent}
         />
       }>

@@ -11,10 +11,12 @@ import { Button, Card, Centered, ErrorText, Screen, T, TopBar } from '@/componen
 import { BackgroundGradient, Colors, Spacing, Tones, type Tone } from '@/constants/theme';
 import { useStrings, type Strings } from '@/i18n';
 import { openPaywall } from '@/upsells';
+import { usePullRefresh } from '@/refresh';
 
 // The relationship history: everything that happened to the couple, newest first, on one line.
 export default function Timeline() {
   const s = useStrings();
+  const [refreshing, refresh] = usePullRefresh();
   const list = useInfiniteQuery({
     queryKey: ['timeline'],
     queryFn: ({ pageParam }) => api.timeline(pageParam),
@@ -37,7 +39,7 @@ export default function Timeline() {
   return (
     <Screen
       refreshControl={
-        <RefreshControl refreshing={list.isRefetching} onRefresh={() => void list.refetch()} tintColor={Colors.accent} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => refresh(list.refetch())} tintColor={Colors.accent} />
       }>
       <TopBar title={s.timeline} onBack={() => router.back()} />
       <ErrorText error={list.error} />

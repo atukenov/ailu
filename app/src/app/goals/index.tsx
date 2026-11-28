@@ -11,12 +11,14 @@ import { Button, Card, Centered, ErrorText, ProgressBar, RoundButton, Screen, T,
 import { Colors, Spacing, Tones } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { openPaywall } from '@/upsells';
+import { usePullRefresh } from '@/refresh';
 
 // A partner's join, step or removal request shows up without a manual refresh.
 const POLL_MS = 30_000;
 
 export default function Goals() {
   const s = useStrings();
+  const [refreshing, refresh] = usePullRefresh();
   const list = useQuery({ queryKey: ['goals'], queryFn: api.goals, refetchInterval: POLL_MS });
 
   if (list.isPending) return <Centered />;
@@ -28,7 +30,7 @@ export default function Goals() {
   return (
     <Screen
       refreshControl={
-        <RefreshControl refreshing={list.isRefetching} onRefresh={() => void list.refetch()} tintColor={Colors.accent} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => refresh(list.refetch())} tintColor={Colors.accent} />
       }>
       <TopBar
         title={s.goals}

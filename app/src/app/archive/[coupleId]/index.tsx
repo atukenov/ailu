@@ -9,12 +9,14 @@ import { archiveTitle, localDay } from '@/components/past-couples';
 import { Button, Card, Centered, ErrorText, Screen, T, TopBar } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
+import { usePullRefresh } from '@/refresh';
 
 // The memories of a couple that ended: readable by both, nothing to add or heart.
 export default function Archive() {
   const s = useStrings();
   const { coupleId } = useLocalSearchParams<{ coupleId: string }>();
   const archive = useQuery({ queryKey: ['archive'], queryFn: api.archive });
+  const [refreshing, refresh] = usePullRefresh();
   const list = useInfiniteQuery({
     queryKey: ['archive', coupleId, 'memories'],
     queryFn: ({ pageParam }) => api.archiveMemories(coupleId, pageParam),
@@ -30,7 +32,7 @@ export default function Archive() {
   return (
     <Screen
       refreshControl={
-        <RefreshControl refreshing={list.isRefetching} onRefresh={() => void list.refetch()} tintColor={Colors.accent} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => refresh(list.refetch())} tintColor={Colors.accent} />
       }>
       <TopBar title={past ? archiveTitle(s, past) : s.archiveTitlePlain} onBack={() => router.back()} />
       <ErrorText error={list.error} />

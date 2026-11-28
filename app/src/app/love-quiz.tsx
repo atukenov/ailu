@@ -10,6 +10,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { useSession } from '@/session';
 import { openPaywall } from '@/upsells';
+import { usePullRefresh } from '@/refresh';
 
 // The partner's taking shows up without a manual refresh.
 const POLL_MS = 30_000;
@@ -19,6 +20,7 @@ const POLL_MS = 30_000;
 export default function LoveQuizScreen() {
   const s = useStrings();
   const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
+  const [refreshing, refresh] = usePullRefresh();
   const quiz = useQuery({ queryKey: ['love-quiz'], queryFn: api.loveQuiz, refetchInterval: POLL_MS });
   const [taking, setTaking] = useState(false);
 
@@ -33,7 +35,7 @@ export default function LoveQuizScreen() {
   return (
     <Screen
       refreshControl={
-        <RefreshControl refreshing={quiz.isRefetching} onRefresh={() => void quiz.refetch()} tintColor={Colors.accent} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => refresh(quiz.refetch())} tintColor={Colors.accent} />
       }>
       <TopBar title={s.loveQuiz} onBack={() => router.back()} />
       <ErrorText error={quiz.error} />

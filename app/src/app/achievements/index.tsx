@@ -14,6 +14,7 @@ import { Colors, Radius, Spacing, Tones } from '@/constants/theme';
 import { isoToText } from '@/dates';
 import { useStrings } from '@/i18n';
 import { openPaywall } from '@/upsells';
+import { usePullRefresh } from '@/refresh';
 
 // A partner's mark or confirmation shows up without a manual refresh.
 const POLL_MS = 30_000;
@@ -23,6 +24,7 @@ const TABS: (AchievementCategory | 'all')[] = ['all', 'firsts', 'events', 'trave
 export default function Achievements() {
   const s = useStrings();
   const [tab, setTab] = useState<(typeof TABS)[number]>('all');
+  const [refreshing, refresh] = usePullRefresh();
   const list = useQuery({ queryKey: ['achievements'], queryFn: api.achievements, refetchInterval: POLL_MS });
   const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
 
@@ -50,7 +52,7 @@ export default function Achievements() {
   return (
     <Screen
       refreshControl={
-        <RefreshControl refreshing={list.isRefetching} onRefresh={() => void list.refetch()} tintColor={Colors.accent} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => refresh(list.refetch())} tintColor={Colors.accent} />
       }>
       <TopBar title={s.achievements} onBack={() => router.back()} />
       <ErrorText error={list.error} />

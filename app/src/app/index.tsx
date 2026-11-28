@@ -15,6 +15,7 @@ import { useStrings } from '@/i18n';
 import { registerForPush } from '@/notifications';
 import { useSession } from '@/session';
 import { openPaywall, upsells } from '@/upsells';
+import { usePullRefresh } from '@/refresh';
 
 // Until the realtime hub exists, poll so a partner's accept or answer shows up without a manual refresh.
 const POLL_MS = 30_000;
@@ -25,6 +26,7 @@ export default function TodayScreen() {
   const queryClient = useQueryClient();
   const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
   const today = useQuery({ queryKey: ['today'], queryFn: api.today, refetchInterval: POLL_MS });
+  const [refreshing, refresh] = usePullRefresh();
   const storage = useQuery({ queryKey: ['storage'], queryFn: api.storage });
 
   // Only reachable in a couple, which is when there is something to notify about.
@@ -32,7 +34,9 @@ export default function TodayScreen() {
     registerForPush();
   }, []);
 
-  if (today.isPending) return <Centered />;
+  // The plan and the couple decide which cards show between others (upsells, AI picks); waiting for
+  // them keeps those cards from popping in and shifting the screen after it appears.
+  if (today.isPending || storage.isPending || couple.isPending) return <Centered />;
   if (today.isError)
     return (
       <Screen>
@@ -49,11 +53,8 @@ export default function TodayScreen() {
     <Screen
       refreshControl={
         <RefreshControl
-          refreshing={today.isRefetching}
-          onRefresh={() => {
-            void today.refetch();
-            void queryClient.invalidateQueries({ queryKey: ['mood'] });
-          }}
+          refreshing={refreshing}
+          onRefresh={() => refresh(Promise.all([today.refetch(), queryClient.invalidateQueries({ queryKey: ['mood'] })]))}
           tintColor={Colors.accent}
         />
       }>

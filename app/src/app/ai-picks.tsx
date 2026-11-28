@@ -9,6 +9,7 @@ import { Button, Card, Centered, Chip, ErrorText, Field, Screen, T, TopBar } fro
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useStrings } from '@/i18n';
 import { openPaywall } from '@/upsells';
+import { usePullRefresh } from '@/refresh';
 
 const KINDS: AiKind[] = ['date', 'home', 'film', 'music'];
 const BUDGETS: AiBudget[] = ['any', 'free', 'low'];
@@ -20,6 +21,7 @@ export default function AiPicksScreen() {
   const s = useStrings();
   const params = useLocalSearchParams<{ kind?: AiKind }>();
   const queryClient = useQueryClient();
+  const [refreshing, refresh] = usePullRefresh();
   const ai = useQuery({ queryKey: ['ai'], queryFn: api.ai });
   const couple = useQuery({ queryKey: ['couple'], queryFn: api.couple });
   const [tab, setTab] = useState<'picks' | 'saved'>('picks');
@@ -46,7 +48,7 @@ export default function AiPicksScreen() {
   return (
     <Screen
       refreshControl={
-        <RefreshControl refreshing={ai.isRefetching} onRefresh={() => void ai.refetch()} tintColor={Colors.accent} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => refresh(ai.refetch())} tintColor={Colors.accent} />
       }>
       <TopBar title={s.aiPicks} onBack={() => router.back()} />
       <ErrorText error={ai.error} />
