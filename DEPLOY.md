@@ -607,7 +607,7 @@ npx eas-cli@latest build -p ios --profile production
 npx eas-cli@latest submit -p ios --profile production --latest
 ```
 
-Спросит Apple ID и предложит создать **App Store Connect API Key** → `Y` (EAS создаст ключ и дальше будет отправлять без пароля). Через 15–30 минут сборка появится в App Store Connect → TestFlight.
+Пароль не нужен: `app/eas.json` → `submit.production.ios` указывает на ключ App Store Connect API `HGAAFGK229`, файл которого лежит вне репозитория в `~/Desktop/Dev/ailu-keys/AuthKey_HGAAFGK229.p8` (путь `../../ailu-keys/...` считается от папки `app/`). На другом компьютере положите ключ туда же. Через 15–30 минут сборка появится в App Store Connect → TestFlight.
 
 Android:
 
