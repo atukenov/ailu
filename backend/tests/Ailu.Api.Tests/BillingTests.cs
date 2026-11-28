@@ -236,6 +236,56 @@ public class BillingTests
     }
 
     [Fact]
+    public async Task Apple_purchase_falls_back_to_the_sandbox_when_production_answers_401()
+    {
+        // Before the app is live, production refuses even a good token with 401; TestFlight purchases are in the sandbox.
+        var json = $$"""
+            {"environment":"Sandbox","bundleId":"kz.ailu.app","data":[{"subscriptionGroupIdentifier":"1","lastTransactions":[
+              {"originalTransactionId":"200","status":1,
+               "signedTransactionInfo":"{{Signed(new { originalTransactionId = "200", transactionId = "200", productId = "kz.ailu.premium.monthly",
+                   expiresDate = DateTimeOffset.UtcNow.AddDays(30).ToUnixTimeMilliseconds() })}}",
+               "signedRenewalInfo":"{{Signed(new { autoRenewStatus = 1 })}}"}]}]}
+            """;
+        var hosts = new List<string>();
+        var handler = new StubHandler(req =>
+        {
+            hosts.Add(req.RequestUri!.Host);
+            return req.RequestUri.Host == new Uri(AppleStoreClient.Production).Host
+                ? new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+        });
+        using var ec = System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP256);
+        var options = new AppleStoreOptions { IssuerId = "issuer", KeyId = "KEY", PrivateKey = ec.ExportPkcs8PrivateKeyPem() };
+        var client = new AppleStoreClient(new HttpClient(handler), options, TimeProvider.System,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<AppleStoreClient>.Instance);
+
+        var p = await client.FetchAsync("200");
+
+        Assert.NotNull(p);
+        Assert.True(p!.Sandbox);
+        Assert.Equal(SubscriptionStatus.Active, p.Status);
+        Assert.Equal(["api.storekit.itunes.apple.com", "api.storekit-sandbox.itunes.apple.com"], hosts);
+    }
+
+    [Fact]
+    public async Task Apple_401_from_the_sandbox_is_still_an_error()
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
+        using var ec = System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP256);
+        var options = new AppleStoreOptions { IssuerId = "issuer", KeyId = "KEY", PrivateKey = ec.ExportPkcs8PrivateKeyPem() };
+        var client = new AppleStoreClient(new HttpClient(handler), options, TimeProvider.System,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<AppleStoreClient>.Instance);
+
+        await Assert.ThrowsAsync<StoreUnavailableException>(() => client.FetchAsync("200"));
+    }
+
+    private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Task.FromResult(respond(request));
+    }
+
+    [Fact]
     public void Google_subscription_state_is_read_from_subscriptionsv2()
     {
         const string json = """
