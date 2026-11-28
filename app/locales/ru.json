@@ -1,4 +1,6 @@
 {
-  "CFBundleDisplayName": "Ailu",
-  "NSPhotoLibraryUsageDescription": "Ailu открывает ваши фото, чтобы вы могли добавить их в воспоминания."
+  "ios": {
+    "CFBundleDisplayName": "Ailu",
+    "NSPhotoLibraryUsageDescription": "Ailu открывает ваши фото, чтобы вы могли добавить их в воспоминания."
+  }
 }
